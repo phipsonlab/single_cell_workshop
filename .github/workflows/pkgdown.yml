@@ -157,6 +157,12 @@ jobs:
           install_cran("rmarkdown", "2.30")
           install_cran("pkgdown", "2.2.0")
 
+          # Install devtools for local package installation
+          if (!requireNamespace("devtools", quietly = TRUE)) {
+            message("Installing devtools...")
+            install.packages("devtools", repos = "https://cloud.r-project.org", quiet = TRUE)
+          }
+
           message("\n=== Package installation complete ===\n")
         shell: Rscript {0}
 
@@ -240,6 +246,12 @@ jobs:
           ls -lh data/
           test -s data/heart-counts.Rds || exit 1
           test -s data/cellinfo_updated.Rds || exit 1
+
+      # Install local package (required for pkgdown to build reference docs)
+      - name: Install local package
+        run: |
+          devtools::install_local(".", force = TRUE, upgrade = "never")
+        shell: Rscript {0}
 
       # Build pkgdown site
       - name: Build site

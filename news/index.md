@@ -34,4 +34,4 @@
 
 - Human heart snRNA-seq data from Sim et al. (2021) *Circulation*
 - 9 samples across 3 developmental stages (foetal, young, adult)
-- ~54,000 nuclei after quality control
+- ~43,000 nuclei after quality control

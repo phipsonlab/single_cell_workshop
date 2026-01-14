@@ -155,7 +155,7 @@ cat("- Genes:", format(nrow(counts), big.mark = ","), "\n")
 cat("- Cells:", format(ncol(counts), big.mark = ","), "\n")
 ```
 
-    ## - Cells: 42,935
+    ## - Cells: 42,993
 
 ### Examine Cell Type Labels
 
@@ -176,9 +176,9 @@ print(table(cellinfo$Celltype))
 
     ## 
     ##      Cardiomyocytes   Endothelial cells    Epicardial cells           Erythroid 
-    ##               23995                3378                2839                  50 
+    ##               24047                3368                2845                  50 
     ##          Fibroblast        Immune cells             Neurons Smooth muscle cells 
-    ##                8672                2880                 733                 388
+    ##                8679                2877                 737                 390
 
 ``` r
 # Cell type by developmental stage
@@ -194,14 +194,14 @@ print(table(cellinfo$Celltype, cellinfo$Group))
 
     ##                      
     ##                       adult fetal young
-    ##   Cardiomyocytes       1959 17060  4976
-    ##   Endothelial cells    1087  1068  1223
-    ##   Epicardial cells      864   915  1060
+    ##   Cardiomyocytes       1975 17084  4988
+    ##   Endothelial cells    1087  1066  1215
+    ##   Epicardial cells      870   915  1060
     ##   Erythroid               0    50     0
-    ##   Fibroblast           2221  2905  3546
-    ##   Immune cells         1059   574  1247
-    ##   Neurons               101   284   348
-    ##   Smooth muscle cells    80   183   125
+    ##   Fibroblast           2198  2913  3568
+    ##   Immune cells         1058   575  1244
+    ##   Neurons               101   286   350
+    ##   Smooth muscle cells    80   185   125
 
 ### Define Colour Palettes
 
@@ -284,7 +284,7 @@ if (n_erythroid > 0) {
 cat("Cells for DE analysis:", ncol(counts_filtered), "\n")
 ```
 
-    ## Cells for DE analysis: 42885
+    ## Cells for DE analysis: 42943
 
 ``` r
 cat("\nCell type distribution:\n")
@@ -299,9 +299,9 @@ print(table(cellinfo_filtered$Celltype))
 
     ## 
     ##      Cardiomyocytes   Endothelial cells    Epicardial cells          Fibroblast 
-    ##               23995                3378                2839                8672 
+    ##               24047                3368                2845                8679 
     ##        Immune cells             Neurons Smooth muscle cells 
-    ##                2880                 733                 388
+    ##                2877                 737                 390
 
 > **Note:** Gene filtering (mitochondrial, ribosomal, sex chromosome,
 > and unannotated genes) was performed in Module 1. Filtering of lowly
@@ -375,15 +375,15 @@ composition_data %>%
     ## # A tibble: 9 × 3
     ##   Sample Group total_cells
     ##   <chr>  <chr>       <int>
-    ## 1 a1     adult        3787
-    ## 2 a2     adult        2439
-    ## 3 a3     adult        1145
-    ## 4 f1     fetal        7198
-    ## 5 f2     fetal        9026
-    ## 6 f3     fetal        6765
-    ## 7 y1     young        4101
-    ## 8 y2     young        4351
-    ## 9 y3     young        4073
+    ## 1 a1     adult        3779
+    ## 2 a2     adult        2438
+    ## 3 a3     adult        1152
+    ## 4 f1     fetal        7236
+    ## 5 f2     fetal        9055
+    ## 6 f3     fetal        6733
+    ## 7 y1     young        4113
+    ## 8 y2     young        4334
+    ## 9 y3     young        4103
 
 ### Visualise Composition Changes
 
@@ -483,21 +483,21 @@ print(propeller_results)
 ```
 
     ##                     BaselineProp PropMean.adult PropMean.fetal PropMean.young
-    ## Cardiomyocytes       0.559519646     0.21325177    0.733992921     0.39745000
-    ## Immune cells         0.067156348     0.18675439    0.025224804     0.09940743
-    ## Endothelial cells    0.078768800     0.13981820    0.047667140     0.09795653
-    ## Fibroblast           0.202215227     0.32089945    0.131125816     0.28196804
-    ## Epicardial cells     0.066200303     0.11407479    0.040883730     0.08508428
-    ## Neurons              0.017092223     0.01328168    0.012480686     0.02807099
-    ## Smooth muscle cells  0.009047452     0.01191973    0.008624903     0.01006272
+    ## Cardiomyocytes       0.559974850     0.21548148    0.733788987     0.39749745
+    ## Immune cells         0.066995785     0.18617797    0.025183961     0.09894800
+    ## Endothelial cells    0.078429546     0.13982738    0.047519819     0.09708729
+    ## Fibroblast           0.202105116     0.31844683    0.131404704     0.28339776
+    ## Epicardial cells     0.066250611     0.11489272    0.040816245     0.08489414
+    ## Neurons              0.017162285     0.01327039    0.012549952     0.02814835
+    ## Smooth muscle cells  0.009081806     0.01190322    0.008736332     0.01002700
     ##                     Fstatistic      P.Value          FDR
-    ## Cardiomyocytes      14.2756862 9.916688e-05 0.0006941682
-    ## Immune cells        12.2523228 2.511712e-04 0.0008790993
-    ## Endothelial cells    5.0233889 1.571079e-02 0.0366585150
-    ## Fibroblast           4.4818201 2.299246e-02 0.0402368110
-    ## Epicardial cells     3.1160027 6.388112e-02 0.0894335674
-    ## Neurons              1.7405369 1.982157e-01 0.2312516849
-    ## Smooth muscle cells  0.6694511 5.218903e-01 0.5218902627
+    ## Cardiomyocytes      14.0281301 0.0000973816 0.0006816712
+    ## Immune cells        12.1189229 0.0002407271 0.0008425449
+    ## Endothelial cells    4.8969039 0.0166635906 0.0388817114
+    ## Fibroblast           4.3202398 0.0252212881 0.0441372542
+    ## Epicardial cells     3.1013397 0.0637471295 0.0892459813
+    ## Neurons              1.7241876 0.2000808597 0.2334276697
+    ## Smooth muscle cells  0.6534677 0.5294193445 0.5294193445
 
 ``` r
 # Identify significant changes
@@ -518,31 +518,35 @@ if (nrow(sig_celltypes) > 0) {
     ## 
     ## Cell types with significant composition changes (FDR < 0.05):
     ##                   PropMean.fetal PropMean.young PropMean.adult Fstatistic
-    ## Cardiomyocytes        0.73399292     0.39745000      0.2132518  14.275686
-    ## Immune cells          0.02522480     0.09940743      0.1867544  12.252323
-    ## Endothelial cells     0.04766714     0.09795653      0.1398182   5.023389
-    ## Fibroblast            0.13112582     0.28196804      0.3208994   4.481820
+    ## Cardiomyocytes        0.73378899     0.39749745      0.2154815  14.028130
+    ## Immune cells          0.02518396     0.09894800      0.1861780  12.118923
+    ## Endothelial cells     0.04751982     0.09708729      0.1398274   4.896904
+    ## Fibroblast            0.13140470     0.28339776      0.3184468   4.320240
     ##                            FDR
-    ## Cardiomyocytes    0.0006941682
-    ## Immune cells      0.0008790993
-    ## Endothelial cells 0.0366585150
-    ## Fibroblast        0.0402368110
+    ## Cardiomyocytes    0.0006816712
+    ## Immune cells      0.0008425449
+    ## Endothelial cells 0.0388817114
+    ## Fibroblast        0.0441372542
 
-**Interpretation**: The propeller test assesses whether the observed
-differences in cell type proportions are statistically significant when
-accounting for sample-to-sample variation. In the original study, Sim et
-al. found significant changes in cardiomyocyte, fibroblast, and immune
-cell proportions across development (FDR \< 0.05). With our limited
-sample size (n=3 per group), we may lack the statistical power to detect
-these changes, even if the biological trends are evident in the
-visualisations.
+**Interpretation**: The propeller test reveals statistically significant
+changes in cell type composition during heart development (FDR \< 0.05):
 
-> **Note on statistical power**: The original study findings were based
-> on the same 9 samples we are analysing. However, the propeller test is
-> conservative and properly accounts for the small sample size.
-> Non-significant results should not be interpreted as evidence of no
-> biological effect—they may simply reflect insufficient power to detect
-> true differences.
+- **Cardiomyocytes** show the most dramatic change, decreasing from ~73%
+  in fetal hearts to ~40% in young and ~22% in adult hearts (FDR \<
+  0.001)
+- **Immune cells** increase substantially, from ~2.5% in fetal to ~10%
+  in young and ~19% in adult hearts (FDR \< 0.001)
+- **Fibroblasts** increase from ~13% in fetal to ~28% in young and ~32%
+  in adult hearts (FDR \< 0.05)
+- **Endothelial cells** also increase during development (FDR \< 0.05)
+
+These findings align closely with those reported by Sim et al. (2021),
+who found significant expansion of cardiac fibroblasts and immune cells,
+accompanied by a decrease in cardiomyocyte proportions. The biological
+interpretation is that as the heart matures, the relative contribution
+of non-myocyte populations increases as the tissue develops its
+supporting structures (fibroblasts for extracellular matrix, immune
+cells for tissue homeostasis, endothelial cells for vasculature).
 
 ## Create Pseudobulk Samples
 
@@ -586,47 +590,47 @@ print(table(pseudobulk_group))
 
     ## pseudobulk_group
     ##      Cardiomyocytes.a1      Cardiomyocytes.a2      Cardiomyocytes.a3 
-    ##                   1539                    288                    132 
+    ##                   1549                    291                    135 
     ##      Cardiomyocytes.f1      Cardiomyocytes.f2      Cardiomyocytes.f3 
-    ##                   4948                   7449                   4663 
+    ##                   4983                   7471                   4630 
     ##      Cardiomyocytes.y1      Cardiomyocytes.y2      Cardiomyocytes.y3 
-    ##                    994                   1765                   2217 
+    ##                    991                   1741                   2256 
     ##   Endothelial cells.a1   Endothelial cells.a2   Endothelial cells.a3 
-    ##                    567                    398                    122 
+    ##                    565                    400                    122 
     ##   Endothelial cells.f1   Endothelial cells.f2   Endothelial cells.f3 
-    ##                    423                    300                    345 
+    ##                    424                    299                    343 
     ##   Endothelial cells.y1   Endothelial cells.y2   Endothelial cells.y3 
-    ##                    468                    358                    397 
+    ##                    468                    353                    394 
     ##    Epicardial cells.a1    Epicardial cells.a2    Epicardial cells.a3 
-    ##                    330                    456                     78 
+    ##                    329                    463                     78 
     ##    Epicardial cells.f1    Epicardial cells.f2    Epicardial cells.f3 
-    ##                    418                    240                    257 
+    ##                    421                    239                    255 
     ##    Epicardial cells.y1    Epicardial cells.y2    Epicardial cells.y3 
     ##                    595                    255                    210 
     ##          Fibroblast.a1          Fibroblast.a2          Fibroblast.a3 
-    ##                    929                    887                    405 
+    ##                    914                    876                    408 
     ##          Fibroblast.f1          Fibroblast.f2          Fibroblast.f3 
-    ##                   1013                    730                   1162 
+    ##                   1011                    735                   1167 
     ##          Fibroblast.y1          Fibroblast.y2          Fibroblast.y3 
-    ##                   1488                   1416                    642 
+    ##                   1502                   1426                    640 
     ##        Immune cells.a1        Immune cells.a2        Immune cells.a3 
-    ##                    349                    328                    382 
+    ##                    349                    326                    383 
     ##        Immune cells.f1        Immune cells.f2        Immune cells.f3 
-    ##                    253                    187                    134 
+    ##                    253                    190                    132 
     ##        Immune cells.y1        Immune cells.y2        Immune cells.y3 
-    ##                    301                    474                    472 
+    ##                    301                    475                    468 
     ##             Neurons.a1             Neurons.a2             Neurons.a3 
     ##                     52                     36                     13 
     ##             Neurons.f1             Neurons.f2             Neurons.f3 
-    ##                     94                    100                     90 
+    ##                     95                    101                     90 
     ##             Neurons.y1             Neurons.y2             Neurons.y3 
-    ##                    199                     57                     92 
+    ##                    199                     57                     94 
     ## Smooth muscle cells.a1 Smooth muscle cells.a2 Smooth muscle cells.a3 
     ##                     21                     46                     13 
     ## Smooth muscle cells.f1 Smooth muscle cells.f2 Smooth muscle cells.f3 
-    ##                     49                     20                    114 
+    ##                     49                     20                    116 
     ## Smooth muscle cells.y1 Smooth muscle cells.y2 Smooth muscle cells.y3 
-    ##                     56                     26                     43
+    ##                     57                     27                     41
 
 ### Aggregate Counts
 
@@ -705,12 +709,12 @@ head(dge$samples)
 ```
 
     ##                   lib.size norm.factors     pseudobulk_id       celltype sample
-    ## Cardiomyocytes.a1 29509310            1 Cardiomyocytes.a1 Cardiomyocytes     a1
-    ## Cardiomyocytes.a2  6839420            1 Cardiomyocytes.a2 Cardiomyocytes     a2
-    ## Cardiomyocytes.a3  2120636            1 Cardiomyocytes.a3 Cardiomyocytes     a3
-    ## Cardiomyocytes.f1 50630676            1 Cardiomyocytes.f1 Cardiomyocytes     f1
-    ## Cardiomyocytes.f2 66175611            1 Cardiomyocytes.f2 Cardiomyocytes     f2
-    ## Cardiomyocytes.f3 63596974            1 Cardiomyocytes.f3 Cardiomyocytes     f3
+    ## Cardiomyocytes.a1 29650342            1 Cardiomyocytes.a1 Cardiomyocytes     a1
+    ## Cardiomyocytes.a2  6855965            1 Cardiomyocytes.a2 Cardiomyocytes     a2
+    ## Cardiomyocytes.a3  2146823            1 Cardiomyocytes.a3 Cardiomyocytes     a3
+    ## Cardiomyocytes.f1 51168612            1 Cardiomyocytes.f1 Cardiomyocytes     f1
+    ## Cardiomyocytes.f2 66528657            1 Cardiomyocytes.f2 Cardiomyocytes     f2
+    ## Cardiomyocytes.f3 62958142            1 Cardiomyocytes.f3 Cardiomyocytes     f3
     ##                   group sex
     ## Cardiomyocytes.a1 adult   f
     ## Cardiomyocytes.a2 adult   m
@@ -938,7 +942,7 @@ cat("Genes before filtering:", nrow(dge), "\n")
 cat("Genes after filtering:", nrow(dge_filtered), "\n")
 ```
 
-    ## Genes after filtering: 15970
+    ## Genes after filtering: 15972
 
 ``` r
 # Apply TMM normalisation
@@ -955,69 +959,69 @@ print(dge_filtered$samples[, c("lib.size", "norm.factors")])
 ```
 
     ##                        lib.size norm.factors
-    ## Cardiomyocytes.a1      29496007    0.5980691
-    ## Cardiomyocytes.a2       6836372    0.6848721
-    ## Cardiomyocytes.a3       2119045    0.8246200
-    ## Cardiomyocytes.f1      50603602    0.8102726
-    ## Cardiomyocytes.f2      66148201    0.7778729
-    ## Cardiomyocytes.f3      63573020    0.7202654
-    ## Cardiomyocytes.y1      12462705    0.6378081
-    ## Cardiomyocytes.y2      28785286    0.6194712
-    ## Cardiomyocytes.y3      16298680    0.8782436
-    ## Endothelial cells.a1    3740023    1.0509952
-    ## Endothelial cells.a2    2568540    1.0133357
-    ## Endothelial cells.a3     781344    1.1125139
-    ## Endothelial cells.f1    3468570    1.1316873
-    ## Endothelial cells.f2    2569781    1.1329679
-    ## Endothelial cells.f3    3989951    1.0655295
-    ## Endothelial cells.y1    3127825    1.0634920
-    ## Endothelial cells.y2    2445699    1.0016953
-    ## Endothelial cells.y3    2124667    0.9581740
-    ## Epicardial cells.a1     1768137    1.0412641
-    ## Epicardial cells.a2     3465782    0.8720177
-    ## Epicardial cells.a3      532305    1.0668027
-    ## Epicardial cells.f1     3041338    1.1353154
-    ## Epicardial cells.f2     1698965    1.0920206
-    ## Epicardial cells.f3     2595975    1.0471145
-    ## Epicardial cells.y1     3703198    0.9713980
-    ## Epicardial cells.y2     1601834    0.9618783
-    ## Epicardial cells.y3     1120534    0.9289960
-    ## Fibroblast.a1           7281212    1.0746025
-    ## Fibroblast.a2           7670879    0.9835376
-    ## Fibroblast.a3           3810418    1.0792989
-    ## Fibroblast.f1           7595543    1.0494530
-    ## Fibroblast.f2           5142099    1.0302138
-    ## Fibroblast.f3          10956825    1.0066763
-    ## Fibroblast.y1          12325273    0.9612371
-    ## Fibroblast.y2          10759060    0.9561517
-    ## Fibroblast.y3           4994896    0.9752673
-    ## Immune cells.a1         2579054    1.0346262
-    ## Immune cells.a2         2076196    1.0773197
-    ## Immune cells.a3         2894769    1.1613529
-    ## Immune cells.f1         1634048    1.1126271
-    ## Immune cells.f2         1063960    1.2296393
-    ## Immune cells.f3          996186    1.1131232
-    ## Immune cells.y1         2270365    1.1228178
-    ## Immune cells.y2         3180451    1.0420742
-    ## Immune cells.y3         2447925    1.0320235
-    ## Neurons.a1               256789    1.1747136
-    ## Neurons.a2               207811    1.0601088
-    ## Neurons.a3                74057    1.3396612
-    ## Neurons.f1               544707    1.1034003
-    ## Neurons.f2               633420    1.1201456
-    ## Neurons.f3               681890    1.0560271
-    ## Neurons.y1              1038650    1.0843009
-    ## Neurons.y2               209761    1.0733240
-    ## Neurons.y3               330745    1.0407414
-    ## Smooth muscle cells.a1   118999    1.1796940
-    ## Smooth muscle cells.a2   359768    0.9584901
-    ## Smooth muscle cells.a3    96592    1.1756187
-    ## Smooth muscle cells.f1   369138    1.0294430
-    ## Smooth muscle cells.f2   145847    1.1400543
-    ## Smooth muscle cells.f3  1246685    0.9764167
-    ## Smooth muscle cells.y1   336263    1.0339953
-    ## Smooth muscle cells.y2   153371    0.9810013
-    ## Smooth muscle cells.y3   269864    0.9652504
+    ## Cardiomyocytes.a1      29636931    0.5991534
+    ## Cardiomyocytes.a2       6852897    0.6848412
+    ## Cardiomyocytes.a3       2145212    0.8301117
+    ## Cardiomyocytes.f1      51141688    0.8096875
+    ## Cardiomyocytes.f2      66501392    0.7777464
+    ## Cardiomyocytes.f3      62934775    0.7188752
+    ## Cardiomyocytes.y1      12401468    0.6425480
+    ## Cardiomyocytes.y2      28198390    0.6211136
+    ## Cardiomyocytes.y3      16473502    0.8792502
+    ## Endothelial cells.a1    3727002    1.0515394
+    ## Endothelial cells.a2    2595083    1.0127823
+    ## Endothelial cells.a3     781345    1.1089051
+    ## Endothelial cells.f1    3483816    1.1314038
+    ## Endothelial cells.f2    2555777    1.1383690
+    ## Endothelial cells.f3    3973992    1.0636597
+    ## Endothelial cells.y1    3127830    1.0669312
+    ## Endothelial cells.y2    2411574    0.9973083
+    ## Endothelial cells.y3    2100604    0.9555307
+    ## Epicardial cells.a1     1758216    1.0384055
+    ## Epicardial cells.a2     3535704    0.8715015
+    ## Epicardial cells.a3      532305    1.0644509
+    ## Epicardial cells.f1     3070826    1.1402689
+    ## Epicardial cells.f2     1685454    1.0926364
+    ## Epicardial cells.f3     2564646    1.0491854
+    ## Epicardial cells.y1     3699642    0.9721303
+    ## Epicardial cells.y2     1600548    0.9609367
+    ## Epicardial cells.y3     1124205    0.9290104
+    ## Fibroblast.a1           7131283    1.0892055
+    ## Fibroblast.a2           7471964    0.9858132
+    ## Fibroblast.a3           3836311    1.0767413
+    ## Fibroblast.f1           7568500    1.0468032
+    ## Fibroblast.f2           5202890    1.0288392
+    ## Fibroblast.f3          11012063    1.0048931
+    ## Fibroblast.y1          12458028    0.9618019
+    ## Fibroblast.y2          10920232    0.9608698
+    ## Fibroblast.y3           4960727    0.9775423
+    ## Immune cells.a1         2579063    1.0314769
+    ## Immune cells.a2         2063336    1.0806001
+    ## Immune cells.a3         2888685    1.1576423
+    ## Immune cells.f1         1634057    1.1094381
+    ## Immune cells.f2         1102475    1.2304178
+    ## Immune cells.f3          963489    1.1099125
+    ## Immune cells.y1         2270368    1.1239500
+    ## Immune cells.y2         3207015    1.0394530
+    ## Immune cells.y3         2419202    1.0224861
+    ## Neurons.a1               256788    1.1763478
+    ## Neurons.a2               207811    1.0614116
+    ## Neurons.a3                74057    1.3393162
+    ## Neurons.f1               555067    1.1119175
+    ## Neurons.f2               651058    1.1194837
+    ## Neurons.f3               681885    1.0543713
+    ## Neurons.y1              1038652    1.0808971
+    ## Neurons.y2               209761    1.0742698
+    ## Neurons.y3               336061    1.0409169
+    ## Smooth muscle cells.a1   118999    1.1783179
+    ## Smooth muscle cells.a2   359770    0.9596999
+    ## Smooth muscle cells.a3    96592    1.1750697
+    ## Smooth muscle cells.f1   369140    1.0258847
+    ## Smooth muscle cells.f2   145847    1.1396795
+    ## Smooth muscle cells.f3  1263580    0.9735165
+    ## Smooth muscle cells.y1   344165    1.0328166
+    ## Smooth muscle cells.y2   159936    0.9801815
+    ## Smooth muscle cells.y3   256712    0.9588462
 
 ### Voom Transformation
 
@@ -1151,9 +1155,9 @@ summary(dt_cardio)
 ```
 
     ##          YvF   AvF   AvY
-    ## Down    1201  1226     8
-    ## NotSig 13735 13667 15933
-    ## Up      1034  1077    29
+    ## Down    1191  1214     9
+    ## NotSig 13755 13693 15933
+    ## Up      1026  1065    30
 
 ``` r
 # MD plots for each contrast
@@ -1191,64 +1195,64 @@ topTreat(treat_cardio, coef = "AvF", n = 20)[, c("SYMBOL", "GENENAME", "logFC", 
     ## TOGARAM2     TOGARAM2
     ## FILIP1L       FILIP1L
     ## DGKG             DGKG
+    ## EMILIN2       EMILIN2
     ## MIR29B2CHG MIR29B2CHG
     ## CCSER1         CCSER1
     ## AAK1             AAK1
     ## NCEH1           NCEH1
-    ## EMILIN2       EMILIN2
     ## PPP1R13L     PPP1R13L
     ## GRAMD1B       GRAMD1B
-    ## EMC10           EMC10
     ## ADRA1A         ADRA1A
+    ## EMC10           EMC10
+    ## MBOAT2         MBOAT2
     ## FYB2             FYB2
     ## FAM3D-AS1   FAM3D-AS1
     ## AGPAT4         AGPAT4
-    ## MBOAT2         MBOAT2
     ## PFKFB2         PFKFB2
     ## HECW2           HECW2
-    ## CFAP61         CFAP61
+    ## LINC01428   LINC01428
     ##                                                                   GENENAME
     ## TMEM178B                                        transmembrane protein 178B
     ## TOGARAM2                    TOG array regulator of axonemal microtubules 2
     ## FILIP1L                               filamin A interacting protein 1 like
     ## DGKG                                           diacylglycerol kinase gamma
+    ## EMILIN2                                   elastin microfibril interfacer 2
     ## MIR29B2CHG                                    MIR29B2 and MIR29C host gene
     ## CCSER1                                   coiled-coil serine rich protein 1
     ## AAK1                                               AP2 associated kinase 1
     ## NCEH1                                neutral cholesterol ester hydrolase 1
-    ## EMILIN2                                   elastin microfibril interfacer 2
     ## PPP1R13L                  protein phosphatase 1 regulatory subunit 13 like
     ## GRAMD1B                                          GRAM domain containing 1B
-    ## EMC10                               ER membrane protein complex subunit 10
     ## ADRA1A                                               adrenoceptor alpha 1A
+    ## EMC10                               ER membrane protein complex subunit 10
+    ## MBOAT2              membrane bound glycerophospholipid O-acyltransferase 2
     ## FYB2                                                 FYN binding protein 2
     ## FAM3D-AS1                                            FAM3D antisense RNA 1
     ## AGPAT4                      1-acylglycerol-3-phosphate O-acyltransferase 4
-    ## MBOAT2              membrane bound glycerophospholipid O-acyltransferase 2
     ## PFKFB2               6-phosphofructo-2-kinase/fructose-2,6-biphosphatase 2
     ## HECW2      HECT, C2 and WW domain containing E3 ubiquitin protein ligase 2
-    ## CFAP61                            cilia and flagella associated protein 61
+    ## LINC01428                      long intergenic non-protein coding RNA 1428
     ##                logFC      P.Value    adj.P.Val
-    ## TMEM178B    7.639349 1.967356e-21 3.141868e-17
-    ## TOGARAM2    7.492989 1.290657e-18 1.030589e-14
-    ## FILIP1L     4.039662 1.482405e-16 7.891338e-13
-    ## DGKG        5.038590 2.653101e-16 1.059251e-12
-    ## MIR29B2CHG  4.317352 9.924486e-16 2.978624e-12
-    ## CCSER1      3.690847 1.183646e-15 2.978624e-12
-    ## AAK1        1.911225 1.315917e-15 2.978624e-12
-    ## NCEH1       4.065068 1.492110e-15 2.978624e-12
-    ## EMILIN2    -4.033696 2.214586e-15 3.929660e-12
-    ## PPP1R13L    3.747764 3.254204e-15 5.156117e-12
-    ## GRAMD1B     2.815380 3.551490e-15 5.156117e-12
-    ## EMC10      -3.251951 4.073444e-15 5.421075e-12
-    ## ADRA1A      4.040018 7.280892e-15 8.944295e-12
-    ## FYB2        5.647460 8.136566e-15 9.281497e-12
-    ## FAM3D-AS1   6.135190 1.139787e-14 1.213494e-11
-    ## AGPAT4     -4.233240 2.338284e-14 2.333900e-11
-    ## MBOAT2     -3.301955 2.606392e-14 2.448475e-11
-    ## PFKFB2      3.697529 2.822445e-14 2.504136e-11
-    ## HECW2      -5.507797 4.610690e-14 3.875406e-11
-    ## CFAP61      4.834211 6.071162e-14 4.847823e-11
+    ## TMEM178B    7.628093 2.884375e-20 4.606924e-16
+    ## TOGARAM2    7.479380 1.411795e-18 1.127459e-14
+    ## FILIP1L     4.043817 1.351546e-16 7.195629e-13
+    ## DGKG        5.039077 3.811173e-16 1.521801e-12
+    ## EMILIN2    -3.996823 7.460532e-16 1.952642e-12
+    ## MIR29B2CHG  4.325584 8.233531e-16 1.952642e-12
+    ## CCSER1      3.690560 8.557787e-16 1.952642e-12
+    ## AAK1        1.909761 1.251832e-15 2.499283e-12
+    ## NCEH1       4.055115 1.802379e-15 3.198621e-12
+    ## PPP1R13L    3.740165 2.101760e-15 3.356931e-12
+    ## GRAMD1B     2.817592 2.396837e-15 3.480207e-12
+    ## ADRA1A      4.046825 3.001270e-15 3.994690e-12
+    ## EMC10      -3.246674 3.573090e-15 4.389954e-12
+    ## MBOAT2     -3.302337 7.324992e-15 8.356769e-12
+    ## FYB2        5.662234 1.021594e-14 1.087793e-11
+    ## FAM3D-AS1   6.083960 1.430189e-14 1.427686e-11
+    ## AGPAT4     -4.241339 2.836790e-14 2.665248e-11
+    ## PFKFB2      3.694850 4.135339e-14 3.566695e-11
+    ## HECW2      -5.511888 4.242875e-14 3.566695e-11
+    ## LINC01428   6.917623 4.910722e-14 3.921703e-11
 
 ### Fibroblast Differential Expression
 
@@ -1291,9 +1295,9 @@ summary(dt_fibro)
 ```
 
     ##          YvF   AvF   AvY
-    ## Down     882   704    10
-    ## NotSig 14395 14722 15950
-    ## Up       693   544    10
+    ## Down     885   689     8
+    ## NotSig 14413 14751 15957
+    ## Up       674   532     7
 
 ``` r
 # Top DE genes
@@ -1311,44 +1315,44 @@ topTreat(treat_fibro, coef = "AvF", n = 20)[, c("SYMBOL", "GENENAME", "logFC", "
     ## CNTNAP2     CNTNAP2                         contactin associated protein 2
     ## VIT             VIT                                                 vitrin
     ## MTUS1         MTUS1              microtubule associated scaffold protein 1
-    ## COL28A1     COL28A1                     collagen type XXVIII alpha 1 chain
     ## LINC02511 LINC02511            long intergenic non-protein coding RNA 2511
-    ## PIEZO2       PIEZO2    piezo type mechanosensitive ion channel component 2
-    ## MEST           MEST                           mesoderm specific transcript
-    ## HHIP           HHIP                           hedgehog interacting protein
     ## EMILIN2     EMILIN2                       elastin microfibril interfacer 2
+    ## MEST           MEST                           mesoderm specific transcript
+    ## PIEZO2       PIEZO2    piezo type mechanosensitive ion channel component 2
+    ## HHIP           HHIP                           hedgehog interacting protein
+    ## COL28A1     COL28A1                     collagen type XXVIII alpha 1 chain
+    ## COL6A6       COL6A6                         collagen type VI alpha 6 chain
     ## LAMA2         LAMA2                                laminin subunit alpha 2
     ## IGF2BP3     IGF2BP3    insulin like growth factor 2 mRNA binding protein 3
-    ## COL6A6       COL6A6                         collagen type VI alpha 6 chain
     ## CACNB4       CACNB4 calcium voltage-gated channel auxiliary subunit beta 4
+    ## MME-AS1     MME-AS1                                    MME antisense RNA 1
     ## ECHDC2       ECHDC2                enoyl-CoA hydratase domain containing 2
     ## PRSS35       PRSS35                                     serine protease 35
     ## CCL11         CCL11                          C-C motif chemokine ligand 11
     ## GSN             GSN                                               gelsolin
-    ## C11orf87   C11orf87                    chromosome 11 open reading frame 87
     ## TMEM26       TMEM26                               transmembrane protein 26
     ## SAMD5         SAMD5                sterile alpha motif domain containing 5
     ##               logFC      P.Value    adj.P.Val
-    ## CNTNAP2   -3.137683 1.242293e-15 1.983942e-11
-    ## VIT        5.694914 3.420988e-14 2.731659e-10
-    ## MTUS1      3.490190 9.118128e-14 4.853884e-10
-    ## COL28A1    4.579719 1.505350e-13 6.010108e-10
-    ## LINC02511  4.738088 2.908194e-13 9.288770e-10
-    ## PIEZO2    -5.918862 4.978987e-13 1.325240e-09
-    ## MEST      -6.182768 7.119017e-13 1.521895e-09
-    ## HHIP      -5.802522 7.753886e-13 1.521895e-09
-    ## EMILIN2   -4.219448 8.576743e-13 1.521895e-09
-    ## LAMA2      3.935211 1.579173e-12 2.521939e-09
-    ## IGF2BP3   -5.783264 4.572519e-12 6.428215e-09
-    ## COL6A6    -2.650860 4.830218e-12 6.428215e-09
-    ## CACNB4    -3.753094 5.238425e-12 6.435204e-09
-    ## ECHDC2     2.436505 1.479163e-11 1.687302e-08
-    ## PRSS35    -6.753537 1.664622e-11 1.754554e-08
-    ## CCL11      5.220386 1.766183e-11 1.754554e-08
-    ## GSN        3.660341 1.867715e-11 1.754554e-08
-    ## C11orf87  -6.460264 3.126596e-11 2.773986e-08
-    ## TMEM26    -8.496108 3.773647e-11 3.171849e-08
-    ## SAMD5     -4.705047 4.090551e-11 3.266305e-08
+    ## CNTNAP2   -3.167238 4.144616e-15 6.619780e-11
+    ## VIT        5.687436 4.488375e-14 3.584417e-10
+    ## MTUS1      3.487891 1.171861e-13 6.238987e-10
+    ## LINC02511  4.724299 3.666649e-13 1.221497e-09
+    ## EMILIN2   -4.226971 3.823870e-13 1.221497e-09
+    ## MEST      -6.163864 6.903606e-13 1.515767e-09
+    ## PIEZO2    -5.911528 6.984343e-13 1.515767e-09
+    ## HHIP      -5.784088 7.592123e-13 1.515767e-09
+    ## COL28A1    4.640992 1.153005e-12 2.046199e-09
+    ## COL6A6    -2.649063 3.187631e-12 5.091283e-09
+    ## LAMA2      3.940293 4.071836e-12 5.912306e-09
+    ## IGF2BP3   -5.822081 5.642516e-12 7.172859e-09
+    ## CACNB4    -3.755820 5.838165e-12 7.172859e-09
+    ## MME-AS1    5.672477 8.117702e-12 9.261138e-09
+    ## ECHDC2     2.436573 9.976631e-12 1.062312e-08
+    ## PRSS35    -6.727923 1.780639e-11 1.777523e-08
+    ## CCL11      5.273334 2.323484e-11 2.125862e-08
+    ## GSN        3.660629 2.395787e-11 2.125862e-08
+    ## TMEM26    -8.478859 4.529853e-11 3.807937e-08
+    ## SAMD5     -4.719951 4.770148e-11 3.809440e-08
 
 ### Endothelial Cell Differential Expression
 
@@ -1388,9 +1392,9 @@ summary(dt_endo)
 ```
 
     ##          YvF   AvF   AvY
-    ## Down     311   367     0
-    ## NotSig 15447 15362 15970
-    ## Up       212   241     0
+    ## Down     311   354     0
+    ## NotSig 15450 15379 15972
+    ## Up       211   239     0
 
 ### Immune Cell Differential Expression
 
@@ -1432,9 +1436,9 @@ summary(dt_immune)
 ```
 
     ##          YvF   AvF   AvY
-    ## Down     111   121     2
-    ## NotSig 15756 15747 15967
-    ## Up       103   102     1
+    ## Down      94   109     1
+    ## NotSig 15786 15769 15970
+    ## Up        92    94     1
 
 ## Visualisation of DE Results
 
@@ -1495,20 +1499,23 @@ ggplot(de_summary_long, aes(x = contrast, y = n_genes, fill = direction)) +
 
 **Interpretation**: This summary plot reveals several patterns:
 
-1.  **Adult vs Fetal** comparisons consistently yield the most DE genes
-    across cell types, reflecting the substantial transcriptional
-    changes during full cardiac development.
+1.  **Young vs Fetal and Adult vs Fetal** comparisons yield similar
+    numbers of DE genes, while **Adult vs Young** shows remarkably few
+    changes. This suggests that most transcriptional maturation occurs
+    during the fetal-to- postnatal transition, with relative
+    transcriptional stability thereafter.
 
 2.  **Cell type-specific responses**: Cardiomyocytes show the largest
-    number of DE genes, consistent with the major functional changes
-    these cells undergo during maturation. Immune cells show fewer DE
-    genes, which may reflect either biological stability or limited
-    power due to smaller cell numbers.
+    number of DE genes (~2,200), followed by fibroblasts (~1,200-1,500),
+    endothelial cells (~500-600), and immune cells (~190). This ranking
+    is consistent with the original study findings, where cardiomyocytes
+    showed the most transcriptional remodelling during development.
 
-3.  **Symmetry of changes**: The balance between upregulated and
-    downregulated genes varies by cell type and comparison, providing
-    insight into the directional nature of developmental transcriptional
-    programmes.
+3.  **Directional patterns**: In cardiomyocytes and fibroblasts,
+    downregulated genes slightly outnumber upregulated genes when
+    comparing postnatal to fetal stages, suggesting that developmental
+    maturation involves repression of fetal transcriptional programmes
+    in addition to activation of mature genes.
 
 ### Volcano Plots
 
@@ -1736,34 +1743,47 @@ al. (2021):
 **Cell Type Composition (propeller analysis):**
 
 - The human heart undergoes significant changes in cellular composition
-  during development
-- Cardiomyocyte proportions decrease from fetal to adult stages
-- Fibroblast and immune cell proportions increase during postnatal
+  during development (FDR \< 0.05 for four major cell types)
+- Cardiomyocyte proportions decrease dramatically from ~73% (fetal) to
+  ~22% (adult)
+- Immune cell proportions increase from ~2.5% (fetal) to ~19% (adult)
+- Fibroblast and endothelial cell proportions also increase during
   maturation
 - These compositional changes reflect fundamental biological processes
-  in cardiac development
+  in cardiac development, consistent with the original study findings
 
 **Differential Expression (limma-voom analysis):**
 
 - The pseudobulk approach correctly treats samples (not cells) as the
   unit of biological replication, avoiding the pseudoreplication problem
-- Adult vs Fetal comparisons reveal the most transcriptional changes
-  across all cell types, reflecting the substantial remodelling during
-  development
 - Cardiomyocytes show the largest number of differentially expressed
-  genes, consistent with major functional maturation involving metabolic
-  reprogramming and cell cycle exit
-- Non-myocyte populations (fibroblasts, endothelial cells, immune cells)
-  show increased interferon signaling during maturation
+  genes (~2,200 genes for both Young vs Fetal and Adult vs Fetal
+  comparisons), consistent with major functional maturation involving
+  metabolic reprogramming and cell cycle exit reported in the original
+  study
+- Fibroblasts show substantial transcriptional changes (~1,200-1,500 DE
+  genes), reflecting their expanding role in extracellular matrix
+  production
+- Endothelial and immune cells show more modest changes (~200-600 DE
+  genes), though still biologically meaningful
+- Interestingly, the Adult vs Young comparison yields very few DE genes
+  across all cell types, suggesting that most developmental
+  transcriptional changes occur during the fetal-to-postnatal transition
+  rather than during later maturation
 
 **Methodological Notes:**
 
 The limma-voom pipeline with TREAT provides conservative but reliable
-identification of differentially expressed genes. With n=3 samples per
-group, our statistical power is limited, and we may fail to detect true
-biological effects. The original study findings should be consulted for
-the complete picture of transcriptional changes during human heart
-development.
+identification of differentially expressed genes. Despite having only
+n=3 samples per group, we successfully detected significant composition
+changes and thousands of differentially expressed genes, demonstrating
+that even modest sample sizes can yield meaningful results when the
+biological signal is strong. The TREAT method (testing for fold-changes
+exceeding a threshold) ensures that we report genes with biologically
+meaningful effect sizes, not just statistically significant changes. For
+additional biological insights including gene set enrichment and
+sex-specific expression programmes, the original study by Sim et
+al. (2021) should be consulted.
 
 ### References
 
@@ -1795,7 +1815,7 @@ sessionInfo()
     ## tzcode source: system (glibc)
     ## 
     ## attached base packages:
-    ## [1] stats4    stats     graphics  grDevices utils     datasets  methods  
+    ## [1] stats4    stats     graphics  grDevices datasets  utils     methods  
     ## [8] base     
     ## 
     ## other attached packages:
@@ -1808,70 +1828,71 @@ sessionInfo()
     ## [19] sp_2.2-0            
     ## 
     ## loaded via a namespace (and not attached):
-    ##   [1] jsonlite_2.0.0              magrittr_2.0.4             
-    ##   [3] spatstat.utils_3.2-1        farver_2.1.2               
-    ##   [5] rmarkdown_2.30              fs_1.6.6                   
-    ##   [7] ragg_1.5.0                  vctrs_0.6.5                
-    ##   [9] ROCR_1.0-11                 memoise_2.0.1              
-    ##  [11] spatstat.explore_3.6-0      S4Arrays_1.10.1            
-    ##  [13] htmltools_0.5.9             SparseArray_1.10.8         
-    ##  [15] sass_0.4.10                 sctransform_0.4.3          
-    ##  [17] parallelly_1.46.1           KernSmooth_2.23-26         
-    ##  [19] bslib_0.9.0                 htmlwidgets_1.6.4          
-    ##  [21] desc_1.4.3                  ica_1.0-3                  
-    ##  [23] plyr_1.8.9                  plotly_4.11.0              
-    ##  [25] zoo_1.8-15                  cachem_1.1.0               
-    ##  [27] igraph_2.2.1                mime_0.13                  
-    ##  [29] lifecycle_1.0.5             pkgconfig_2.0.3            
-    ##  [31] Matrix_1.7-4                R6_2.6.1                   
-    ##  [33] fastmap_1.2.0               MatrixGenerics_1.22.0      
-    ##  [35] fitdistrplus_1.2-4          future_1.68.0              
-    ##  [37] shiny_1.12.1                digest_0.6.39              
-    ##  [39] tensor_1.5.1                RSpectra_0.16-2            
-    ##  [41] irlba_2.3.5.1               RSQLite_2.4.5              
-    ##  [43] GenomicRanges_1.62.1        textshaping_1.0.4          
-    ##  [45] labeling_0.4.3              progressr_0.18.0           
-    ##  [47] spatstat.sparse_3.1-0       httr_1.4.7                 
-    ##  [49] polyclip_1.10-7             abind_1.4-8                
-    ##  [51] compiler_4.5.2              withr_3.0.2                
-    ##  [53] bit64_4.6.0-1               S7_0.2.1                   
-    ##  [55] DBI_1.2.3                   fastDummies_1.7.5          
-    ##  [57] MASS_7.3-65                 DelayedArray_0.36.0        
-    ##  [59] tools_4.5.2                 lmtest_0.9-40              
-    ##  [61] otel_0.2.0                  httpuv_1.6.16              
-    ##  [63] future.apply_1.20.1         goftest_1.2-3              
-    ##  [65] glue_1.8.0                  nlme_3.1-168               
-    ##  [67] promises_1.5.0              grid_4.5.2                 
-    ##  [69] Rtsne_0.17                  cluster_2.1.8.1            
-    ##  [71] reshape2_1.4.5              gtable_0.3.6               
-    ##  [73] spatstat.data_3.1-9         data.table_1.18.0          
-    ##  [75] utf8_1.2.6                  XVector_0.50.0             
-    ##  [77] spatstat.geom_3.6-1         RcppAnnoy_0.0.23           
-    ##  [79] ggrepel_0.9.6               RANN_2.6.2                 
-    ##  [81] pillar_1.11.1               stringr_1.6.0              
-    ##  [83] spam_2.11-3                 RcppHNSW_0.6.0             
-    ##  [85] later_1.4.5                 splines_4.5.2              
-    ##  [87] lattice_0.22-7              bit_4.6.0                  
-    ##  [89] survival_3.8-3              deldir_2.0-4               
-    ##  [91] tidyselect_1.2.1            SingleCellExperiment_1.32.0
-    ##  [93] locfit_1.5-9.12             Biostrings_2.78.0          
-    ##  [95] miniUI_0.1.2                pbapply_1.7-4              
-    ##  [97] knitr_1.51                  gridExtra_2.3              
-    ##  [99] Seqinfo_1.0.0               SummarizedExperiment_1.40.0
-    ## [101] scattermore_1.2             xfun_0.55                  
-    ## [103] statmod_1.5.1               matrixStats_1.5.0          
-    ## [105] stringi_1.8.7               lazyeval_0.2.2             
-    ## [107] yaml_2.3.12                 evaluate_1.0.5             
-    ## [109] codetools_0.2-20            tibble_3.3.1               
-    ## [111] cli_3.6.5                   uwot_0.2.4                 
-    ## [113] xtable_1.8-4                reticulate_1.44.1          
-    ## [115] systemfonts_1.3.1           jquerylib_0.1.4            
-    ## [117] Rcpp_1.1.1                  globals_0.18.0             
-    ## [119] spatstat.random_3.4-3       png_0.1-8                  
-    ## [121] spatstat.univar_3.1-5       parallel_4.5.2             
-    ## [123] blob_1.2.4                  pkgdown_2.2.0              
-    ## [125] dotCall64_1.2               listenv_0.10.0             
-    ## [127] viridisLite_0.4.2           scales_1.4.0               
-    ## [129] ggridges_0.5.7              crayon_1.5.3               
-    ## [131] purrr_1.2.1                 rlang_1.1.7                
-    ## [133] KEGGREST_1.50.0             cowplot_1.2.0
+    ##   [1] RcppAnnoy_0.0.23            splines_4.5.2              
+    ##   [3] later_1.4.5                 tibble_3.3.1               
+    ##   [5] polyclip_1.10-7             fastDummies_1.7.5          
+    ##   [7] lifecycle_1.0.5             globals_0.18.0             
+    ##   [9] lattice_0.22-7              MASS_7.3-65                
+    ##  [11] magrittr_2.0.4              plotly_4.11.0              
+    ##  [13] sass_0.4.10                 rmarkdown_2.30             
+    ##  [15] jquerylib_0.1.4             yaml_2.3.12                
+    ##  [17] httpuv_1.6.16               otel_0.2.0                 
+    ##  [19] sctransform_0.4.3           spam_2.11-3                
+    ##  [21] spatstat.sparse_3.1-0       reticulate_1.44.1          
+    ##  [23] cowplot_1.2.0               pbapply_1.7-4              
+    ##  [25] DBI_1.2.3                   abind_1.4-8                
+    ##  [27] Rtsne_0.17                  GenomicRanges_1.62.1       
+    ##  [29] purrr_1.2.1                 ggrepel_0.9.6              
+    ##  [31] irlba_2.3.5.1               listenv_0.10.0             
+    ##  [33] spatstat.utils_3.2-1        goftest_1.2-3              
+    ##  [35] RSpectra_0.16-2             spatstat.random_3.4-3      
+    ##  [37] fitdistrplus_1.2-4          parallelly_1.46.1          
+    ##  [39] pkgdown_2.2.0               codetools_0.2-20           
+    ##  [41] DelayedArray_0.36.0         tidyselect_1.2.1           
+    ##  [43] farver_2.1.2                matrixStats_1.5.0          
+    ##  [45] spatstat.explore_3.6-0      Seqinfo_1.0.0              
+    ##  [47] jsonlite_2.0.0              progressr_0.18.0           
+    ##  [49] ggridges_0.5.7              survival_3.8-3             
+    ##  [51] systemfonts_1.3.1           tools_4.5.2                
+    ##  [53] ragg_1.5.0                  ica_1.0-3                  
+    ##  [55] Rcpp_1.1.1                  glue_1.8.0                 
+    ##  [57] gridExtra_2.3               SparseArray_1.10.8         
+    ##  [59] xfun_0.55                   MatrixGenerics_1.22.0      
+    ##  [61] withr_3.0.2                 BiocManager_1.30.27        
+    ##  [63] fastmap_1.2.0               digest_0.6.39              
+    ##  [65] R6_2.6.1                    mime_0.13                  
+    ##  [67] textshaping_1.0.4           scattermore_1.2            
+    ##  [69] tensor_1.5.1                spatstat.data_3.1-9        
+    ##  [71] RSQLite_2.4.5               utf8_1.2.6                 
+    ##  [73] renv_1.1.5                  data.table_1.18.0          
+    ##  [75] httr_1.4.7                  htmlwidgets_1.6.4          
+    ##  [77] S4Arrays_1.10.1             uwot_0.2.4                 
+    ##  [79] pkgconfig_2.0.3             gtable_0.3.6               
+    ##  [81] blob_1.2.4                  lmtest_0.9-40              
+    ##  [83] S7_0.2.1                    SingleCellExperiment_1.32.0
+    ##  [85] XVector_0.50.0              htmltools_0.5.9            
+    ##  [87] dotCall64_1.2               scales_1.4.0               
+    ##  [89] png_0.1-8                   spatstat.univar_3.1-5      
+    ##  [91] knitr_1.51                  reshape2_1.4.5             
+    ##  [93] nlme_3.1-168                cachem_1.1.0               
+    ##  [95] zoo_1.8-15                  stringr_1.6.0              
+    ##  [97] KernSmooth_2.23-26          parallel_4.5.2             
+    ##  [99] miniUI_0.1.2                desc_1.4.3                 
+    ## [101] pillar_1.11.1               grid_4.5.2                 
+    ## [103] vctrs_0.6.5                 RANN_2.6.2                 
+    ## [105] promises_1.5.0              xtable_1.8-4               
+    ## [107] cluster_2.1.8.1             evaluate_1.0.5             
+    ## [109] cli_3.6.5                   locfit_1.5-9.12            
+    ## [111] compiler_4.5.2              rlang_1.1.7                
+    ## [113] crayon_1.5.3                future.apply_1.20.1        
+    ## [115] labeling_0.4.3              plyr_1.8.9                 
+    ## [117] fs_1.6.6                    stringi_1.8.7              
+    ## [119] viridisLite_0.4.2           deldir_2.0-4               
+    ## [121] Biostrings_2.78.0           lazyeval_0.2.2             
+    ## [123] spatstat.geom_3.6-1         Matrix_1.7-4               
+    ## [125] RcppHNSW_0.6.0              bit64_4.6.0-1              
+    ## [127] future_1.68.0               KEGGREST_1.50.0            
+    ## [129] statmod_1.5.1               shiny_1.12.1               
+    ## [131] SummarizedExperiment_1.40.0 ROCR_1.0-11                
+    ## [133] igraph_2.2.1                memoise_2.0.1              
+    ## [135] bslib_0.9.0                 bit_4.6.0

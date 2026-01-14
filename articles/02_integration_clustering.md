@@ -109,7 +109,7 @@ seu <- readRDS(file.path(data_dir, "processed/01_qc_filtered.rds"))
 dim(seu)
 ```
 
-    ## [1] 18953 42935
+    ## [1] 18953 42993
 
 Let us verify the cell counts per sample:
 
@@ -119,7 +119,7 @@ table(seu$sample)
 
     ## 
     ##   a1   a2   a3   f1   f2   f3   y1   y2   y3 
-    ## 3787 2439 1145 7215 9042 6782 4101 4351 4073
+    ## 3779 2438 1152 7253 9071 6750 4113 4334 4103
 
 ## Downsampling for Computational Efficiency
 
@@ -165,15 +165,15 @@ cells_per_sample
     ## # A tibble: 9 × 4
     ##   sample n_cells proportion n_sample
     ##   <chr>    <int>      <dbl>    <dbl>
-    ## 1 a1        3787     0.0882      882
-    ## 2 a2        2439     0.0568      568
-    ## 3 a3        1145     0.0267      267
-    ## 4 f1        7215     0.168      1680
-    ## 5 f2        9042     0.211      2106
-    ## 6 f3        6782     0.158      1580
-    ## 7 y1        4101     0.0955      955
-    ## 8 y2        4351     0.101      1013
-    ## 9 y3        4073     0.0949      949
+    ## 1 a1        3779     0.0879      879
+    ## 2 a2        2438     0.0567      567
+    ## 3 a3        1152     0.0268      268
+    ## 4 f1        7253     0.169      1687
+    ## 5 f2        9071     0.211      2110
+    ## 6 f3        6750     0.157      1570
+    ## 7 y1        4113     0.0957      957
+    ## 8 y2        4334     0.101      1008
+    ## 9 y3        4103     0.0954      954
 
 Now we sample cells from each group:
 
@@ -219,7 +219,7 @@ table(seu$sample)
 
     ## 
     ##   a1   a2   a3   f1   f2   f3   y1   y2   y3 
-    ##  882  568  267 1680 2106 1580  955 1013  949
+    ##  879  567  268 1687 2110 1570  957 1008  954
 
 ## Normalisation with SCTransform
 
@@ -271,8 +271,8 @@ top_features <- head(VariableFeatures(seu), 10)
 top_features
 ```
 
-    ##  [1] "F13A1"     "NRXN1"     "ACSM3"     "XKR4"      "CNTNAP2"   "KAZN"     
-    ##  [7] "LINC02388" "NEGR1"     "PKHD1L1"   "LDB2"
+    ##  [1] "F13A1"     "NRXN1"     "SLC8A1"    "ACSM3"     "XKR4"      "CNTNAP2"  
+    ##  [7] "LINC02388" "KAZN"      "PKHD1L1"   "NEGR1"
 
 We can visualise the mean-variance relationship:
 
@@ -665,16 +665,16 @@ for (res in resolutions) {
 }
 ```
 
-    ##   Resolution 0.1: 13 clusters
-    ##   Resolution 0.2: 16 clusters
-    ##   Resolution 0.3: 17 clusters
-    ##   Resolution 0.4: 17 clusters
-    ##   Resolution 0.5: 19 clusters
-    ##   Resolution 0.6: 21 clusters
-    ##   Resolution 0.7: 22 clusters
+    ##   Resolution 0.1: 12 clusters
+    ##   Resolution 0.2: 15 clusters
+    ##   Resolution 0.3: 18 clusters
+    ##   Resolution 0.4: 19 clusters
+    ##   Resolution 0.5: 20 clusters
+    ##   Resolution 0.6: 20 clusters
+    ##   Resolution 0.7: 20 clusters
     ##   Resolution 0.8: 21 clusters
     ##   Resolution 0.9: 21 clusters
-    ##   Resolution 1.0: 25 clusters
+    ##   Resolution 1.0: 22 clusters
 
 ### Visualising Cluster Resolution with Clustree
 
@@ -732,7 +732,7 @@ question. For this heart development dataset, we observe that:
 - Higher resolutions begin to split what appear to be continuous
   populations
 
-We select resolution 0.5 for this analysis, which produces 17 clusters
+We select resolution 0.5 for this analysis, which produces 19 clusters
 with good separation of major cell types. This choice is specific to
 this dataset—other datasets may require different resolutions:
 
@@ -760,7 +760,7 @@ cat("- Resolution:", selected_res, "\n")
 cat("- Number of clusters:", length(unique(seu$seurat_clusters)), "\n")
 ```
 
-    ## - Number of clusters: 19
+    ## - Number of clusters: 20
 
 ### UMAP with Clusters
 
@@ -873,7 +873,7 @@ In this module, we:
 - Reduced dimensions with PCA (20 components)
 - Integrated samples with Harmony
 - Visualised with UMAP
-- Identified 19 clusters at resolution 0.5
+- Identified 20 clusters at resolution 0.5
 
 The clustered object is now ready for cell type annotation in Module 3.
 
@@ -901,7 +901,7 @@ sessionInfo()
     ## tzcode source: system (glibc)
     ## 
     ## attached base packages:
-    ## [1] stats     graphics  grDevices utils     datasets  methods   base     
+    ## [1] stats     graphics  grDevices datasets  utils     methods   base     
     ## 
     ## other attached packages:
     ##  [1] future_1.68.0      RColorBrewer_1.1-3 clustree_0.5.1     ggraph_2.2.2      
@@ -938,16 +938,16 @@ sessionInfo()
     ##  [76] RANN_2.6.2             pillar_1.11.1          stringr_1.6.0         
     ##  [79] spam_2.11-3            RcppHNSW_0.6.0         later_1.4.5           
     ##  [82] splines_4.5.2          tweenr_2.0.3           lattice_0.22-7        
-    ##  [85] survival_3.8-3         deldir_2.0-4           tidyselect_1.2.1      
-    ##  [88] miniUI_0.1.2           pbapply_1.7-4          knitr_1.51            
-    ##  [91] gridExtra_2.3          scattermore_1.2        RhpcBLASctl_0.23-42   
-    ##  [94] xfun_0.55              graphlayouts_1.2.2     matrixStats_1.5.0     
-    ##  [97] stringi_1.8.7          lazyeval_0.2.2         yaml_2.3.12           
-    ## [100] evaluate_1.0.5         codetools_0.2-20       cli_3.6.5             
-    ## [103] uwot_0.2.4             xtable_1.8-4           reticulate_1.44.1     
-    ## [106] systemfonts_1.3.1      jquerylib_0.1.4        globals_0.18.0        
-    ## [109] spatstat.random_3.4-3  png_0.1-8              spatstat.univar_3.1-5 
-    ## [112] parallel_4.5.2         pkgdown_2.2.0          dotCall64_1.2         
-    ## [115] listenv_0.10.0         viridisLite_0.4.2      scales_1.4.0          
-    ## [118] ggridges_0.5.7         purrr_1.2.1            rlang_1.1.7           
-    ## [121] cowplot_1.2.0
+    ##  [85] renv_1.1.5             survival_3.8-3         deldir_2.0-4          
+    ##  [88] tidyselect_1.2.1       miniUI_0.1.2           pbapply_1.7-4         
+    ##  [91] knitr_1.51             gridExtra_2.3          scattermore_1.2       
+    ##  [94] RhpcBLASctl_0.23-42    xfun_0.55              graphlayouts_1.2.2    
+    ##  [97] matrixStats_1.5.0      stringi_1.8.7          lazyeval_0.2.2        
+    ## [100] yaml_2.3.12            evaluate_1.0.5         codetools_0.2-20      
+    ## [103] BiocManager_1.30.27    cli_3.6.5              uwot_0.2.4            
+    ## [106] xtable_1.8-4           reticulate_1.44.1      systemfonts_1.3.1     
+    ## [109] jquerylib_0.1.4        globals_0.18.0         spatstat.random_3.4-3 
+    ## [112] png_0.1-8              spatstat.univar_3.1-5  parallel_4.5.2        
+    ## [115] pkgdown_2.2.0          dotCall64_1.2          listenv_0.10.0        
+    ## [118] viridisLite_0.4.2      scales_1.4.0           ggridges_0.5.7        
+    ## [121] purrr_1.2.1            rlang_1.1.7            cowplot_1.2.0

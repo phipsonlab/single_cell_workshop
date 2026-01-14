@@ -33,17 +33,11 @@
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-workshop-modules" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Workshop Modules</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-workshop-modules">
-<li><h6 class="dropdown-header" data-toc-skip>Session 1: scRNA-seq Fundamentals</h6></li>
-    <li><a class="dropdown-item" href="../articles/00_setup.html">Module 0: Setup</a></li>
+<li><a class="dropdown-item" href="../articles/00_setup.html">Module 0: Setup</a></li>
     <li><a class="dropdown-item" href="../articles/01_quality_control.html">Module 1: Quality Control</a></li>
     <li><a class="dropdown-item" href="../articles/02_integration_clustering.html">Module 2: Integration &amp; Clustering</a></li>
     <li><a class="dropdown-item" href="../articles/03_cell_type_annotation.html">Module 3: Cell Type Annotation</a></li>
     <li><a class="dropdown-item" href="../articles/04_differential_expression.html">Module 4: Differential Expression</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Session 2: [Afternoon Topics]</h6></li>
-    <li><h6 class="dropdown-header" data-toc-skip>[Module 5: Topic]</h6></li>
-    <li><h6 class="dropdown-header" data-toc-skip>[Module 6: Topic]</h6></li>
-    <li><h6 class="dropdown-header" data-toc-skip>[Module 7: Topic]</h6></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../articles/resources.html">Resources</a></li>
@@ -188,13 +182,13 @@ removing technical variation</p>
 <span></span>
 <span><span class="co"># Examine the object dimensions</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">seu</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## [1] 18953 42935</span></span></code></pre>
+<pre><code><span><span class="co">## [1] 18953 42993</span></span></code></pre>
 <p>Let us verify the cell counts per sample:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">seu</span><span class="op">$</span><span class="va">sample</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">##   a1   a2   a3   f1   f2   f3   y1   y2   y3 </span></span>
-<span><span class="co">## 3787 2439 1145 7215 9042 6782 4101 4351 4073</span></span></code></pre>
+<span><span class="co">## 3779 2438 1152 7253 9071 6750 4113 4334 4103</span></span></code></pre>
 </div>
 <div class="section level2">
 <h2 id="downsampling-for-computational-efficiency">Downsampling for Computational Efficiency<a class="anchor" aria-label="anchor" href="#downsampling-for-computational-efficiency"></a>
@@ -237,15 +231,15 @@ relative contribution of each sample to the final dataset.</p>
 <pre><code><span><span class="co">## <span style="color: #949494;"># A tibble: 9 × 4</span></span></span>
 <span><span class="co">##   sample n_cells proportion n_sample</span></span>
 <span><span class="co">##   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">1</span> a1        <span style="text-decoration: underline;">3</span>787     0.088<span style="text-decoration: underline;">2</span>      882</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">2</span> a2        <span style="text-decoration: underline;">2</span>439     0.056<span style="text-decoration: underline;">8</span>      568</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">3</span> a3        <span style="text-decoration: underline;">1</span>145     0.026<span style="text-decoration: underline;">7</span>      267</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">4</span> f1        <span style="text-decoration: underline;">7</span>215     0.168      <span style="text-decoration: underline;">1</span>680</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">5</span> f2        <span style="text-decoration: underline;">9</span>042     0.211      <span style="text-decoration: underline;">2</span>106</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">6</span> f3        <span style="text-decoration: underline;">6</span>782     0.158      <span style="text-decoration: underline;">1</span>580</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">7</span> y1        <span style="text-decoration: underline;">4</span>101     0.095<span style="text-decoration: underline;">5</span>      955</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">8</span> y2        <span style="text-decoration: underline;">4</span>351     0.101      <span style="text-decoration: underline;">1</span>013</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">9</span> y3        <span style="text-decoration: underline;">4</span>073     0.094<span style="text-decoration: underline;">9</span>      949</span></span></code></pre>
+<span><span class="co">## <span style="color: #BCBCBC;">1</span> a1        <span style="text-decoration: underline;">3</span>779     0.087<span style="text-decoration: underline;">9</span>      879</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">2</span> a2        <span style="text-decoration: underline;">2</span>438     0.056<span style="text-decoration: underline;">7</span>      567</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">3</span> a3        <span style="text-decoration: underline;">1</span>152     0.026<span style="text-decoration: underline;">8</span>      268</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">4</span> f1        <span style="text-decoration: underline;">7</span>253     0.169      <span style="text-decoration: underline;">1</span>687</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">5</span> f2        <span style="text-decoration: underline;">9</span>071     0.211      <span style="text-decoration: underline;">2</span>110</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">6</span> f3        <span style="text-decoration: underline;">6</span>750     0.157      <span style="text-decoration: underline;">1</span>570</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">7</span> y1        <span style="text-decoration: underline;">4</span>113     0.095<span style="text-decoration: underline;">7</span>      957</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">8</span> y2        <span style="text-decoration: underline;">4</span>334     0.101      <span style="text-decoration: underline;">1</span>008</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">9</span> y3        <span style="text-decoration: underline;">4</span>103     0.095<span style="text-decoration: underline;">4</span>      954</span></span></code></pre>
 <p>Now we sample cells from each group:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Sample cells from each sample</span></span>
@@ -278,7 +272,7 @@ relative contribution of each sample to the final dataset.</p>
 <span><span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">seu</span><span class="op">$</span><span class="va">sample</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">##   a1   a2   a3   f1   f2   f3   y1   y2   y3 </span></span>
-<span><span class="co">##  882  568  267 1680 2106 1580  955 1013  949</span></span></code></pre>
+<span><span class="co">##  879  567  268 1687 2110 1570  957 1008  954</span></span></code></pre>
 </div>
 <div class="section level2">
 <h2 id="normalisation-with-sctransform">Normalisation with SCTransform<a class="anchor" aria-label="anchor" href="#normalisation-with-sctransform"></a>
@@ -327,8 +321,8 @@ examine the top variable features:</p>
 <code class="sourceCode R"><span><span class="co"># Get the top 10 variable features</span></span>
 <span><span class="va">top_features</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://satijalab.github.io/seurat-object/reference/VariableFeatures.html" class="external-link">VariableFeatures</a></span><span class="op">(</span><span class="va">seu</span><span class="op">)</span>, <span class="fl">10</span><span class="op">)</span></span>
 <span><span class="va">top_features</span></span></code></pre></div>
-<pre><code><span><span class="co">##  [1] "F13A1"     "NRXN1"     "ACSM3"     "XKR4"      "CNTNAP2"   "KAZN"     </span></span>
-<span><span class="co">##  [7] "LINC02388" "NEGR1"     "PKHD1L1"   "LDB2"</span></span></code></pre>
+<pre><code><span><span class="co">##  [1] "F13A1"     "NRXN1"     "SLC8A1"    "ACSM3"     "XKR4"      "CNTNAP2"  </span></span>
+<span><span class="co">##  [7] "LINC02388" "KAZN"      "PKHD1L1"   "NEGR1"</span></span></code></pre>
 <p>We can visualise the mean-variance relationship:</p>
 <div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Plot variable features</span></span>
@@ -712,16 +706,16 @@ clusters behave across the resolution spectrum:</p>
 <span>    <span class="va">n_clusters</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">seu</span><span class="op">@</span><span class="va">meta.data</span><span class="op">[[</span><span class="va">col_name</span><span class="op">]</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"  Resolution %.1f: %d clusters\n"</span>, <span class="va">res</span>, <span class="va">n_clusters</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">}</span></span></code></pre></div>
-<pre><code><span><span class="co">##   Resolution 0.1: 13 clusters</span></span>
-<span><span class="co">##   Resolution 0.2: 16 clusters</span></span>
-<span><span class="co">##   Resolution 0.3: 17 clusters</span></span>
-<span><span class="co">##   Resolution 0.4: 17 clusters</span></span>
-<span><span class="co">##   Resolution 0.5: 19 clusters</span></span>
-<span><span class="co">##   Resolution 0.6: 21 clusters</span></span>
-<span><span class="co">##   Resolution 0.7: 22 clusters</span></span>
+<pre><code><span><span class="co">##   Resolution 0.1: 12 clusters</span></span>
+<span><span class="co">##   Resolution 0.2: 15 clusters</span></span>
+<span><span class="co">##   Resolution 0.3: 18 clusters</span></span>
+<span><span class="co">##   Resolution 0.4: 19 clusters</span></span>
+<span><span class="co">##   Resolution 0.5: 20 clusters</span></span>
+<span><span class="co">##   Resolution 0.6: 20 clusters</span></span>
+<span><span class="co">##   Resolution 0.7: 20 clusters</span></span>
 <span><span class="co">##   Resolution 0.8: 21 clusters</span></span>
 <span><span class="co">##   Resolution 0.9: 21 clusters</span></span>
-<span><span class="co">##   Resolution 1.0: 25 clusters</span></span></code></pre>
+<span><span class="co">##   Resolution 1.0: 22 clusters</span></span></code></pre>
 </div>
 <div class="section level3">
 <h3 id="visualising-cluster-resolution-with-clustree">Visualising Cluster Resolution with Clustree<a class="anchor" aria-label="anchor" href="#visualising-cluster-resolution-with-clustree"></a>
@@ -775,7 +769,7 @@ numbers)</li>
 <li>Higher resolutions begin to split what appear to be continuous
 populations</li>
 </ul>
-<p>We select resolution 0.5 for this analysis, which produces 17
+<p>We select resolution 0.5 for this analysis, which produces 19
 clusters with good separation of major cell types. This choice is
 specific to this dataset—other datasets may require different
 resolutions:</p>
@@ -795,7 +789,7 @@ resolutions:</p>
 <pre><code><span><span class="co">## - Resolution: 0.5</span></span></code></pre>
 <div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"- Number of clusters:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">seu</span><span class="op">$</span><span class="va">seurat_clusters</span><span class="op">)</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## - Number of clusters: 19</span></span></code></pre>
+<pre><code><span><span class="co">## - Number of clusters: 20</span></span></code></pre>
 </div>
 <div class="section level3">
 <h3 id="umap-with-clusters">UMAP with Clusters<a class="anchor" aria-label="anchor" href="#umap-with-clusters"></a>
@@ -903,7 +897,7 @@ module:</p>
 <li>Reduced dimensions with PCA (20 components)</li>
 <li>Integrated samples with Harmony</li>
 <li>Visualised with UMAP</li>
-<li>Identified 19 clusters at resolution 0.5</li>
+<li>Identified 20 clusters at resolution 0.5</li>
 </ul>
 <p>The clustered object is now ready for cell type annotation in Module
 3.</p>
@@ -931,7 +925,7 @@ module:</p>
 <span><span class="co">## tzcode source: system (glibc)</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## attached base packages:</span></span>
-<span><span class="co">## [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
+<span><span class="co">## [1] stats     graphics  grDevices datasets  utils     methods   base     </span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## other attached packages:</span></span>
 <span><span class="co">##  [1] future_1.68.0      RColorBrewer_1.1-3 clustree_0.5.1     ggraph_2.2.2      </span></span>
@@ -968,19 +962,19 @@ module:</p>
 <span><span class="co">##  [76] RANN_2.6.2             pillar_1.11.1          stringr_1.6.0         </span></span>
 <span><span class="co">##  [79] spam_2.11-3            RcppHNSW_0.6.0         later_1.4.5           </span></span>
 <span><span class="co">##  [82] splines_4.5.2          tweenr_2.0.3           lattice_0.22-7        </span></span>
-<span><span class="co">##  [85] survival_3.8-3         deldir_2.0-4           tidyselect_1.2.1      </span></span>
-<span><span class="co">##  [88] miniUI_0.1.2           pbapply_1.7-4          knitr_1.51            </span></span>
-<span><span class="co">##  [91] gridExtra_2.3          scattermore_1.2        RhpcBLASctl_0.23-42   </span></span>
-<span><span class="co">##  [94] xfun_0.55              graphlayouts_1.2.2     matrixStats_1.5.0     </span></span>
-<span><span class="co">##  [97] stringi_1.8.7          lazyeval_0.2.2         yaml_2.3.12           </span></span>
-<span><span class="co">## [100] evaluate_1.0.5         codetools_0.2-20       cli_3.6.5             </span></span>
-<span><span class="co">## [103] uwot_0.2.4             xtable_1.8-4           reticulate_1.44.1     </span></span>
-<span><span class="co">## [106] systemfonts_1.3.1      jquerylib_0.1.4        globals_0.18.0        </span></span>
-<span><span class="co">## [109] spatstat.random_3.4-3  png_0.1-8              spatstat.univar_3.1-5 </span></span>
-<span><span class="co">## [112] parallel_4.5.2         pkgdown_2.2.0          dotCall64_1.2         </span></span>
-<span><span class="co">## [115] listenv_0.10.0         viridisLite_0.4.2      scales_1.4.0          </span></span>
-<span><span class="co">## [118] ggridges_0.5.7         purrr_1.2.1            rlang_1.1.7           </span></span>
-<span><span class="co">## [121] cowplot_1.2.0</span></span></code></pre>
+<span><span class="co">##  [85] renv_1.1.5             survival_3.8-3         deldir_2.0-4          </span></span>
+<span><span class="co">##  [88] tidyselect_1.2.1       miniUI_0.1.2           pbapply_1.7-4         </span></span>
+<span><span class="co">##  [91] knitr_1.51             gridExtra_2.3          scattermore_1.2       </span></span>
+<span><span class="co">##  [94] RhpcBLASctl_0.23-42    xfun_0.55              graphlayouts_1.2.2    </span></span>
+<span><span class="co">##  [97] matrixStats_1.5.0      stringi_1.8.7          lazyeval_0.2.2        </span></span>
+<span><span class="co">## [100] yaml_2.3.12            evaluate_1.0.5         codetools_0.2-20      </span></span>
+<span><span class="co">## [103] BiocManager_1.30.27    cli_3.6.5              uwot_0.2.4            </span></span>
+<span><span class="co">## [106] xtable_1.8-4           reticulate_1.44.1      systemfonts_1.3.1     </span></span>
+<span><span class="co">## [109] jquerylib_0.1.4        globals_0.18.0         spatstat.random_3.4-3 </span></span>
+<span><span class="co">## [112] png_0.1-8              spatstat.univar_3.1-5  parallel_4.5.2        </span></span>
+<span><span class="co">## [115] pkgdown_2.2.0          dotCall64_1.2          listenv_0.10.0        </span></span>
+<span><span class="co">## [118] viridisLite_0.4.2      scales_1.4.0           ggridges_0.5.7        </span></span>
+<span><span class="co">## [121] purrr_1.2.1            rlang_1.1.7            cowplot_1.2.0</span></span></code></pre>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

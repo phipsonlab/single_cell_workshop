@@ -1,6 +1,6 @@
 # Articles
 
-### Session 1: Single-Cell RNA-seq Analysis Fundamentals
+### Workshop Modules
 
 - [Module 0: Environment
   Setup](https://phipsonlab.github.io/single_cell_workshop/articles/00_setup.md):

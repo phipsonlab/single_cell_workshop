@@ -56,6 +56,45 @@ If your R version is older than 4.3, we recommend updating R before
 installing the workshop packages. You can download the latest version
 from [CRAN](https://cran.r-project.org/).
 
+## Required Package Versions
+
+For reproducibility, this workshop uses specific package versions. The
+code outputs in the tutorial notebooks were generated with these exact
+versions, so using different versions may produce slightly different
+results.
+
+**R Environment:**
+
+- R version: **4.5.2**
+- Bioconductor: **3.22**
+
+**CRAN Packages:**
+
+| Package      | Version | Purpose                           |
+|--------------|---------|-----------------------------------|
+| Seurat       | 5.4.0   | Core single cell analysis toolkit |
+| SeuratObject | 5.3.0   | Data structures for Seurat        |
+| harmony      | 1.2.4   | Batch effect correction           |
+| ggplot2      | 4.0.1   | Data visualisation                |
+| patchwork    | 1.3.2   | Combining plots                   |
+| dplyr        | 1.1.4   | Data manipulation                 |
+| tidyr        | 1.3.2   | Data tidying                      |
+| RColorBrewer | 1.1.3   | Colour palettes                   |
+| clustree     | 0.5.1   | Cluster resolution visualisation  |
+| pheatmap     | 1.0.13  | Heatmaps                          |
+
+**Bioconductor Packages:**
+
+| Package              | Version | Purpose                        |
+|----------------------|---------|--------------------------------|
+| scDblFinder          | 1.24.0  | Doublet detection              |
+| SingleCellExperiment | 1.32.0  | Data structures                |
+| edgeR                | 4.8.2   | Differential expression        |
+| limma                | 3.66.0  | Linear models for DE           |
+| speckle              | 1.10.0  | Cell type composition analysis |
+| org.Hs.eg.db         | 3.22.0  | Human gene annotations         |
+| AnnotationDbi        | 1.72.0  | Annotation database interface  |
+
 ## Understanding R Package Sources
 
 R packages come from three main sources, each serving different
@@ -69,7 +108,8 @@ purposes:
 2.  **Bioconductor**: A specialised repository for bioinformatics
     packages. Bioconductor packages follow stricter development
     guidelines and are designed to work together for genomic data
-    analysis. We install these using `BiocManager::install()`.
+    analysis. We install these using
+    [`BiocManager::install()`](https://bioconductor.github.io/BiocManager/reference/install.html).
 
 3.  **GitHub**: A code hosting platform where developers share packages
     that may be in active development or not yet submitted to
@@ -88,22 +128,37 @@ complete.
 
 ``` r
 # =============================================================================
-# Automatic Package Installation
-# This chunk detects missing packages and installs them automatically
+# Automatic Package Installation with Version Pinning
+# This chunk installs packages with specific versions for reproducibility
 # =============================================================================
 
-# Define all required packages with their sources
-cran_packages <- c(
-    "Seurat",
-    "harmony",
-    "ggplot2",
-    "patchwork",
-    "dplyr",
-    "tidyr",
-    "RColorBrewer",
-    "clustree",
-    "pheatmap",
-    "remotes"
+# --------------------------------------------------------------------------
+# Step 1: Install remotes and BiocManager
+# --------------------------------------------------------------------------
+if (!requireNamespace("remotes", quietly = TRUE)) {
+    install.packages("remotes")
+}
+if (!requireNamespace("BiocManager", quietly = TRUE)) {
+    install.packages("BiocManager")
+}
+
+# Set Bioconductor version to 3.22
+BiocManager::install(version = "3.22", ask = FALSE, update = FALSE)
+
+# --------------------------------------------------------------------------
+# Step 2: Define required packages with versions
+# --------------------------------------------------------------------------
+cran_packages <- list(
+    Seurat = "5.4.0",
+    SeuratObject = "5.3.0",
+    harmony = "1.2.4",
+    ggplot2 = "4.0.1",
+    patchwork = "1.3.2",
+    dplyr = "1.1.4",
+    tidyr = "1.3.2",
+    RColorBrewer = "1.1.3",
+    clustree = "0.5.1",
+    pheatmap = "1.0.13"
 )
 
 bioc_packages <- c(
@@ -116,67 +171,58 @@ bioc_packages <- c(
     "speckle"
 )
 
-# Function to check if a package is installed
-is_installed <- function(pkg) {
-    requireNamespace(pkg, quietly = TRUE)
+# --------------------------------------------------------------------------
+# Step 3: Install Bioconductor packages
+# --------------------------------------------------------------------------
+message("\n=== Installing Bioconductor packages ===\n")
+for (pkg in bioc_packages) {
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+        message("Installing ", pkg, "...")
+        BiocManager::install(pkg, ask = FALSE, update = FALSE)
+    } else {
+        message(pkg, " already installed")
+    }
 }
 
 # --------------------------------------------------------------------------
-# Step 1: Ensure BiocManager is available
+# Step 4: Install CRAN packages with specific versions
 # --------------------------------------------------------------------------
-if (!is_installed("BiocManager")) {
-    message("Installing BiocManager...")
-    install.packages("BiocManager", quiet = TRUE)
-}
-
-# --------------------------------------------------------------------------
-# Step 2: Check and install CRAN packages
-# --------------------------------------------------------------------------
-missing_cran <- cran_packages[!sapply(cran_packages, is_installed)]
-
-if (length(missing_cran) > 0) {
-    message("\n=== Installing ", length(missing_cran), " missing CRAN package(s) ===")
-    message("Packages: ", paste(missing_cran, collapse = ", "))
-    install.packages(missing_cran, quiet = TRUE)
-} else {
-    message("\n=== All CRAN packages are already installed ===")
-}
-
-# --------------------------------------------------------------------------
-# Step 3: Check and install Bioconductor packages
-# --------------------------------------------------------------------------
-missing_bioc <- bioc_packages[!sapply(bioc_packages, is_installed)]
-
-if (length(missing_bioc) > 0) {
-    message("\n=== Installing ", length(missing_bioc), " missing Bioconductor package(s) ===")
-    message("Packages: ", paste(missing_bioc, collapse = ", "))
-    BiocManager::install(missing_bioc, ask = FALSE, update = FALSE)
-} else {
-    message("\n=== All Bioconductor packages are already installed ===")
+message("\n=== Installing CRAN packages with pinned versions ===\n")
+for (pkg in names(cran_packages)) {
+    version <- cran_packages[[pkg]]
+    current <- tryCatch(
+        as.character(packageVersion(pkg)),
+        error = function(e) ""
+    )
+    if (current != version) {
+        message("Installing ", pkg, " version ", version, "...")
+        remotes::install_version(pkg, version = version,
+                                 repos = "https://cloud.r-project.org",
+                                 upgrade = "never", quiet = TRUE)
+    } else {
+        message(pkg, " ", version, " already installed")
+    }
 }
 
 # --------------------------------------------------------------------------
 # Final verification
 # --------------------------------------------------------------------------
-all_packages <- c(cran_packages, bioc_packages)
-final_check <- sapply(all_packages, is_installed)
+message("\n", paste(rep("=", 50), collapse = ""))
+all_packages <- c(names(cran_packages), bioc_packages)
+final_check <- sapply(all_packages, requireNamespace, quietly = TRUE)
 missing_final <- names(final_check)[!final_check]
 
 if (length(missing_final) == 0) {
-    message("\n", paste(rep("=", 50), collapse = ""))
-    message("SUCCESS! All ", length(all_packages), " packages are installed.")
-    message(paste(rep("=", 50), collapse = ""))
-    message("\nYour environment is ready for the workshop!")
+    message("SUCCESS! All packages are installed.")
+    message("Your environment is ready for the workshop!")
 } else {
-    message("\n", paste(rep("=", 50), collapse = ""))
     message("WARNING: The following packages could not be installed:")
     for (pkg in missing_final) {
         message("  - ", pkg)
     }
-    message(paste(rep("=", 50), collapse = ""))
-    message("\nPlease see the Troubleshooting section below or try")
-    message("installing these packages manually using the steps that follow.")
+    message("\nPlease see the Troubleshooting section below.")
 }
+message(paste(rep("=", 50), collapse = ""))
 ```
 
 If you prefer to install packages manually, or if the automatic
@@ -300,6 +346,9 @@ check_results <- sapply(packages, function(pkg) {
 })
 ```
 
+    ## Warning: replacing previous import 'S4Arrays::makeNindexFromArrayViewport' by
+    ## 'DelayedArray::makeNindexFromArrayViewport' when loading 'SummarizedExperiment'
+
     ## 
 
 ``` r
@@ -328,40 +377,101 @@ if (length(missing) > 0) {
 
 ### Check Package Versions
 
-Different versions of packages may behave differently. Here, we print
-the versions of key packages to help with troubleshooting if issues
-arise during the workshop:
+Different versions of packages may behave differently. Here, we verify
+that your installed package versions match the expected versions used in
+the workshop materials. The workshop was developed and tested with these
+specific versions:
 
 ``` r
-# Print versions of key packages
-key_packages <- c("Seurat", "harmony", "edgeR", "limma", "scDblFinder")
+# Expected versions for reproducibility
+expected_versions <- list(
+    # CRAN packages
+    Seurat = "5.4.0",
+    SeuratObject = "5.3.0",
+    harmony = "1.2.4",
+    ggplot2 = "4.0.1",
+    patchwork = "1.3.2",
+    dplyr = "1.1.4",
+    tidyr = "1.3.2",
+    # Bioconductor packages
+    scDblFinder = "1.24.0",
+    SingleCellExperiment = "1.32.0",
+    edgeR = "4.8.2",
+    limma = "3.66.0",
+    speckle = "1.10.0"
+)
 
-cat("Key package versions:\n")
+cat("Package Version Check\n")
 ```
 
-    ## Key package versions:
+    ## Package Version Check
 
 ``` r
-cat(paste(rep("-", 40), collapse = ""), "\n")
+cat(paste(rep("=", 55), collapse = ""), "\n")
 ```
 
-    ## ----------------------------------------
+    ## =======================================================
 
 ``` r
-for (pkg in key_packages) {
+cat(sprintf("%-20s %-12s %-12s %s\n", "Package", "Expected", "Installed", "Status"))
+```
+
+    ## Package              Expected     Installed    Status
+
+``` r
+cat(paste(rep("-", 55), collapse = ""), "\n")
+```
+
+    ## -------------------------------------------------------
+
+``` r
+all_match <- TRUE
+for (pkg in names(expected_versions)) {
+    expected <- expected_versions[[pkg]]
     if (requireNamespace(pkg, quietly = TRUE)) {
-        cat(sprintf("  %-15s : %s\n", pkg, as.character(packageVersion(pkg))))
+        actual <- as.character(packageVersion(pkg))
+        status <- if (actual == expected) "OK" else "MISMATCH"
+        if (actual != expected) all_match <- FALSE
     } else {
-        cat(sprintf("  %-15s : NOT INSTALLED\n", pkg))
+        actual <- "NOT INSTALLED"
+        status <- "MISSING"
+        all_match <- FALSE
     }
+    cat(sprintf("%-20s %-12s %-12s %s\n", pkg, expected, actual, status))
 }
 ```
 
-    ##   Seurat          : 5.4.0
-    ##   harmony         : 1.2.4
-    ##   edgeR           : 4.8.2
-    ##   limma           : 3.66.0
-    ##   scDblFinder     : 1.24.0
+    ## Seurat               5.4.0        5.4.0        OK
+    ## SeuratObject         5.3.0        5.3.0        OK
+    ## harmony              1.2.4        1.2.4        OK
+    ## ggplot2              4.0.1        4.0.1        OK
+    ## patchwork            1.3.2        1.3.2        OK
+    ## dplyr                1.1.4        1.1.4        OK
+    ## tidyr                1.3.2        1.3.2        OK
+    ## scDblFinder          1.24.0       1.24.0       OK
+    ## SingleCellExperiment 1.32.0       1.32.0       OK
+    ## edgeR                4.8.2        4.8.2        OK
+    ## limma                3.66.0       3.66.0       OK
+    ## speckle              1.10.0       1.10.0       OK
+
+``` r
+cat(paste(rep("=", 55), collapse = ""), "\n")
+```
+
+    ## =======================================================
+
+``` r
+if (all_match) {
+    cat("\nAll package versions match! Your environment is correctly configured.\n")
+} else {
+    cat("\nWARNING: Some package versions differ from expected.\n")
+    cat("The workshop may still work, but outputs might differ slightly.\n")
+    cat("Consider re-running the automatic installation to get exact versions.\n")
+}
+```
+
+    ## 
+    ## All package versions match! Your environment is correctly configured.
 
 ## Download Workshop Data
 
@@ -371,8 +481,8 @@ running the workshop modules.
 
 ### About the Dataset
 
-The dataset contains ~54,000 nuclei from 9 human heart samples across
-three developmental stages:
+The dataset contains ~43,000 nuclei (after quality control filtering)
+from 9 human heart samples across three developmental stages:
 
 | Group  | Samples | Age Range             |
 |--------|---------|-----------------------|
@@ -628,7 +738,7 @@ sessionInfo()
     ## tzcode source: system (glibc)
     ## 
     ## attached base packages:
-    ## [1] stats     graphics  grDevices utils     datasets  methods   base     
+    ## [1] stats     graphics  grDevices datasets  utils     methods   base     
     ## 
     ## loaded via a namespace (and not attached):
     ##   [1] fs_1.6.6                    matrixStats_1.5.0          
@@ -713,16 +823,17 @@ sessionInfo()
     ## [159] reshape2_1.4.5              stats4_4.5.2               
     ## [161] ScaledMatrix_1.18.0         XML_3.99-0.20              
     ## [163] evaluate_1.0.5              SeuratObject_5.3.0         
-    ## [165] scran_1.38.0                tweenr_2.0.3               
-    ## [167] httpuv_1.6.16               RANN_2.6.2                 
-    ## [169] tidyr_1.3.2                 purrr_1.2.1                
-    ## [171] polyclip_1.10-7             future_1.68.0              
-    ## [173] scattermore_1.2             ggplot2_4.0.1              
-    ## [175] ggforce_0.5.0               rsvd_1.0.5                 
-    ## [177] xtable_1.8-4                restfulr_0.0.16            
-    ## [179] RSpectra_0.16-2             later_1.4.5                
-    ## [181] viridisLite_0.4.2           ragg_1.5.0                 
-    ## [183] tibble_3.3.1                memoise_2.0.1              
-    ## [185] beeswarm_0.4.0              AnnotationDbi_1.72.0       
-    ## [187] GenomicAlignments_1.46.0    IRanges_2.44.0             
-    ## [189] cluster_2.1.8.1             globals_0.18.0
+    ## [165] scran_1.38.0                renv_1.1.5                 
+    ## [167] BiocManager_1.30.27         tweenr_2.0.3               
+    ## [169] httpuv_1.6.16               RANN_2.6.2                 
+    ## [171] tidyr_1.3.2                 purrr_1.2.1                
+    ## [173] polyclip_1.10-7             future_1.68.0              
+    ## [175] scattermore_1.2             ggplot2_4.0.1              
+    ## [177] ggforce_0.5.0               rsvd_1.0.5                 
+    ## [179] xtable_1.8-4                restfulr_0.0.16            
+    ## [181] RSpectra_0.16-2             later_1.4.5                
+    ## [183] viridisLite_0.4.2           ragg_1.5.0                 
+    ## [185] tibble_3.3.1                memoise_2.0.1              
+    ## [187] beeswarm_0.4.0              AnnotationDbi_1.72.0       
+    ## [189] GenomicAlignments_1.46.0    IRanges_2.44.0             
+    ## [191] cluster_2.1.8.1             globals_0.18.0

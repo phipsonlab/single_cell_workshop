@@ -307,8 +307,8 @@ gc()  # Garbage collection to release memory
 ```
 
     ##             used   (Mb) gc trigger   (Mb)   max used   (Mb)
-    ## Ncells  12074857  644.9   20314325 1085.0   17057418  911.0
-    ## Vcells 289623802 2209.7 1019235031 7776.2 1273040425 9712.6
+    ## Ncells  14711744  785.7   26484698 1414.5   19861120 1060.7
+    ## Vcells 294315468 2245.5 1025721071 7825.7 1282149408 9782.1
 
 ### Examining the Seurat Object
 
@@ -655,8 +655,8 @@ gc()
 ```
 
     ##             used   (Mb) gc trigger   (Mb)   max used   (Mb)
-    ## Ncells  12594197  672.7   20314325 1085.0   20314325 1085.0
-    ## Vcells 291786879 2226.2  782836504 5972.6 1273040425 9712.6
+    ## Ncells  15288018  816.5   26484698 1414.5   26484698 1414.5
+    ## Vcells 296582833 2262.8  820576857 6260.6 1282149408 9782.1
 
 ### Examining Doublet Detection Results
 
@@ -669,7 +669,7 @@ table(seu$scDblFinder.class)
 
     ## 
     ## singlet doublet 
-    ##   49489    4646
+    ##   49546    4589
 
 ``` r
 # Doublet rate per sample
@@ -686,15 +686,15 @@ seu@meta.data %>%
     ## # A tibble: 9 × 4
     ##   sample total_cells doublets doublet_rate_pct
     ##   <chr>        <int>    <int>            <dbl>
-    ## 1 a1            4360      248             5.69
+    ## 1 a1            4360      259             5.94
     ## 2 a2            3374      179             5.31
-    ## 3 a3            1681       82             4.88
-    ## 4 f1            8294      745             8.98
-    ## 5 f2           10947     1355            12.4 
-    ## 6 f3            8515      767             9.01
-    ## 7 y1            4422      207             4.68
-    ## 8 y2            5558      381             6.85
-    ## 9 y3            6984      682             9.77
+    ## 3 a3            1681       75             4.46
+    ## 4 f1            8294      707             8.52
+    ## 5 f2           10947     1326            12.1 
+    ## 6 f3            8515      799             9.38
+    ## 7 y1            4422      194             4.39
+    ## 8 y2            5558      395             7.11
+    ## 9 y3            6984      655             9.38
 
 The expected doublet rate depends on the number of cells loaded. As a
 rule of thumb, loading ~10,000 cells results in approximately 8%
@@ -831,19 +831,19 @@ cat("- Cells before:", cells_before, "\n")
 cat("- Cells after:", cells_after, "\n")
 ```
 
-    ## - Cells after: 42935
+    ## - Cells after: 42993
 
 ``` r
 cat("- Cells removed:", cells_before - cells_after, "\n")
 ```
 
-    ## - Cells removed: 11200
+    ## - Cells removed: 11142
 
 ``` r
 cat("- Retention:", round(cells_after / cells_before * 100, 1), "%\n")
 ```
 
-    ## - Retention: 79.3 %
+    ## - Retention: 79.4 %
 
 ### Examining Filtering Effects by Sample
 
@@ -877,15 +877,15 @@ filter_summary
 ```
 
     ##   sample before after removed retention_pct  group
-    ## 1     a1   4360  3787     573          86.9  adult
-    ## 2     a2   3374  2439     935          72.3  adult
-    ## 3     a3   1681  1145     536          68.1  adult
-    ## 4     f1   8294  7215    1079          87.0 foetal
-    ## 5     f2  10947  9042    1905          82.6 foetal
-    ## 6     f3   8515  6782    1733          79.6 foetal
-    ## 7     y1   4422  4101     321          92.7  young
-    ## 8     y2   5558  4351    1207          78.3  young
-    ## 9     y3   6984  4073    2911          58.3  young
+    ## 1     a1   4360  3779     581          86.7  adult
+    ## 2     a2   3374  2438     936          72.3  adult
+    ## 3     a3   1681  1152     529          68.5  adult
+    ## 4     f1   8294  7253    1041          87.4 foetal
+    ## 5     f2  10947  9071    1876          82.9 foetal
+    ## 6     f3   8515  6750    1765          79.3 foetal
+    ## 7     y1   4422  4113     309          93.0  young
+    ## 8     y2   5558  4334    1224          78.0  young
+    ## 9     y3   6984  4103    2881          58.7  young
 
 ``` r
 # Visualise filtering effect
@@ -895,7 +895,11 @@ filter_long <- filter_summary %>%
         names_to = "stage",
         values_to = "cells"
     ) %>%
-    mutate(stage = factor(stage, levels = c("before", "after")))
+    mutate(
+        stage = factor(stage, levels = c("before", "after")),
+        # Add retention label only for "after" bars (empty string for "before")
+        label = ifelse(stage == "after", paste0(retention_pct, "%"), "")
+    )
 
 ggplot(filter_long, aes(x = sample, y = cells, fill = stage)) +
     geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.7) +
@@ -904,8 +908,7 @@ ggplot(filter_long, aes(x = sample, y = cells, fill = stage)) +
         labels = c("Before QC", "After QC")
     ) +
     geom_text(
-        data = filter_long %>% filter(stage == "after"),
-        aes(label = paste0(filter_summary$retention_pct[match(sample, filter_summary$sample)], "%")),
+        aes(label = label),
         position = position_dodge(width = 0.8),
         vjust = -0.5, size = 3, colour = "#3C5488", fontface = "bold"
     ) +
@@ -1163,7 +1166,7 @@ dge <- calcNormFactors(dge)
 dim(dge)
 ```
 
-    ## [1] 16563     9
+    ## [1] 16553     9
 
 ### Multidimensional Scaling (MDS) Plot
 
@@ -1308,7 +1311,7 @@ sessionInfo()
     ## tzcode source: system (glibc)
     ## 
     ## attached base packages:
-    ## [1] stats4    stats     graphics  grDevices utils     datasets  methods  
+    ## [1] stats4    stats     graphics  grDevices datasets  utils     methods  
     ## [8] base     
     ## 
     ## other attached packages:
@@ -1344,38 +1347,39 @@ sessionInfo()
     ##  [49] tidyselect_1.2.1         UCSC.utils_1.6.1         farver_2.1.2            
     ##  [52] viridis_0.6.5            ScaledMatrix_1.18.0      spatstat.explore_3.6-0  
     ##  [55] GenomicAlignments_1.46.0 jsonlite_2.0.0           BiocNeighbors_2.4.0     
-    ##  [58] progressr_0.18.0         ggridges_0.5.7           survival_3.8-3          
-    ##  [61] scater_1.38.0            systemfonts_1.3.1        tools_4.5.2             
+    ##  [58] progressr_0.18.0         scater_1.38.0            ggridges_0.5.7          
+    ##  [61] survival_3.8-3           systemfonts_1.3.1        tools_4.5.2             
     ##  [64] ragg_1.5.0               ica_1.0-3                Rcpp_1.1.1              
     ##  [67] glue_1.8.0               gridExtra_2.3            SparseArray_1.10.8      
     ##  [70] mgcv_1.9-3               xfun_0.55                GenomeInfoDb_1.46.2     
-    ##  [73] withr_3.0.2              fastmap_1.2.0            bluster_1.20.0          
-    ##  [76] digest_0.6.39            rsvd_1.0.5               R6_2.6.1                
-    ##  [79] mime_0.13                textshaping_1.0.4        scattermore_1.2         
-    ##  [82] tensor_1.5.1             RSQLite_2.4.5            spatstat.data_3.1-9     
-    ##  [85] cigarillo_1.0.0          utf8_1.2.6               tidyr_1.3.2             
-    ##  [88] data.table_1.18.0        rtracklayer_1.70.1       httr_1.4.7              
-    ##  [91] htmlwidgets_1.6.4        S4Arrays_1.10.1          uwot_0.2.4              
-    ##  [94] pkgconfig_2.0.3          gtable_0.3.6             blob_1.2.4              
-    ##  [97] lmtest_0.9-40            S7_0.2.1                 XVector_0.50.0          
-    ## [100] htmltools_0.5.9          dotCall64_1.2            scales_1.4.0            
-    ## [103] png_0.1-8                spatstat.univar_3.1-5    scran_1.38.0            
-    ## [106] knitr_1.51               reshape2_1.4.5           rjson_0.2.23            
-    ## [109] nlme_3.1-168             curl_7.0.0               cachem_1.1.0            
-    ## [112] zoo_1.8-15               stringr_1.6.0            KernSmooth_2.23-26      
-    ## [115] vipor_0.4.7              parallel_4.5.2           miniUI_0.1.2            
-    ## [118] ggrastr_1.0.2            restfulr_0.0.16          desc_1.4.3              
-    ## [121] pillar_1.11.1            grid_4.5.2               vctrs_0.6.5             
-    ## [124] RANN_2.6.2               promises_1.5.0           BiocSingular_1.26.1     
-    ## [127] beachmat_2.26.0          xtable_1.8-4             cluster_2.1.8.1         
-    ## [130] beeswarm_0.4.0           evaluate_1.0.5           locfit_1.5-9.12         
-    ## [133] cli_3.6.5                compiler_4.5.2           Rsamtools_2.26.0        
-    ## [136] rlang_1.1.7              crayon_1.5.3             future.apply_1.20.1     
-    ## [139] labeling_0.4.3           ggbeeswarm_0.7.3         plyr_1.8.9              
-    ## [142] fs_1.6.6                 stringi_1.8.7            viridisLite_0.4.2       
-    ## [145] deldir_2.0-4             BiocParallel_1.44.0      Biostrings_2.78.0       
-    ## [148] lazyeval_0.2.2           spatstat.geom_3.6-1      Matrix_1.7-4            
-    ## [151] RcppHNSW_0.6.0           bit64_4.6.0-1            future_1.68.0           
-    ## [154] KEGGREST_1.50.0          statmod_1.5.1            shiny_1.12.1            
-    ## [157] ROCR_1.0-11              memoise_2.0.1            igraph_2.2.1            
-    ## [160] bslib_0.9.0              bit_4.6.0                xgboost_3.1.3.1
+    ##  [73] withr_3.0.2              BiocManager_1.30.27      fastmap_1.2.0           
+    ##  [76] bluster_1.20.0           digest_0.6.39            rsvd_1.0.5              
+    ##  [79] R6_2.6.1                 mime_0.13                textshaping_1.0.4       
+    ##  [82] scattermore_1.2          tensor_1.5.1             RSQLite_2.4.5           
+    ##  [85] spatstat.data_3.1-9      cigarillo_1.0.0          utf8_1.2.6              
+    ##  [88] tidyr_1.3.2              renv_1.1.5               data.table_1.18.0       
+    ##  [91] rtracklayer_1.70.1       httr_1.4.7               htmlwidgets_1.6.4       
+    ##  [94] S4Arrays_1.10.1          uwot_0.2.4               pkgconfig_2.0.3         
+    ##  [97] gtable_0.3.6             blob_1.2.4               lmtest_0.9-40           
+    ## [100] S7_0.2.1                 XVector_0.50.0           htmltools_0.5.9         
+    ## [103] dotCall64_1.2            scales_1.4.0             png_0.1-8               
+    ## [106] spatstat.univar_3.1-5    scran_1.38.0             knitr_1.51              
+    ## [109] reshape2_1.4.5           rjson_0.2.23             nlme_3.1-168            
+    ## [112] curl_7.0.0               cachem_1.1.0             zoo_1.8-15              
+    ## [115] stringr_1.6.0            KernSmooth_2.23-26       vipor_0.4.7             
+    ## [118] parallel_4.5.2           miniUI_0.1.2             ggrastr_1.0.2           
+    ## [121] restfulr_0.0.16          desc_1.4.3               pillar_1.11.1           
+    ## [124] grid_4.5.2               vctrs_0.6.5              RANN_2.6.2              
+    ## [127] promises_1.5.0           BiocSingular_1.26.1      beachmat_2.26.0         
+    ## [130] xtable_1.8-4             cluster_2.1.8.1          beeswarm_0.4.0          
+    ## [133] evaluate_1.0.5           locfit_1.5-9.12          cli_3.6.5               
+    ## [136] compiler_4.5.2           Rsamtools_2.26.0         rlang_1.1.7             
+    ## [139] crayon_1.5.3             future.apply_1.20.1      labeling_0.4.3          
+    ## [142] ggbeeswarm_0.7.3         plyr_1.8.9               fs_1.6.6                
+    ## [145] stringi_1.8.7            viridisLite_0.4.2        deldir_2.0-4            
+    ## [148] BiocParallel_1.44.0      Biostrings_2.78.0        lazyeval_0.2.2          
+    ## [151] spatstat.geom_3.6-1      Matrix_1.7-4             RcppHNSW_0.6.0          
+    ## [154] bit64_4.6.0-1            future_1.68.0            KEGGREST_1.50.0         
+    ## [157] statmod_1.5.1            shiny_1.12.1             ROCR_1.0-11             
+    ## [160] memoise_2.0.1            igraph_2.2.1             bslib_0.9.0             
+    ## [163] bit_4.6.0                xgboost_3.1.3.1

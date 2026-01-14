@@ -33,17 +33,11 @@
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-workshop-modules" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Workshop Modules</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-workshop-modules">
-<li><h6 class="dropdown-header" data-toc-skip>Session 1: scRNA-seq Fundamentals</h6></li>
-    <li><a class="dropdown-item" href="../articles/00_setup.html">Module 0: Setup</a></li>
+<li><a class="dropdown-item" href="../articles/00_setup.html">Module 0: Setup</a></li>
     <li><a class="dropdown-item" href="../articles/01_quality_control.html">Module 1: Quality Control</a></li>
     <li><a class="dropdown-item" href="../articles/02_integration_clustering.html">Module 2: Integration &amp; Clustering</a></li>
     <li><a class="dropdown-item" href="../articles/03_cell_type_annotation.html">Module 3: Cell Type Annotation</a></li>
     <li><a class="dropdown-item" href="../articles/04_differential_expression.html">Module 4: Differential Expression</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Session 2: [Afternoon Topics]</h6></li>
-    <li><h6 class="dropdown-header" data-toc-skip>[Module 5: Topic]</h6></li>
-    <li><h6 class="dropdown-header" data-toc-skip>[Module 6: Topic]</h6></li>
-    <li><h6 class="dropdown-header" data-toc-skip>[Module 7: Topic]</h6></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../articles/resources.html">Resources</a></li>
@@ -382,8 +376,8 @@ statistical analyses.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/rm.html" class="external-link">rm</a></span><span class="op">(</span><span class="va">counts</span>, <span class="va">cellinfo</span>, <span class="va">cellinfo_matched</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/gc.html" class="external-link">gc</a></span><span class="op">(</span><span class="op">)</span>  <span class="co"># Garbage collection to release memory</span></span></code></pre></div>
 <pre><code><span><span class="co">##             used   (Mb) gc trigger   (Mb)   max used   (Mb)</span></span>
-<span><span class="co">## Ncells  12074857  644.9   20314325 1085.0   17057418  911.0</span></span>
-<span><span class="co">## Vcells 289623802 2209.7 1019235031 7776.2 1273040425 9712.6</span></span></code></pre>
+<span><span class="co">## Ncells  14711744  785.7   26484698 1414.5   19861120 1060.7</span></span>
+<span><span class="co">## Vcells 294315468 2245.5 1025721071 7825.7 1282149408 9782.1</span></span></code></pre>
 </div>
 <div class="section level3">
 <h3 id="examining-the-seurat-object">Examining the Seurat Object<a class="anchor" aria-label="anchor" href="#examining-the-seurat-object"></a>
@@ -711,8 +705,8 @@ could create artificial heterogeneity.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/rm.html" class="external-link">rm</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/gc.html" class="external-link">gc</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##             used   (Mb) gc trigger   (Mb)   max used   (Mb)</span></span>
-<span><span class="co">## Ncells  12594197  672.7   20314325 1085.0   20314325 1085.0</span></span>
-<span><span class="co">## Vcells 291786879 2226.2  782836504 5972.6 1273040425 9712.6</span></span></code></pre>
+<span><span class="co">## Ncells  15288018  816.5   26484698 1414.5   26484698 1414.5</span></span>
+<span><span class="co">## Vcells 296582833 2262.8  820576857 6260.6 1282149408 9782.1</span></span></code></pre>
 </div>
 <div class="section level3">
 <h3 id="examining-doublet-detection-results">Examining Doublet Detection Results<a class="anchor" aria-label="anchor" href="#examining-doublet-detection-results"></a>
@@ -723,7 +717,7 @@ could create artificial heterogeneity.</p>
 <span><span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">seu</span><span class="op">$</span><span class="va">scDblFinder.class</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">## singlet doublet </span></span>
-<span><span class="co">##   49489    4646</span></span></code></pre>
+<span><span class="co">##   49546    4589</span></span></code></pre>
 <div class="sourceCode" id="cb55"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Doublet rate per sample</span></span>
 <span><span class="va">seu</span><span class="op">@</span><span class="va">meta.data</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
@@ -737,15 +731,15 @@ could create artificial heterogeneity.</p>
 <pre><code><span><span class="co">## <span style="color: #949494;"># A tibble: 9 × 4</span></span></span>
 <span><span class="co">##   sample total_cells doublets doublet_rate_pct</span></span>
 <span><span class="co">##   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">1</span> a1            <span style="text-decoration: underline;">4</span>360      248             5.69</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">1</span> a1            <span style="text-decoration: underline;">4</span>360      259             5.94</span></span>
 <span><span class="co">## <span style="color: #BCBCBC;">2</span> a2            <span style="text-decoration: underline;">3</span>374      179             5.31</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">3</span> a3            <span style="text-decoration: underline;">1</span>681       82             4.88</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">4</span> f1            <span style="text-decoration: underline;">8</span>294      745             8.98</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">5</span> f2           <span style="text-decoration: underline;">10</span>947     <span style="text-decoration: underline;">1</span>355            12.4 </span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">6</span> f3            <span style="text-decoration: underline;">8</span>515      767             9.01</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">7</span> y1            <span style="text-decoration: underline;">4</span>422      207             4.68</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">8</span> y2            <span style="text-decoration: underline;">5</span>558      381             6.85</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">9</span> y3            <span style="text-decoration: underline;">6</span>984      682             9.77</span></span></code></pre>
+<span><span class="co">## <span style="color: #BCBCBC;">3</span> a3            <span style="text-decoration: underline;">1</span>681       75             4.46</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">4</span> f1            <span style="text-decoration: underline;">8</span>294      707             8.52</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">5</span> f2           <span style="text-decoration: underline;">10</span>947     <span style="text-decoration: underline;">1</span>326            12.1 </span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">6</span> f3            <span style="text-decoration: underline;">8</span>515      799             9.38</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">7</span> y1            <span style="text-decoration: underline;">4</span>422      194             4.39</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">8</span> y2            <span style="text-decoration: underline;">5</span>558      395             7.11</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">9</span> y3            <span style="text-decoration: underline;">6</span>984      655             9.38</span></span></code></pre>
 <p>The expected doublet rate depends on the number of cells loaded. As a
 rule of thumb, loading ~10,000 cells results in approximately 8%
 doublets. Our observed rates should be in a similar range.</p>
@@ -877,13 +871,13 @@ removed.</p>
 <pre><code><span><span class="co">## - Cells before: 54135</span></span></code></pre>
 <div class="sourceCode" id="cb64"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"- Cells after:"</span>, <span class="va">cells_after</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## - Cells after: 42935</span></span></code></pre>
+<pre><code><span><span class="co">## - Cells after: 42993</span></span></code></pre>
 <div class="sourceCode" id="cb66"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"- Cells removed:"</span>, <span class="va">cells_before</span> <span class="op">-</span> <span class="va">cells_after</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## - Cells removed: 11200</span></span></code></pre>
+<pre><code><span><span class="co">## - Cells removed: 11142</span></span></code></pre>
 <div class="sourceCode" id="cb68"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"- Retention:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">cells_after</span> <span class="op">/</span> <span class="va">cells_before</span> <span class="op">*</span> <span class="fl">100</span>, <span class="fl">1</span><span class="op">)</span>, <span class="st">"%\n"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## - Retention: 79.3 %</span></span></code></pre>
+<pre><code><span><span class="co">## - Retention: 79.4 %</span></span></code></pre>
 </div>
 <div class="section level3">
 <h3 id="examining-filtering-effects-by-sample">Examining Filtering Effects by Sample<a class="anchor" aria-label="anchor" href="#examining-filtering-effects-by-sample"></a>
@@ -915,15 +909,15 @@ issues:</p>
 <span></span>
 <span><span class="va">filter_summary</span></span></code></pre></div>
 <pre><code><span><span class="co">##   sample before after removed retention_pct  group</span></span>
-<span><span class="co">## 1     a1   4360  3787     573          86.9  adult</span></span>
-<span><span class="co">## 2     a2   3374  2439     935          72.3  adult</span></span>
-<span><span class="co">## 3     a3   1681  1145     536          68.1  adult</span></span>
-<span><span class="co">## 4     f1   8294  7215    1079          87.0 foetal</span></span>
-<span><span class="co">## 5     f2  10947  9042    1905          82.6 foetal</span></span>
-<span><span class="co">## 6     f3   8515  6782    1733          79.6 foetal</span></span>
-<span><span class="co">## 7     y1   4422  4101     321          92.7  young</span></span>
-<span><span class="co">## 8     y2   5558  4351    1207          78.3  young</span></span>
-<span><span class="co">## 9     y3   6984  4073    2911          58.3  young</span></span></code></pre>
+<span><span class="co">## 1     a1   4360  3779     581          86.7  adult</span></span>
+<span><span class="co">## 2     a2   3374  2438     936          72.3  adult</span></span>
+<span><span class="co">## 3     a3   1681  1152     529          68.5  adult</span></span>
+<span><span class="co">## 4     f1   8294  7253    1041          87.4 foetal</span></span>
+<span><span class="co">## 5     f2  10947  9071    1876          82.9 foetal</span></span>
+<span><span class="co">## 6     f3   8515  6750    1765          79.3 foetal</span></span>
+<span><span class="co">## 7     y1   4422  4113     309          93.0  young</span></span>
+<span><span class="co">## 8     y2   5558  4334    1224          78.0  young</span></span>
+<span><span class="co">## 9     y3   6984  4103    2881          58.7  young</span></span></code></pre>
 <div class="sourceCode" id="cb72"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Visualise filtering effect</span></span>
 <span><span class="va">filter_long</span> <span class="op">&lt;-</span> <span class="va">filter_summary</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
@@ -932,7 +926,11 @@ issues:</p>
 <span>        names_to <span class="op">=</span> <span class="st">"stage"</span>,</span>
 <span>        values_to <span class="op">=</span> <span class="st">"cells"</span></span>
 <span>    <span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>stage <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">stage</span>, levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"before"</span>, <span class="st">"after"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
+<span>        stage <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">stage</span>, levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"before"</span>, <span class="st">"after"</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>        <span class="co"># Add retention label only for "after" bars (empty string for "before")</span></span>
+<span>        label <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">stage</span> <span class="op">==</span> <span class="st">"after"</span>, <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="va">retention_pct</span>, <span class="st">"%"</span><span class="op">)</span>, <span class="st">""</span><span class="op">)</span></span>
+<span>    <span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">filter_long</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">sample</span>, y <span class="op">=</span> <span class="va">cells</span>, fill <span class="op">=</span> <span class="va">stage</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_bar.html" class="external-link">geom_bar</a></span><span class="op">(</span>stat <span class="op">=</span> <span class="st">"identity"</span>, position <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/position_dodge.html" class="external-link">position_dodge</a></span><span class="op">(</span>width <span class="op">=</span> <span class="fl">0.8</span><span class="op">)</span>, width <span class="op">=</span> <span class="fl">0.7</span><span class="op">)</span> <span class="op">+</span></span>
@@ -941,8 +939,7 @@ issues:</p>
 <span>        labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Before QC"</span>, <span class="st">"After QC"</span><span class="op">)</span></span>
 <span>    <span class="op">)</span> <span class="op">+</span></span>
 <span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_text.html" class="external-link">geom_text</a></span><span class="op">(</span></span>
-<span>        data <span class="op">=</span> <span class="va">filter_long</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">stage</span> <span class="op">==</span> <span class="st">"after"</span><span class="op">)</span>,</span>
-<span>        <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>label <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="va">filter_summary</span><span class="op">$</span><span class="va">retention_pct</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/match.html" class="external-link">match</a></span><span class="op">(</span><span class="va">sample</span>, <span class="va">filter_summary</span><span class="op">$</span><span class="va">sample</span><span class="op">)</span><span class="op">]</span>, <span class="st">"%"</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>        <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>label <span class="op">=</span> <span class="va">label</span><span class="op">)</span>,</span>
 <span>        position <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/position_dodge.html" class="external-link">position_dodge</a></span><span class="op">(</span>width <span class="op">=</span> <span class="fl">0.8</span><span class="op">)</span>,</span>
 <span>        vjust <span class="op">=</span> <span class="op">-</span><span class="fl">0.5</span>, size <span class="op">=</span> <span class="fl">3</span>, colour <span class="op">=</span> <span class="st">"#3C5488"</span>, fontface <span class="op">=</span> <span class="st">"bold"</span></span>
 <span>    <span class="op">)</span> <span class="op">+</span></span>
@@ -1158,7 +1155,7 @@ and perform filtering:</p>
 <span><span class="va">dge</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/edgeR/man/calcNormFactors.html" class="external-link">calcNormFactors</a></span><span class="op">(</span><span class="va">dge</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">dge</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## [1] 16563     9</span></span></code></pre>
+<pre><code><span><span class="co">## [1] 16553     9</span></span></code></pre>
 </div>
 <div class="section level3">
 <h3 id="multidimensional-scaling-mds-plot">Multidimensional Scaling (MDS) Plot<a class="anchor" aria-label="anchor" href="#multidimensional-scaling-mds-plot"></a>
@@ -1299,7 +1296,7 @@ package versions:</p>
 <span><span class="co">## tzcode source: system (glibc)</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## attached base packages:</span></span>
-<span><span class="co">## [1] stats4    stats     graphics  grDevices utils     datasets  methods  </span></span>
+<span><span class="co">## [1] stats4    stats     graphics  grDevices datasets  utils     methods  </span></span>
 <span><span class="co">## [8] base     </span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## other attached packages:</span></span>
@@ -1335,41 +1332,42 @@ package versions:</p>
 <span><span class="co">##  [49] tidyselect_1.2.1         UCSC.utils_1.6.1         farver_2.1.2            </span></span>
 <span><span class="co">##  [52] viridis_0.6.5            ScaledMatrix_1.18.0      spatstat.explore_3.6-0  </span></span>
 <span><span class="co">##  [55] GenomicAlignments_1.46.0 jsonlite_2.0.0           BiocNeighbors_2.4.0     </span></span>
-<span><span class="co">##  [58] progressr_0.18.0         ggridges_0.5.7           survival_3.8-3          </span></span>
-<span><span class="co">##  [61] scater_1.38.0            systemfonts_1.3.1        tools_4.5.2             </span></span>
+<span><span class="co">##  [58] progressr_0.18.0         scater_1.38.0            ggridges_0.5.7          </span></span>
+<span><span class="co">##  [61] survival_3.8-3           systemfonts_1.3.1        tools_4.5.2             </span></span>
 <span><span class="co">##  [64] ragg_1.5.0               ica_1.0-3                Rcpp_1.1.1              </span></span>
 <span><span class="co">##  [67] glue_1.8.0               gridExtra_2.3            SparseArray_1.10.8      </span></span>
 <span><span class="co">##  [70] mgcv_1.9-3               xfun_0.55                GenomeInfoDb_1.46.2     </span></span>
-<span><span class="co">##  [73] withr_3.0.2              fastmap_1.2.0            bluster_1.20.0          </span></span>
-<span><span class="co">##  [76] digest_0.6.39            rsvd_1.0.5               R6_2.6.1                </span></span>
-<span><span class="co">##  [79] mime_0.13                textshaping_1.0.4        scattermore_1.2         </span></span>
-<span><span class="co">##  [82] tensor_1.5.1             RSQLite_2.4.5            spatstat.data_3.1-9     </span></span>
-<span><span class="co">##  [85] cigarillo_1.0.0          utf8_1.2.6               tidyr_1.3.2             </span></span>
-<span><span class="co">##  [88] data.table_1.18.0        rtracklayer_1.70.1       httr_1.4.7              </span></span>
-<span><span class="co">##  [91] htmlwidgets_1.6.4        S4Arrays_1.10.1          uwot_0.2.4              </span></span>
-<span><span class="co">##  [94] pkgconfig_2.0.3          gtable_0.3.6             blob_1.2.4              </span></span>
-<span><span class="co">##  [97] lmtest_0.9-40            S7_0.2.1                 XVector_0.50.0          </span></span>
-<span><span class="co">## [100] htmltools_0.5.9          dotCall64_1.2            scales_1.4.0            </span></span>
-<span><span class="co">## [103] png_0.1-8                spatstat.univar_3.1-5    scran_1.38.0            </span></span>
-<span><span class="co">## [106] knitr_1.51               reshape2_1.4.5           rjson_0.2.23            </span></span>
-<span><span class="co">## [109] nlme_3.1-168             curl_7.0.0               cachem_1.1.0            </span></span>
-<span><span class="co">## [112] zoo_1.8-15               stringr_1.6.0            KernSmooth_2.23-26      </span></span>
-<span><span class="co">## [115] vipor_0.4.7              parallel_4.5.2           miniUI_0.1.2            </span></span>
-<span><span class="co">## [118] ggrastr_1.0.2            restfulr_0.0.16          desc_1.4.3              </span></span>
-<span><span class="co">## [121] pillar_1.11.1            grid_4.5.2               vctrs_0.6.5             </span></span>
-<span><span class="co">## [124] RANN_2.6.2               promises_1.5.0           BiocSingular_1.26.1     </span></span>
-<span><span class="co">## [127] beachmat_2.26.0          xtable_1.8-4             cluster_2.1.8.1         </span></span>
-<span><span class="co">## [130] beeswarm_0.4.0           evaluate_1.0.5           locfit_1.5-9.12         </span></span>
-<span><span class="co">## [133] cli_3.6.5                compiler_4.5.2           Rsamtools_2.26.0        </span></span>
-<span><span class="co">## [136] rlang_1.1.7              crayon_1.5.3             future.apply_1.20.1     </span></span>
-<span><span class="co">## [139] labeling_0.4.3           ggbeeswarm_0.7.3         plyr_1.8.9              </span></span>
-<span><span class="co">## [142] fs_1.6.6                 stringi_1.8.7            viridisLite_0.4.2       </span></span>
-<span><span class="co">## [145] deldir_2.0-4             BiocParallel_1.44.0      Biostrings_2.78.0       </span></span>
-<span><span class="co">## [148] lazyeval_0.2.2           spatstat.geom_3.6-1      Matrix_1.7-4            </span></span>
-<span><span class="co">## [151] RcppHNSW_0.6.0           bit64_4.6.0-1            future_1.68.0           </span></span>
-<span><span class="co">## [154] KEGGREST_1.50.0          statmod_1.5.1            shiny_1.12.1            </span></span>
-<span><span class="co">## [157] ROCR_1.0-11              memoise_2.0.1            igraph_2.2.1            </span></span>
-<span><span class="co">## [160] bslib_0.9.0              bit_4.6.0                xgboost_3.1.3.1</span></span></code></pre>
+<span><span class="co">##  [73] withr_3.0.2              BiocManager_1.30.27      fastmap_1.2.0           </span></span>
+<span><span class="co">##  [76] bluster_1.20.0           digest_0.6.39            rsvd_1.0.5              </span></span>
+<span><span class="co">##  [79] R6_2.6.1                 mime_0.13                textshaping_1.0.4       </span></span>
+<span><span class="co">##  [82] scattermore_1.2          tensor_1.5.1             RSQLite_2.4.5           </span></span>
+<span><span class="co">##  [85] spatstat.data_3.1-9      cigarillo_1.0.0          utf8_1.2.6              </span></span>
+<span><span class="co">##  [88] tidyr_1.3.2              renv_1.1.5               data.table_1.18.0       </span></span>
+<span><span class="co">##  [91] rtracklayer_1.70.1       httr_1.4.7               htmlwidgets_1.6.4       </span></span>
+<span><span class="co">##  [94] S4Arrays_1.10.1          uwot_0.2.4               pkgconfig_2.0.3         </span></span>
+<span><span class="co">##  [97] gtable_0.3.6             blob_1.2.4               lmtest_0.9-40           </span></span>
+<span><span class="co">## [100] S7_0.2.1                 XVector_0.50.0           htmltools_0.5.9         </span></span>
+<span><span class="co">## [103] dotCall64_1.2            scales_1.4.0             png_0.1-8               </span></span>
+<span><span class="co">## [106] spatstat.univar_3.1-5    scran_1.38.0             knitr_1.51              </span></span>
+<span><span class="co">## [109] reshape2_1.4.5           rjson_0.2.23             nlme_3.1-168            </span></span>
+<span><span class="co">## [112] curl_7.0.0               cachem_1.1.0             zoo_1.8-15              </span></span>
+<span><span class="co">## [115] stringr_1.6.0            KernSmooth_2.23-26       vipor_0.4.7             </span></span>
+<span><span class="co">## [118] parallel_4.5.2           miniUI_0.1.2             ggrastr_1.0.2           </span></span>
+<span><span class="co">## [121] restfulr_0.0.16          desc_1.4.3               pillar_1.11.1           </span></span>
+<span><span class="co">## [124] grid_4.5.2               vctrs_0.6.5              RANN_2.6.2              </span></span>
+<span><span class="co">## [127] promises_1.5.0           BiocSingular_1.26.1      beachmat_2.26.0         </span></span>
+<span><span class="co">## [130] xtable_1.8-4             cluster_2.1.8.1          beeswarm_0.4.0          </span></span>
+<span><span class="co">## [133] evaluate_1.0.5           locfit_1.5-9.12          cli_3.6.5               </span></span>
+<span><span class="co">## [136] compiler_4.5.2           Rsamtools_2.26.0         rlang_1.1.7             </span></span>
+<span><span class="co">## [139] crayon_1.5.3             future.apply_1.20.1      labeling_0.4.3          </span></span>
+<span><span class="co">## [142] ggbeeswarm_0.7.3         plyr_1.8.9               fs_1.6.6                </span></span>
+<span><span class="co">## [145] stringi_1.8.7            viridisLite_0.4.2        deldir_2.0-4            </span></span>
+<span><span class="co">## [148] BiocParallel_1.44.0      Biostrings_2.78.0        lazyeval_0.2.2          </span></span>
+<span><span class="co">## [151] spatstat.geom_3.6-1      Matrix_1.7-4             RcppHNSW_0.6.0          </span></span>
+<span><span class="co">## [154] bit64_4.6.0-1            future_1.68.0            KEGGREST_1.50.0         </span></span>
+<span><span class="co">## [157] statmod_1.5.1            shiny_1.12.1             ROCR_1.0-11             </span></span>
+<span><span class="co">## [160] memoise_2.0.1            igraph_2.2.1             bslib_0.9.0             </span></span>
+<span><span class="co">## [163] bit_4.6.0                xgboost_3.1.3.1</span></span></code></pre>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

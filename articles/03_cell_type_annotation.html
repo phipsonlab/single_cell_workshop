@@ -33,17 +33,11 @@
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-workshop-modules" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Workshop Modules</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-workshop-modules">
-<li><h6 class="dropdown-header" data-toc-skip>Session 1: scRNA-seq Fundamentals</h6></li>
-    <li><a class="dropdown-item" href="../articles/00_setup.html">Module 0: Setup</a></li>
+<li><a class="dropdown-item" href="../articles/00_setup.html">Module 0: Setup</a></li>
     <li><a class="dropdown-item" href="../articles/01_quality_control.html">Module 1: Quality Control</a></li>
     <li><a class="dropdown-item" href="../articles/02_integration_clustering.html">Module 2: Integration &amp; Clustering</a></li>
     <li><a class="dropdown-item" href="../articles/03_cell_type_annotation.html">Module 3: Cell Type Annotation</a></li>
     <li><a class="dropdown-item" href="../articles/04_differential_expression.html">Module 4: Differential Expression</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Session 2: [Afternoon Topics]</h6></li>
-    <li><h6 class="dropdown-header" data-toc-skip>[Module 5: Topic]</h6></li>
-    <li><h6 class="dropdown-header" data-toc-skip>[Module 6: Topic]</h6></li>
-    <li><h6 class="dropdown-header" data-toc-skip>[Module 7: Topic]</h6></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../articles/resources.html">Resources</a></li>
@@ -148,10 +142,10 @@ PLP1)</li>
 <pre><code><span><span class="co">## - Cells: 10000</span></span></code></pre>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"- Genes:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">seu</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## - Genes: 17700</span></span></code></pre>
+<pre><code><span><span class="co">## - Genes: 17732</span></span></code></pre>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"- Clusters:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">seu</span><span class="op">$</span><span class="va">seurat_clusters</span><span class="op">)</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## - Clusters: 19</span></span></code></pre>
+<pre><code><span><span class="co">## - Clusters: 20</span></span></code></pre>
 <p>Let us first examine the cluster distribution to understand what we
 are annotating.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
@@ -164,25 +158,26 @@ are annotating.</p>
 <code class="sourceCode R"><span><span class="kw">for</span> <span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_along</a></span><span class="op">(</span><span class="va">cluster_sizes</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"  Cluster %s: %d cells\n"</span>, <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">cluster_sizes</span><span class="op">)</span><span class="op">[</span><span class="va">i</span><span class="op">]</span>, <span class="va">cluster_sizes</span><span class="op">[</span><span class="va">i</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">}</span></span></code></pre></div>
-<pre><code><span><span class="co">##   Cluster 0: 2605 cells</span></span>
-<span><span class="co">##   Cluster 1: 1216 cells</span></span>
-<span><span class="co">##   Cluster 2: 1150 cells</span></span>
-<span><span class="co">##   Cluster 3: 700 cells</span></span>
-<span><span class="co">##   Cluster 4: 582 cells</span></span>
-<span><span class="co">##   Cluster 5: 579 cells</span></span>
-<span><span class="co">##   Cluster 6: 503 cells</span></span>
-<span><span class="co">##   Cluster 7: 421 cells</span></span>
-<span><span class="co">##   Cluster 8: 419 cells</span></span>
-<span><span class="co">##   Cluster 9: 258 cells</span></span>
-<span><span class="co">##   Cluster 10: 231 cells</span></span>
-<span><span class="co">##   Cluster 11: 203 cells</span></span>
-<span><span class="co">##   Cluster 12: 198 cells</span></span>
-<span><span class="co">##   Cluster 13: 197 cells</span></span>
-<span><span class="co">##   Cluster 14: 179 cells</span></span>
-<span><span class="co">##   Cluster 15: 172 cells</span></span>
-<span><span class="co">##   Cluster 16: 140 cells</span></span>
-<span><span class="co">##   Cluster 17: 140 cells</span></span>
-<span><span class="co">##   Cluster 18: 107 cells</span></span></code></pre>
+<pre><code><span><span class="co">##   Cluster 0: 2588 cells</span></span>
+<span><span class="co">##   Cluster 1: 1166 cells</span></span>
+<span><span class="co">##   Cluster 2: 1125 cells</span></span>
+<span><span class="co">##   Cluster 3: 619 cells</span></span>
+<span><span class="co">##   Cluster 4: 572 cells</span></span>
+<span><span class="co">##   Cluster 5: 511 cells</span></span>
+<span><span class="co">##   Cluster 6: 492 cells</span></span>
+<span><span class="co">##   Cluster 7: 433 cells</span></span>
+<span><span class="co">##   Cluster 8: 418 cells</span></span>
+<span><span class="co">##   Cluster 9: 257 cells</span></span>
+<span><span class="co">##   Cluster 10: 222 cells</span></span>
+<span><span class="co">##   Cluster 11: 211 cells</span></span>
+<span><span class="co">##   Cluster 12: 211 cells</span></span>
+<span><span class="co">##   Cluster 13: 201 cells</span></span>
+<span><span class="co">##   Cluster 14: 192 cells</span></span>
+<span><span class="co">##   Cluster 15: 187 cells</span></span>
+<span><span class="co">##   Cluster 16: 184 cells</span></span>
+<span><span class="co">##   Cluster 17: 154 cells</span></span>
+<span><span class="co">##   Cluster 18: 133 cells</span></span>
+<span><span class="co">##   Cluster 19: 124 cells</span></span></code></pre>
 </div>
 <div class="section level2">
 <h2 id="define-colour-palette">Define Colour Palette<a class="anchor" aria-label="anchor" href="#define-colour-palette"></a>
@@ -237,12 +232,12 @@ important context for annotation.</p>
 <span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>axis.text.x <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>size <span class="op">=</span> <span class="fl">10</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p><img src="03_cell_type_annotation_files/figure-html/cluster-composition-1.png" class="r-plt" alt="" width="960" style="display: block; margin: auto;"></p>
 <p>We observe that some clusters are highly enriched for specific
-developmental stages. For example, clusters 0, 7, 8, 9, 12, 13, and 16
-are nearly exclusively fetal, while cluster 2 contains predominantly
-young and adult cells. This developmental segregation often reflects
-biological differences in cell state, particularly among cardiomyocytes
-where fetal cells have distinct transcriptional profiles from mature
-cells.</p>
+developmental stages. For example, clusters 0, 6, 8, 9, 12, 15, 16, and
+17 are nearly exclusively fetal, while cluster 2 contains predominantly
+young and adult cells, and cluster 18 is exclusively young. This
+developmental segregation often reflects biological differences in cell
+state, particularly among cardiomyocytes where fetal cells have distinct
+transcriptional profiles from mature cells.</p>
 </div>
 <div class="section level2">
 <h2 id="find-cluster-markers">Find Cluster Markers<a class="anchor" aria-label="anchor" href="#find-cluster-markers"></a>
@@ -270,7 +265,7 @@ marker-based annotation.</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Found"</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">markers</span><span class="op">)</span>, <span class="st">"marker genes across all clusters\n"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Found 21266 marker genes across all clusters</span></span></code></pre>
+<pre><code><span><span class="co">## Found 22502 marker genes across all clusters</span></span></code></pre>
 <p>Let us examine the top markers for each cluster.</p>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Get top 5 markers per cluster</span></span>
@@ -293,137 +288,144 @@ marker-based annotation.</p>
 <span><span class="op">}</span></span></code></pre></div>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">## --- Cluster 0 ---</span></span>
-<span><span class="co">##   CUX2: log2FC=2.77, pct.1=58%, pct.2=11%</span></span>
-<span><span class="co">##   RNF175: log2FC=2.68, pct.1=44%, pct.2=8%</span></span>
-<span><span class="co">##   GALNTL6: log2FC=2.68, pct.1=32%, pct.2=11%</span></span>
-<span><span class="co">##   LINC02008: log2FC=2.64, pct.1=37%, pct.2=9%</span></span>
-<span><span class="co">##   C1QTNF1-AS1: log2FC=2.60, pct.1=40%, pct.2=7%</span></span>
+<span><span class="co">##   LINC02008: log2FC=2.79, pct.1=38%, pct.2=8%</span></span>
+<span><span class="co">##   GALNTL6: log2FC=2.73, pct.1=32%, pct.2=11%</span></span>
+<span><span class="co">##   CUX2: log2FC=2.62, pct.1=57%, pct.2=12%</span></span>
+<span><span class="co">##   GPR39: log2FC=2.59, pct.1=47%, pct.2=8%</span></span>
+<span><span class="co">##   RNF175: log2FC=2.57, pct.1=43%, pct.2=8%</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## --- Cluster 1 ---</span></span>
-<span><span class="co">##   ADH1B: log2FC=5.46, pct.1=76%, pct.2=6%</span></span>
-<span><span class="co">##   MGST1: log2FC=5.31, pct.1=64%, pct.2=4%</span></span>
-<span><span class="co">##   VIT: log2FC=5.19, pct.1=59%, pct.2=3%</span></span>
-<span><span class="co">##   CFD: log2FC=4.98, pct.1=75%, pct.2=9%</span></span>
-<span><span class="co">##   SCARA5: log2FC=4.86, pct.1=56%, pct.2=3%</span></span>
+<span><span class="co">##   VIT: log2FC=5.54, pct.1=59%, pct.2=3%</span></span>
+<span><span class="co">##   CATSPERB: log2FC=5.16, pct.1=65%, pct.2=4%</span></span>
+<span><span class="co">##   ADH1B: log2FC=5.16, pct.1=79%, pct.2=6%</span></span>
+<span><span class="co">##   CFD: log2FC=5.03, pct.1=79%, pct.2=9%</span></span>
+<span><span class="co">##   MGST1: log2FC=5.01, pct.1=67%, pct.2=5%</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## --- Cluster 2 ---</span></span>
-<span><span class="co">##   LINC01880: log2FC=6.32, pct.1=32%, pct.2=0%</span></span>
-<span><span class="co">##   APOB: log2FC=5.74, pct.1=26%, pct.2=0%</span></span>
-<span><span class="co">##   UGT2B4: log2FC=5.52, pct.1=44%, pct.2=1%</span></span>
-<span><span class="co">##   TMEM178B: log2FC=5.24, pct.1=84%, pct.2=7%</span></span>
-<span><span class="co">##   ADRB1: log2FC=5.17, pct.1=38%, pct.2=1%</span></span>
+<span><span class="co">##   LINC01880: log2FC=6.60, pct.1=34%, pct.2=1%</span></span>
+<span><span class="co">##   APOB: log2FC=5.71, pct.1=25%, pct.2=1%</span></span>
+<span><span class="co">##   UGT2B4: log2FC=5.57, pct.1=47%, pct.2=1%</span></span>
+<span><span class="co">##   TMEM178B: log2FC=5.30, pct.1=84%, pct.2=7%</span></span>
+<span><span class="co">##   LINC01428: log2FC=5.18, pct.1=54%, pct.2=2%</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## --- Cluster 3 ---</span></span>
-<span><span class="co">##   FHL5: log2FC=7.35, pct.1=29%, pct.2=1%</span></span>
-<span><span class="co">##   AGAP2: log2FC=6.60, pct.1=40%, pct.2=1%</span></span>
-<span><span class="co">##   EGFLAM: log2FC=6.43, pct.1=75%, pct.2=5%</span></span>
-<span><span class="co">##   LINC02237: log2FC=6.21, pct.1=38%, pct.2=2%</span></span>
-<span><span class="co">##   FAM162B: log2FC=5.89, pct.1=64%, pct.2=2%</span></span>
+<span><span class="co">##   AGAP2: log2FC=6.69, pct.1=44%, pct.2=1%</span></span>
+<span><span class="co">##   EGFLAM: log2FC=6.66, pct.1=87%, pct.2=5%</span></span>
+<span><span class="co">##   LINC02237: log2FC=6.41, pct.1=43%, pct.2=2%</span></span>
+<span><span class="co">##   FHL5: log2FC=6.29, pct.1=29%, pct.2=1%</span></span>
+<span><span class="co">##   AVPR1A: log2FC=6.28, pct.1=26%, pct.2=0%</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## --- Cluster 4 ---</span></span>
-<span><span class="co">##   LINC01133: log2FC=5.10, pct.1=36%, pct.2=2%</span></span>
-<span><span class="co">##   DCC: log2FC=4.98, pct.1=42%, pct.2=8%</span></span>
-<span><span class="co">##   NRG1: log2FC=4.96, pct.1=34%, pct.2=10%</span></span>
-<span><span class="co">##   GDF6: log2FC=4.93, pct.1=31%, pct.2=2%</span></span>
-<span><span class="co">##   DSC3: log2FC=4.91, pct.1=35%, pct.2=2%</span></span>
+<span><span class="co">##   CA4: log2FC=6.82, pct.1=38%, pct.2=1%</span></span>
+<span><span class="co">##   TPO: log2FC=6.74, pct.1=50%, pct.2=3%</span></span>
+<span><span class="co">##   BTNL9: log2FC=6.65, pct.1=70%, pct.2=2%</span></span>
+<span><span class="co">##   TM4SF18: log2FC=6.61, pct.1=32%, pct.2=0%</span></span>
+<span><span class="co">##   NR5A2: log2FC=6.57, pct.1=46%, pct.2=1%</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## --- Cluster 5 ---</span></span>
-<span><span class="co">##   BTNL9: log2FC=6.86, pct.1=70%, pct.2=3%</span></span>
-<span><span class="co">##   CA4: log2FC=6.80, pct.1=40%, pct.2=1%</span></span>
-<span><span class="co">##   NOTCH4: log2FC=6.71, pct.1=76%, pct.2=2%</span></span>
-<span><span class="co">##   TPO: log2FC=6.69, pct.1=46%, pct.2=3%</span></span>
-<span><span class="co">##   NR5A2: log2FC=6.67, pct.1=48%, pct.2=1%</span></span>
+<span><span class="co">##   MARCO: log2FC=8.02, pct.1=30%, pct.2=0%</span></span>
+<span><span class="co">##   LILRB5: log2FC=7.57, pct.1=46%, pct.2=1%</span></span>
+<span><span class="co">##   F13A1: log2FC=7.47, pct.1=91%, pct.2=11%</span></span>
+<span><span class="co">##   SIGLEC1: log2FC=7.23, pct.1=65%, pct.2=1%</span></span>
+<span><span class="co">##   FGD2: log2FC=7.04, pct.1=84%, pct.2=2%</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## --- Cluster 6 ---</span></span>
-<span><span class="co">##   MARCO: log2FC=7.98, pct.1=29%, pct.2=1%</span></span>
-<span><span class="co">##   F13A1: log2FC=7.58, pct.1=92%, pct.2=11%</span></span>
-<span><span class="co">##   LILRB5: log2FC=7.51, pct.1=48%, pct.2=1%</span></span>
-<span><span class="co">##   SIGLEC1: log2FC=7.38, pct.1=66%, pct.2=1%</span></span>
-<span><span class="co">##   MS4A14: log2FC=7.38, pct.1=43%, pct.2=0%</span></span>
+<span><span class="co">##   PTCH2: log2FC=4.60, pct.1=35%, pct.2=5%</span></span>
+<span><span class="co">##   PTPRT: log2FC=4.51, pct.1=50%, pct.2=10%</span></span>
+<span><span class="co">##   EPHB2: log2FC=4.51, pct.1=53%, pct.2=4%</span></span>
+<span><span class="co">##   ARHGAP20: log2FC=4.40, pct.1=28%, pct.2=3%</span></span>
+<span><span class="co">##   NTRK2: log2FC=4.22, pct.1=51%, pct.2=6%</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## --- Cluster 7 ---</span></span>
-<span><span class="co">##   HLA-DQB1: log2FC=3.95, pct.1=41%, pct.2=3%</span></span>
-<span><span class="co">##   HLA-DPA1: log2FC=3.95, pct.1=56%, pct.2=5%</span></span>
-<span><span class="co">##   HLA-DRA: log2FC=3.64, pct.1=68%, pct.2=7%</span></span>
-<span><span class="co">##   RASD1: log2FC=3.45, pct.1=26%, pct.2=4%</span></span>
-<span><span class="co">##   LAPTM5: log2FC=3.30, pct.1=49%, pct.2=5%</span></span>
+<span><span class="co">##   CSMD1: log2FC=5.39, pct.1=70%, pct.2=18%</span></span>
+<span><span class="co">##   OPCML: log2FC=4.57, pct.1=72%, pct.2=12%</span></span>
+<span><span class="co">##   BRINP3: log2FC=3.68, pct.1=92%, pct.2=24%</span></span>
+<span><span class="co">##   ZMAT4: log2FC=2.93, pct.1=64%, pct.2=16%</span></span>
+<span><span class="co">##   SNAP91: log2FC=2.66, pct.1=32%, pct.2=10%</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## --- Cluster 8 ---</span></span>
-<span><span class="co">##   CSMD1: log2FC=5.36, pct.1=73%, pct.2=19%</span></span>
-<span><span class="co">##   OPCML: log2FC=4.42, pct.1=68%, pct.2=12%</span></span>
-<span><span class="co">##   BRINP3: log2FC=3.75, pct.1=92%, pct.2=24%</span></span>
-<span><span class="co">##   ZMAT4: log2FC=2.80, pct.1=64%, pct.2=16%</span></span>
-<span><span class="co">##   P2RX1: log2FC=2.70, pct.1=43%, pct.2=7%</span></span>
+<span><span class="co">##   HLA-DQB1: log2FC=3.97, pct.1=40%, pct.2=3%</span></span>
+<span><span class="co">##   HLA-DPA1: log2FC=3.91, pct.1=54%, pct.2=5%</span></span>
+<span><span class="co">##   HLA-DRA: log2FC=3.59, pct.1=70%, pct.2=7%</span></span>
+<span><span class="co">##   RASD1: log2FC=3.39, pct.1=30%, pct.2=4%</span></span>
+<span><span class="co">##   LAPTM5: log2FC=3.34, pct.1=50%, pct.2=6%</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## --- Cluster 9 ---</span></span>
-<span><span class="co">##   E2F1: log2FC=5.00, pct.1=57%, pct.2=2%</span></span>
-<span><span class="co">##   CDC45: log2FC=4.77, pct.1=45%, pct.2=2%</span></span>
-<span><span class="co">##   DTL: log2FC=4.62, pct.1=76%, pct.2=4%</span></span>
-<span><span class="co">##   EXO1: log2FC=4.33, pct.1=40%, pct.2=3%</span></span>
-<span><span class="co">##   GINS4: log2FC=4.28, pct.1=39%, pct.2=2%</span></span>
+<span><span class="co">##   NRG1: log2FC=5.80, pct.1=57%, pct.2=11%</span></span>
+<span><span class="co">##   DCHS2: log2FC=5.52, pct.1=38%, pct.2=2%</span></span>
+<span><span class="co">##   DLK1: log2FC=5.02, pct.1=79%, pct.2=5%</span></span>
+<span><span class="co">##   DSC3: log2FC=4.89, pct.1=60%, pct.2=3%</span></span>
+<span><span class="co">##   NDST4: log2FC=4.87, pct.1=35%, pct.2=2%</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## --- Cluster 10 ---</span></span>
-<span><span class="co">##   TROAP: log2FC=6.98, pct.1=50%, pct.2=1%</span></span>
-<span><span class="co">##   PBK: log2FC=6.92, pct.1=71%, pct.2=1%</span></span>
-<span><span class="co">##   KIF18B: log2FC=6.91, pct.1=80%, pct.2=2%</span></span>
-<span><span class="co">##   KIF20A: log2FC=6.90, pct.1=32%, pct.2=0%</span></span>
-<span><span class="co">##   AURKB: log2FC=6.84, pct.1=59%, pct.2=1%</span></span>
+<span><span class="co">##   CDC45: log2FC=5.36, pct.1=56%, pct.2=2%</span></span>
+<span><span class="co">##   E2F1: log2FC=5.12, pct.1=67%, pct.2=3%</span></span>
+<span><span class="co">##   MCM10: log2FC=5.05, pct.1=52%, pct.2=2%</span></span>
+<span><span class="co">##   DTL: log2FC=5.00, pct.1=84%, pct.2=4%</span></span>
+<span><span class="co">##   BRIP1: log2FC=4.71, pct.1=94%, pct.2=9%</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## --- Cluster 11 ---</span></span>
-<span><span class="co">##   PANCR: log2FC=7.11, pct.1=47%, pct.2=1%</span></span>
-<span><span class="co">##   KCNJ3: log2FC=6.78, pct.1=92%, pct.2=2%</span></span>
-<span><span class="co">##   ZNF385B: log2FC=6.74, pct.1=83%, pct.2=9%</span></span>
-<span><span class="co">##   KCNH7: log2FC=6.70, pct.1=90%, pct.2=8%</span></span>
-<span><span class="co">##   CDH10: log2FC=6.54, pct.1=62%, pct.2=2%</span></span>
+<span><span class="co">##   ACTA1: log2FC=4.34, pct.1=51%, pct.2=17%</span></span>
+<span><span class="co">##   S100A1: log2FC=3.97, pct.1=28%, pct.2=5%</span></span>
+<span><span class="co">##   TNNC1: log2FC=3.94, pct.1=87%, pct.2=48%</span></span>
+<span><span class="co">##   CRYAB: log2FC=3.83, pct.1=92%, pct.2=47%</span></span>
+<span><span class="co">##   COX6A2: log2FC=3.70, pct.1=82%, pct.2=32%</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## --- Cluster 12 ---</span></span>
-<span><span class="co">##   FOXD3: log2FC=9.18, pct.1=33%, pct.2=0%</span></span>
-<span><span class="co">##   NRXN1: log2FC=8.46, pct.1=100%, pct.2=12%</span></span>
-<span><span class="co">##   TFAP2A: log2FC=8.23, pct.1=36%, pct.2=0%</span></span>
-<span><span class="co">##   INSC: log2FC=8.22, pct.1=67%, pct.2=0%</span></span>
-<span><span class="co">##   CHL1: log2FC=8.05, pct.1=92%, pct.2=3%</span></span>
+<span><span class="co">##   PANCR: log2FC=7.54, pct.1=51%, pct.2=1%</span></span>
+<span><span class="co">##   KCNJ3: log2FC=7.22, pct.1=94%, pct.2=2%</span></span>
+<span><span class="co">##   KCNH7: log2FC=6.72, pct.1=87%, pct.2=8%</span></span>
+<span><span class="co">##   ZNF385B: log2FC=6.65, pct.1=86%, pct.2=9%</span></span>
+<span><span class="co">##   VWDE: log2FC=6.60, pct.1=66%, pct.2=1%</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## --- Cluster 13 ---</span></span>
-<span><span class="co">##   PKHD1L1: log2FC=8.74, pct.1=89%, pct.2=3%</span></span>
-<span><span class="co">##   MMRN1: log2FC=7.21, pct.1=44%, pct.2=1%</span></span>
-<span><span class="co">##   SMOC1: log2FC=6.61, pct.1=67%, pct.2=2%</span></span>
-<span><span class="co">##   INHBA: log2FC=6.20, pct.1=55%, pct.2=5%</span></span>
-<span><span class="co">##   LINC02388: log2FC=6.06, pct.1=65%, pct.2=9%</span></span>
+<span><span class="co">##   PKHD1L1: log2FC=8.70, pct.1=94%, pct.2=3%</span></span>
+<span><span class="co">##   SMOC1: log2FC=6.94, pct.1=70%, pct.2=2%</span></span>
+<span><span class="co">##   MMRN1: log2FC=6.83, pct.1=38%, pct.2=1%</span></span>
+<span><span class="co">##   PCDH15: log2FC=6.61, pct.1=74%, pct.2=12%</span></span>
+<span><span class="co">##   INHBA: log2FC=6.40, pct.1=61%, pct.2=5%</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## --- Cluster 14 ---</span></span>
-<span><span class="co">##   SRARP: log2FC=7.19, pct.1=38%, pct.2=0%</span></span>
-<span><span class="co">##   OTUD1: log2FC=5.41, pct.1=75%, pct.2=5%</span></span>
-<span><span class="co">##   PNMT: log2FC=4.76, pct.1=48%, pct.2=3%</span></span>
-<span><span class="co">##   ATF3: log2FC=4.69, pct.1=73%, pct.2=6%</span></span>
-<span><span class="co">##   FOSB: log2FC=4.47, pct.1=79%, pct.2=5%</span></span>
+<span><span class="co">##   SRARP: log2FC=6.72, pct.1=36%, pct.2=0%</span></span>
+<span><span class="co">##   OTUD1: log2FC=5.50, pct.1=74%, pct.2=5%</span></span>
+<span><span class="co">##   ATF3: log2FC=4.82, pct.1=73%, pct.2=6%</span></span>
+<span><span class="co">##   XIRP1: log2FC=4.54, pct.1=77%, pct.2=11%</span></span>
+<span><span class="co">##   PNMT: log2FC=4.54, pct.1=43%, pct.2=3%</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## --- Cluster 15 ---</span></span>
-<span><span class="co">##   TNNC1: log2FC=4.30, pct.1=99%, pct.2=48%</span></span>
-<span><span class="co">##   ACTA1: log2FC=4.30, pct.1=52%, pct.2=18%</span></span>
-<span><span class="co">##   S100A1: log2FC=4.22, pct.1=31%, pct.2=5%</span></span>
-<span><span class="co">##   CRYAB: log2FC=4.08, pct.1=99%, pct.2=47%</span></span>
-<span><span class="co">##   COX6A2: log2FC=4.02, pct.1=98%, pct.2=32%</span></span>
+<span><span class="co">##   CENPF: log2FC=7.10, pct.1=93%, pct.2=5%</span></span>
+<span><span class="co">##   TROAP: log2FC=7.02, pct.1=62%, pct.2=1%</span></span>
+<span><span class="co">##   PBK: log2FC=7.02, pct.1=81%, pct.2=1%</span></span>
+<span><span class="co">##   KIF18B: log2FC=6.97, pct.1=88%, pct.2=2%</span></span>
+<span><span class="co">##   TOP2A: log2FC=6.96, pct.1=96%, pct.2=4%</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## --- Cluster 16 ---</span></span>
-<span><span class="co">##   CYP19A1: log2FC=5.06, pct.1=41%, pct.2=2%</span></span>
-<span><span class="co">##   CILP: log2FC=4.32, pct.1=31%, pct.2=3%</span></span>
-<span><span class="co">##   SMIM41: log2FC=4.24, pct.1=30%, pct.2=3%</span></span>
-<span><span class="co">##   LINC01819: log2FC=4.17, pct.1=26%, pct.2=2%</span></span>
-<span><span class="co">##   HEY1: log2FC=3.84, pct.1=31%, pct.2=3%</span></span>
+<span><span class="co">##   NRXN1: log2FC=8.71, pct.1=100%, pct.2=11%</span></span>
+<span><span class="co">##   INSC: log2FC=8.48, pct.1=70%, pct.2=0%</span></span>
+<span><span class="co">##   FOXD3: log2FC=8.44, pct.1=36%, pct.2=0%</span></span>
+<span><span class="co">##   TFAP2A: log2FC=8.41, pct.1=36%, pct.2=0%</span></span>
+<span><span class="co">##   GRIK3: log2FC=8.02, pct.1=58%, pct.2=1%</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## --- Cluster 17 ---</span></span>
-<span><span class="co">##   SKAP1: log2FC=8.15, pct.1=77%, pct.2=3%</span></span>
-<span><span class="co">##   THEMIS: log2FC=7.63, pct.1=39%, pct.2=2%</span></span>
-<span><span class="co">##   SCML4: log2FC=7.39, pct.1=39%, pct.2=0%</span></span>
-<span><span class="co">##   ITK: log2FC=7.36, pct.1=55%, pct.2=1%</span></span>
-<span><span class="co">##   CD2: log2FC=7.26, pct.1=40%, pct.2=0%</span></span>
+<span><span class="co">##   SKAP1: log2FC=8.15, pct.1=74%, pct.2=3%</span></span>
+<span><span class="co">##   THEMIS: log2FC=7.76, pct.1=41%, pct.2=2%</span></span>
+<span><span class="co">##   ITK: log2FC=7.70, pct.1=59%, pct.2=1%</span></span>
+<span><span class="co">##   CD69: log2FC=7.55, pct.1=36%, pct.2=0%</span></span>
+<span><span class="co">##   SCML4: log2FC=7.55, pct.1=48%, pct.2=1%</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## --- Cluster 18 ---</span></span>
-<span><span class="co">##   DHFR: log2FC=3.20, pct.1=100%, pct.2=44%</span></span>
-<span><span class="co">##   MYH7: log2FC=3.11, pct.1=100%, pct.2=63%</span></span>
-<span><span class="co">##   TNNI1: log2FC=3.00, pct.1=99%, pct.2=35%</span></span>
-<span><span class="co">##   MTRNR2L12: log2FC=2.75, pct.1=92%, pct.2=35%</span></span>
-<span><span class="co">##   MTRNR2L8: log2FC=2.67, pct.1=79%, pct.2=18%</span></span></code></pre>
+<span><span class="co">##   CYP19A1: log2FC=4.94, pct.1=38%, pct.2=2%</span></span>
+<span><span class="co">##   LINC01819: log2FC=4.68, pct.1=32%, pct.2=1%</span></span>
+<span><span class="co">##   CILP: log2FC=3.66, pct.1=26%, pct.2=3%</span></span>
+<span><span class="co">##   COL4A4: log2FC=3.61, pct.1=98%, pct.2=20%</span></span>
+<span><span class="co">##   SMIM41: log2FC=3.48, pct.1=26%, pct.2=3%</span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## --- Cluster 19 ---</span></span>
+<span><span class="co">##   KRT18: log2FC=3.26, pct.1=30%, pct.2=4%</span></span>
+<span><span class="co">##   MYH7: log2FC=3.08, pct.1=100%, pct.2=64%</span></span>
+<span><span class="co">##   DHFR: log2FC=3.03, pct.1=90%, pct.2=44%</span></span>
+<span><span class="co">##   TNNI1: log2FC=3.02, pct.1=98%, pct.2=34%</span></span>
+<span><span class="co">##   KRT8: log2FC=2.60, pct.1=38%, pct.2=6%</span></span></code></pre>
 <div class="section level3">
 <h3 id="visualise-top-markers-with-dotplot">Visualise Top Markers with DotPlot<a class="anchor" aria-label="anchor" href="#visualise-top-markers-with-dotplot"></a>
 </h3>
@@ -560,7 +562,7 @@ expression level (colour intensity).</p>
 <span></span>
 <span><span class="co"># Order clusters by cell type identity for diagonal pattern</span></span>
 <span><span class="co"># Preferred order based on cell type (CM, Fibroblasts, Pericytes, Endothelial, Immune, Neural, etc.)</span></span>
-<span><span class="va">preferred_order</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"9"</span>, <span class="st">"2"</span>, <span class="st">"0"</span>, <span class="st">"7"</span>, <span class="st">"8"</span>, <span class="st">"13"</span>, <span class="st">"16"</span>, <span class="st">"5"</span>, <span class="st">"1"</span>, <span class="st">"12"</span>, <span class="st">"3"</span>, <span class="st">"4"</span>, <span class="st">"11"</span>, <span class="st">"6"</span>, <span class="st">"14"</span>, <span class="st">"15"</span>, <span class="st">"10"</span><span class="op">)</span></span>
+<span><span class="va">preferred_order</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"0"</span>, <span class="st">"6"</span>, <span class="st">"8"</span>, <span class="st">"17"</span>, <span class="st">"7"</span>, <span class="st">"9"</span>, <span class="st">"2"</span>, <span class="st">"11"</span>, <span class="st">"15"</span>, <span class="st">"1"</span>, <span class="st">"12"</span>, <span class="st">"3"</span>, <span class="st">"5"</span>, <span class="st">"13"</span>, <span class="st">"18"</span>, <span class="st">"4"</span>, <span class="st">"14"</span>, <span class="st">"16"</span>, <span class="st">"10"</span><span class="op">)</span></span>
 <span><span class="co"># Filter to only clusters that exist in our data</span></span>
 <span><span class="va">actual_clusters</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">seu</span><span class="op">$</span><span class="va">seurat_clusters</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">cluster_order</span> <span class="op">&lt;-</span> <span class="va">preferred_order</span><span class="op">[</span><span class="va">preferred_order</span> <span class="op"><a href="https://rdrr.io/pkg/BiocGenerics/man/match.html" class="external-link">%in%</a></span> <span class="va">actual_clusters</span><span class="op">]</span></span>
@@ -658,8 +660,8 @@ the UMAP, helping us understand the relationship between clusters.</p>
 <p><img src="03_cell_type_annotation_files/figure-html/featureplot-cm-1.png" class="r-plt" alt="" width="1152" style="display: block; margin: auto;"></p>
 <p>The cardiomyocyte markers reveal an interesting pattern: MYH6 (atrial
 isoform) is enriched in clusters 2 and 9, while MYH7 (ventricular
-isoform) is more expressed in clusters 0 and 3. This suggests we can
-distinguish atrial from ventricular cardiomyocytes.</p>
+isoform) is more expressed in clusters 0, 11, 15, and 17. This suggests
+we can distinguish atrial from ventricular cardiomyocytes.</p>
 <div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Stromal cell markers</span></span>
 <span><span class="fu"><a href="https://satijalab.org/seurat/reference/FeaturePlot.html" class="external-link">FeaturePlot</a></span><span class="op">(</span><span class="va">seu</span>,</span>
@@ -706,7 +708,7 @@ evidence:</p>
 <tr class="odd">
 <td>0</td>
 <td>Fetal CM</td>
-<td>TNNT2+, MYH7+</td>
+<td>TNNT2+, TTN+, MYH7+</td>
 <td>Fetal ventricular cardiomyocytes (100% fetal)</td>
 </tr>
 <tr class="even">
@@ -718,115 +720,129 @@ evidence:</p>
 <tr class="odd">
 <td>2</td>
 <td>Atrial CM</td>
-<td>MYH6+ (atrial isoform)</td>
+<td>TTN+, MYH6++</td>
 <td>Mature atrial CM (young/adult enriched)</td>
 </tr>
 <tr class="even">
 <td>3</td>
 <td>Pericytes</td>
-<td>KCNJ8+, RGS5+, ACTA2+</td>
-<td>Vascular support cells, some smooth muscle</td>
+<td>KCNJ8+, RGS5+, ABCC9+</td>
+<td>Vascular support cells</td>
 </tr>
 <tr class="odd">
 <td>4</td>
-<td>Endothelial</td>
-<td>PECAM1+, VWF+</td>
-<td>Main endothelial population</td>
+<td>Macrophages</td>
+<td>CD163+, F13A1+, PTPRC+</td>
+<td>Tissue-resident macrophages</td>
 </tr>
 <tr class="even">
 <td>5</td>
-<td>Ventricular CM</td>
-<td>TNNT2+, MYH7+</td>
-<td>Mature ventricular CM (young enriched)</td>
+<td>Endothelial</td>
+<td>PECAM1+, VWF+, CDH5+</td>
+<td>Main endothelial population</td>
 </tr>
 <tr class="odd">
 <td>6</td>
-<td>Macrophages</td>
-<td>CD68+, F13A1+</td>
-<td>Tissue-resident macrophages (100% immune)</td>
+<td>Fetal CM</td>
+<td>TNNT2+, TTN+</td>
+<td>Fetal ventricular cardiomyocytes (100% fetal)</td>
 </tr>
 <tr class="even">
 <td>7</td>
-<td>Fetal CM</td>
-<td>TNNT2+, MYH7+</td>
-<td>Fetal ventricular cardiomyocytes</td>
+<td>Activated CM</td>
+<td>TTN+, TNNT2+, HLA-DR+</td>
+<td>CM with immune activation/MHC class II (90% young)</td>
 </tr>
 <tr class="odd">
 <td>8</td>
 <td>Fetal CM</td>
-<td>TNNT2+, MYH7+</td>
-<td>Fetal ventricular cardiomyocytes</td>
+<td>TNNT2+, TTN+</td>
+<td>Fetal ventricular cardiomyocytes (100% fetal)</td>
 </tr>
 <tr class="even">
 <td>9</td>
 <td>Fetal Atrial CM</td>
-<td>MYH6+, TNNT2+</td>
-<td>Fetal atrial cardiomyocytes</td>
+<td>TTN+, MYH6++</td>
+<td>Fetal atrial cardiomyocytes (100% fetal)</td>
 </tr>
 <tr class="odd">
 <td>10</td>
 <td>Proliferating</td>
-<td>MKI67+, TOP2A+, TNNT2+</td>
+<td>MKI67+, TOP2A+</td>
 <td>Proliferating cells (fetal enriched)</td>
 </tr>
 <tr class="even">
 <td>11</td>
-<td>Endothelial</td>
-<td>PECAM1+, EMCN+</td>
-<td>Endothelial cells (100% endothelial)</td>
+<td>Ventricular CM</td>
+<td>TNNT2++, TTN++, MYH7++</td>
+<td>High-expressing ventricular CM</td>
 </tr>
 <tr class="odd">
 <td>12</td>
 <td>Fetal Fibroblasts</td>
-<td>DCN+, COL1A1+</td>
-<td>Fetal-enriched fibroblasts (99% fetal)</td>
+<td>DCN+, COL1A1++</td>
+<td>Fetal fibroblasts (99% fetal)</td>
 </tr>
 <tr class="even">
 <td>13</td>
-<td>Fetal CM</td>
-<td>TNNT2+, MYH7+</td>
-<td>Fetal ventricular cardiomyocytes</td>
+<td>Endothelial</td>
+<td>PECAM1+</td>
+<td>Endothelial subset</td>
 </tr>
 <tr class="odd">
 <td>14</td>
 <td>Immune</td>
-<td>PTPRC+ (CD45)</td>
-<td>Mixed immune cells</td>
+<td>PTPRC+, CD3E+</td>
+<td>Mixed immune/lymphocytes</td>
 </tr>
 <tr class="even">
 <td>15</td>
-<td>Neurons</td>
-<td>NRXN1+, CNP+</td>
-<td>Neural/Schwann cells (100% neurons)</td>
+<td>Ventricular CM</td>
+<td>TTN+, MYH7+</td>
+<td>Ventricular CM (fetal enriched)</td>
 </tr>
 <tr class="odd">
 <td>16</td>
+<td>Neurons</td>
+<td>NRXN1++</td>
+<td>Neural cells (100% fetal)</td>
+</tr>
+<tr class="even">
+<td>17</td>
 <td>Fetal CM</td>
-<td>TNNT2+, MYH7+</td>
-<td>Fetal ventricular cardiomyocytes</td>
+<td>TNNT2+, TTN++, MYH7+</td>
+<td>Fetal ventricular cardiomyocytes (98% fetal)</td>
+</tr>
+<tr class="odd">
+<td>18</td>
+<td>Young Endothelial</td>
+<td>PECAM1+, VWF++</td>
+<td>Endothelial cells (100% young)</td>
 </tr>
 </tbody>
 </table>
 <div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Define cell type annotations for all 17 clusters</span></span>
+<code class="sourceCode R"><span><span class="co"># Define cell type annotations for all 19 clusters</span></span>
 <span><span class="va">cluster_annotations</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>  <span class="st">"0"</span> <span class="op">=</span> <span class="st">"Fetal CM"</span>,</span>
 <span>  <span class="st">"1"</span> <span class="op">=</span> <span class="st">"Fibroblasts"</span>,</span>
 <span>  <span class="st">"2"</span> <span class="op">=</span> <span class="st">"Atrial CM"</span>,</span>
 <span>  <span class="st">"3"</span> <span class="op">=</span> <span class="st">"Pericytes"</span>,</span>
-<span>  <span class="st">"4"</span> <span class="op">=</span> <span class="st">"Endothelial"</span>,</span>
-<span>  <span class="st">"5"</span> <span class="op">=</span> <span class="st">"Ventricular CM"</span>,</span>
-<span>  <span class="st">"6"</span> <span class="op">=</span> <span class="st">"Macrophages"</span>,</span>
-<span>  <span class="st">"7"</span> <span class="op">=</span> <span class="st">"Fetal CM"</span>,</span>
+<span>  <span class="st">"4"</span> <span class="op">=</span> <span class="st">"Macrophages"</span>,</span>
+<span>  <span class="st">"5"</span> <span class="op">=</span> <span class="st">"Endothelial"</span>,</span>
+<span>  <span class="st">"6"</span> <span class="op">=</span> <span class="st">"Fetal CM"</span>,</span>
+<span>  <span class="st">"7"</span> <span class="op">=</span> <span class="st">"Activated CM"</span>,</span>
 <span>  <span class="st">"8"</span> <span class="op">=</span> <span class="st">"Fetal CM"</span>,</span>
 <span>  <span class="st">"9"</span> <span class="op">=</span> <span class="st">"Fetal Atrial CM"</span>,</span>
 <span>  <span class="st">"10"</span> <span class="op">=</span> <span class="st">"Proliferating"</span>,</span>
-<span>  <span class="st">"11"</span> <span class="op">=</span> <span class="st">"Endothelial"</span>,</span>
+<span>  <span class="st">"11"</span> <span class="op">=</span> <span class="st">"Ventricular CM"</span>,</span>
 <span>  <span class="st">"12"</span> <span class="op">=</span> <span class="st">"Fetal Fibroblasts"</span>,</span>
-<span>  <span class="st">"13"</span> <span class="op">=</span> <span class="st">"Fetal CM"</span>,</span>
+<span>  <span class="st">"13"</span> <span class="op">=</span> <span class="st">"Endothelial"</span>,</span>
 <span>  <span class="st">"14"</span> <span class="op">=</span> <span class="st">"Immune"</span>,</span>
-<span>  <span class="st">"15"</span> <span class="op">=</span> <span class="st">"Neurons"</span>,</span>
-<span>  <span class="st">"16"</span> <span class="op">=</span> <span class="st">"Fetal CM"</span></span>
+<span>  <span class="st">"15"</span> <span class="op">=</span> <span class="st">"Ventricular CM"</span>,</span>
+<span>  <span class="st">"16"</span> <span class="op">=</span> <span class="st">"Neurons"</span>,</span>
+<span>  <span class="st">"17"</span> <span class="op">=</span> <span class="st">"Fetal CM"</span>,</span>
+<span>  <span class="st">"18"</span> <span class="op">=</span> <span class="st">"Young Endothelial"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">cell_type_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
@@ -841,19 +857,21 @@ evidence:</p>
 <span>  <span class="st">"1"</span> <span class="op">=</span> <span class="st">"Fibroblasts"</span>,</span>
 <span>  <span class="st">"2"</span> <span class="op">=</span> <span class="st">"Cardiomyocytes"</span>,</span>
 <span>  <span class="st">"3"</span> <span class="op">=</span> <span class="st">"Pericytes"</span>,</span>
-<span>  <span class="st">"4"</span> <span class="op">=</span> <span class="st">"Endothelial"</span>,</span>
-<span>  <span class="st">"5"</span> <span class="op">=</span> <span class="st">"Cardiomyocytes"</span>,</span>
-<span>  <span class="st">"6"</span> <span class="op">=</span> <span class="st">"Immune"</span>,</span>
+<span>  <span class="st">"4"</span> <span class="op">=</span> <span class="st">"Immune"</span>,</span>
+<span>  <span class="st">"5"</span> <span class="op">=</span> <span class="st">"Endothelial"</span>,</span>
+<span>  <span class="st">"6"</span> <span class="op">=</span> <span class="st">"Cardiomyocytes"</span>,</span>
 <span>  <span class="st">"7"</span> <span class="op">=</span> <span class="st">"Cardiomyocytes"</span>,</span>
 <span>  <span class="st">"8"</span> <span class="op">=</span> <span class="st">"Cardiomyocytes"</span>,</span>
 <span>  <span class="st">"9"</span> <span class="op">=</span> <span class="st">"Cardiomyocytes"</span>,</span>
 <span>  <span class="st">"10"</span> <span class="op">=</span> <span class="st">"Proliferating"</span>,</span>
-<span>  <span class="st">"11"</span> <span class="op">=</span> <span class="st">"Endothelial"</span>,</span>
+<span>  <span class="st">"11"</span> <span class="op">=</span> <span class="st">"Cardiomyocytes"</span>,</span>
 <span>  <span class="st">"12"</span> <span class="op">=</span> <span class="st">"Fibroblasts"</span>,</span>
-<span>  <span class="st">"13"</span> <span class="op">=</span> <span class="st">"Cardiomyocytes"</span>,</span>
+<span>  <span class="st">"13"</span> <span class="op">=</span> <span class="st">"Endothelial"</span>,</span>
 <span>  <span class="st">"14"</span> <span class="op">=</span> <span class="st">"Immune"</span>,</span>
-<span>  <span class="st">"15"</span> <span class="op">=</span> <span class="st">"Neural"</span>,</span>
-<span>  <span class="st">"16"</span> <span class="op">=</span> <span class="st">"Cardiomyocytes"</span></span>
+<span>  <span class="st">"15"</span> <span class="op">=</span> <span class="st">"Cardiomyocytes"</span>,</span>
+<span>  <span class="st">"16"</span> <span class="op">=</span> <span class="st">"Neural"</span>,</span>
+<span>  <span class="st">"17"</span> <span class="op">=</span> <span class="st">"Cardiomyocytes"</span>,</span>
+<span>  <span class="st">"18"</span> <span class="op">=</span> <span class="st">"Endothelial"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">cell_type_broad_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
@@ -876,12 +894,13 @@ of our annotation workflow. We show both detailed annotations
 (distinguishing fetal from adult cardiomyocytes, atrial from
 ventricular) and broad categories.</p>
 <div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Define colours for cell types (11 unique detailed types)</span></span>
+<code class="sourceCode R"><span><span class="co"># Define colours for cell types (14 unique detailed types)</span></span>
 <span><span class="va">celltype_colors</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>    <span class="st">"Fetal CM"</span> <span class="op">=</span> <span class="st">"#E64B35"</span>,</span>
 <span>    <span class="st">"Fibroblasts"</span> <span class="op">=</span> <span class="st">"#00A087"</span>,</span>
 <span>    <span class="st">"Atrial CM"</span> <span class="op">=</span> <span class="st">"#3C5488"</span>,</span>
 <span>    <span class="st">"Ventricular CM"</span> <span class="op">=</span> <span class="st">"#4DBBD5"</span>,</span>
+<span>    <span class="st">"Activated CM"</span> <span class="op">=</span> <span class="st">"#F4A582"</span>,</span>
 <span>    <span class="st">"Pericytes"</span> <span class="op">=</span> <span class="st">"#F39B7F"</span>,</span>
 <span>    <span class="st">"Endothelial"</span> <span class="op">=</span> <span class="st">"#8491B4"</span>,</span>
 <span>    <span class="st">"Macrophages"</span> <span class="op">=</span> <span class="st">"#91D1C2"</span>,</span>
@@ -889,7 +908,8 @@ ventricular) and broad categories.</p>
 <span>    <span class="st">"Fetal Fibroblasts"</span> <span class="op">=</span> <span class="st">"#00CED1"</span>,</span>
 <span>    <span class="st">"Neurons"</span> <span class="op">=</span> <span class="st">"#CD534C"</span>,</span>
 <span>    <span class="st">"Immune"</span> <span class="op">=</span> <span class="st">"#868686"</span>,</span>
-<span>    <span class="st">"Proliferating"</span> <span class="op">=</span> <span class="st">"#9370DB"</span></span>
+<span>    <span class="st">"Proliferating"</span> <span class="op">=</span> <span class="st">"#9370DB"</span>,</span>
+<span>    <span class="st">"Young Endothelial"</span> <span class="op">=</span> <span class="st">"#7570B3"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Broad categories</span></span>
@@ -951,10 +971,10 @@ reflect genuine biology or sampling effects.</p>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"right"</span>,</span>
 <span>        legend.text <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>size <span class="op">=</span> <span class="fl">8</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p><img src="03_cell_type_annotation_files/figure-html/cluster-sizes-1.png" class="r-plt" alt="" width="1152" style="display: block; margin: auto;"></p>
-<p>Cluster 0 (Fetal CM) is the largest population with ~2,500 cells,
+<p>Cluster 0 (Fetal CM) is the largest population with ~2,400 cells,
 consistent with fetal samples contributing the most cells. Clusters 16
-and 10 are among the smallest, representing fetal cardiomyocytes and
-proliferating cells respectively.</p>
+(Neurons) and 18 (Young Endothelial) are among the smallest,
+representing specialised populations.</p>
 </div>
 <div class="section level3">
 <h3 id="developmental-composition-per-cluster">Developmental Composition per Cluster<a class="anchor" aria-label="anchor" href="#developmental-composition-per-cluster"></a>
@@ -982,19 +1002,25 @@ cluster.</p>
 <p>This figure reveals striking developmental patterns:</p>
 <ul>
 <li>
-<strong>Fetal-specific clusters</strong> (0, 7, 8, 9, 12, 13, 16):
-These cardiomyocyte and fibroblast populations are almost exclusively
-fetal, reflecting the distinct transcriptional state of immature heart
-cells</li>
+<strong>Fetal-specific clusters</strong> (0, 6, 8, 9, 12, 16, 17):
+These cardiomyocyte, fibroblast, and neural populations are almost
+exclusively fetal, reflecting the distinct transcriptional state of
+immature heart cells</li>
 <li>
-<strong>Mature CM clusters</strong> (2, 5): Atrial and ventricular
-CM clusters contain primarily young and adult cells, representing mature
-cardiomyocyte subtypes</li>
+<strong>Mature CM clusters</strong> (2, 11, 15): Atrial and
+ventricular CM clusters contain cells from all stages, with cluster 2
+enriched for young and adult cells</li>
 <li>
-<strong>Shared populations</strong> (1, 3, 4, 6, 11, 14, 15):
-Stromal, immune, and neural cells are present across all developmental
-stages, suggesting these supporting cell types maintain similar
-identities throughout heart development</li>
+<strong>Activated CM</strong> (7): Cardiomyocytes with MHC class II
+expression, predominantly from young samples, potentially reflecting
+immune activation</li>
+<li>
+<strong>Young-enriched endothelial</strong> (18): Endothelial cells
+exclusively from young samples</li>
+<li>
+<strong>Shared populations</strong> (1, 3, 4, 5, 13, 14):
+Fibroblasts, pericytes, immune, and endothelial cells are present across
+all developmental stages</li>
 <li>
 <strong>Proliferating cells</strong> (10): Nearly exclusively fetal,
 consistent with the high proliferative capacity of fetal cardiac
@@ -1071,7 +1097,10 @@ across all stages</li>
 <h2 id="save-annotated-object">Save Annotated Object<a class="anchor" aria-label="anchor" href="#save-annotated-object"></a>
 </h2>
 <div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Save the annotated Seurat object</span></span>
+<code class="sourceCode R"><span><span class="co"># Create results directory if it doesn't exist</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="st">"../results"</span>, recursive <span class="op">=</span> <span class="cn">TRUE</span>, showWarnings <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Save the annotated Seurat object</span></span>
 <span><span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/saveRDS.html" class="external-link">saveRDS</a></span><span class="op">(</span><span class="va">seu</span>, <span class="st">"../data/processed/03_annotated.rds"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Also save the markers table</span></span>
@@ -1094,7 +1123,7 @@ Sim et al. 2021</li>
 <li>Visualised marker expression using DotPlots and FeaturePlots</li>
 <li>Assigned cell type labels based on marker gene expression and
 developmental composition</li>
-<li>Created both detailed (12 types) and broad (7 types) cell type
+<li>Created both detailed (14 types) and broad (7 types) cell type
 annotations</li>
 </ul>
 <p>The annotated dataset is now ready for differential expression and
@@ -1123,7 +1152,7 @@ composition analysis in Module 4.</p>
 <span><span class="co">## tzcode source: system (glibc)</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## attached base packages:</span></span>
-<span><span class="co">## [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
+<span><span class="co">## [1] stats     graphics  grDevices datasets  utils     methods   base     </span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## other attached packages:</span></span>
 <span><span class="co">## [1] pheatmap_1.0.13    RColorBrewer_1.1-3 patchwork_1.3.2    tidyr_1.3.2       </span></span>
@@ -1142,8 +1171,8 @@ composition analysis in Module 4.</p>
 <span><span class="co">##  [25] cachem_1.1.0           jsonlite_2.0.0         goftest_1.2-3         </span></span>
 <span><span class="co">##  [28] later_1.4.5            spatstat.utils_3.2-1   irlba_2.3.5.1         </span></span>
 <span><span class="co">##  [31] parallel_4.5.2         cluster_2.1.8.1        R6_2.6.1              </span></span>
-<span><span class="co">##  [34] ica_1.0-3              spatstat.data_3.1-9    bslib_0.9.0           </span></span>
-<span><span class="co">##  [37] stringi_1.8.7          limma_3.66.0           reticulate_1.44.1     </span></span>
+<span><span class="co">##  [34] ica_1.0-3              spatstat.data_3.1-9    stringi_1.8.7         </span></span>
+<span><span class="co">##  [37] bslib_0.9.0            limma_3.66.0           reticulate_1.44.1     </span></span>
 <span><span class="co">##  [40] spatstat.univar_3.1-5  parallelly_1.46.1      lmtest_0.9-40         </span></span>
 <span><span class="co">##  [43] jquerylib_0.1.4        scattermore_1.2        Rcpp_1.1.1            </span></span>
 <span><span class="co">##  [46] knitr_1.51             tensor_1.5.1           future.apply_1.20.1   </span></span>
@@ -1151,25 +1180,26 @@ composition analysis in Module 4.</p>
 <span><span class="co">##  [52] Matrix_1.7-4           splines_4.5.2          igraph_2.2.1          </span></span>
 <span><span class="co">##  [55] tidyselect_1.2.1       abind_1.4-8            yaml_2.3.12           </span></span>
 <span><span class="co">##  [58] spatstat.random_3.4-3  spatstat.explore_3.6-0 codetools_0.2-20      </span></span>
-<span><span class="co">##  [61] miniUI_0.1.2           listenv_0.10.0         lattice_0.22-7        </span></span>
-<span><span class="co">##  [64] tibble_3.3.1           plyr_1.8.9             withr_3.0.2           </span></span>
+<span><span class="co">##  [61] miniUI_0.1.2           listenv_0.10.0         plyr_1.8.9            </span></span>
+<span><span class="co">##  [64] lattice_0.22-7         tibble_3.3.1           withr_3.0.2           </span></span>
 <span><span class="co">##  [67] shiny_1.12.1           S7_0.2.1               ROCR_1.0-11           </span></span>
 <span><span class="co">##  [70] evaluate_1.0.5         Rtsne_0.17             future_1.68.0         </span></span>
 <span><span class="co">##  [73] fastDummies_1.7.5      desc_1.4.3             survival_3.8-3        </span></span>
 <span><span class="co">##  [76] polyclip_1.10-7        fitdistrplus_1.2-4     pillar_1.11.1         </span></span>
-<span><span class="co">##  [79] KernSmooth_2.23-26     plotly_4.11.0          generics_0.1.4        </span></span>
-<span><span class="co">##  [82] RcppHNSW_0.6.0         scales_1.4.0           globals_0.18.0        </span></span>
-<span><span class="co">##  [85] xtable_1.8-4           glue_1.8.0             lazyeval_0.2.2        </span></span>
-<span><span class="co">##  [88] tools_4.5.2            data.table_1.18.0      RSpectra_0.16-2       </span></span>
-<span><span class="co">##  [91] RANN_2.6.2             fs_1.6.6               dotCall64_1.2         </span></span>
-<span><span class="co">##  [94] cowplot_1.2.0          grid_4.5.2             nlme_3.1-168          </span></span>
-<span><span class="co">##  [97] cli_3.6.5              spatstat.sparse_3.1-0  textshaping_1.0.4     </span></span>
-<span><span class="co">## [100] spam_2.11-3            viridisLite_0.4.2      uwot_0.2.4            </span></span>
-<span><span class="co">## [103] gtable_0.3.6           sass_0.4.10            digest_0.6.39         </span></span>
-<span><span class="co">## [106] progressr_0.18.0       ggrepel_0.9.6          htmlwidgets_1.6.4     </span></span>
-<span><span class="co">## [109] farver_2.1.2           htmltools_0.5.9        pkgdown_2.2.0         </span></span>
-<span><span class="co">## [112] lifecycle_1.0.5        httr_1.4.7             statmod_1.5.1         </span></span>
-<span><span class="co">## [115] mime_0.13              MASS_7.3-65</span></span></code></pre>
+<span><span class="co">##  [79] BiocManager_1.30.27    KernSmooth_2.23-26     renv_1.1.5            </span></span>
+<span><span class="co">##  [82] plotly_4.11.0          generics_0.1.4         RcppHNSW_0.6.0        </span></span>
+<span><span class="co">##  [85] scales_1.4.0           globals_0.18.0         xtable_1.8-4          </span></span>
+<span><span class="co">##  [88] glue_1.8.0             lazyeval_0.2.2         tools_4.5.2           </span></span>
+<span><span class="co">##  [91] data.table_1.18.0      RSpectra_0.16-2        RANN_2.6.2            </span></span>
+<span><span class="co">##  [94] fs_1.6.6               dotCall64_1.2          cowplot_1.2.0         </span></span>
+<span><span class="co">##  [97] grid_4.5.2             nlme_3.1-168           cli_3.6.5             </span></span>
+<span><span class="co">## [100] spatstat.sparse_3.1-0  textshaping_1.0.4      spam_2.11-3           </span></span>
+<span><span class="co">## [103] viridisLite_0.4.2      uwot_0.2.4             gtable_0.3.6          </span></span>
+<span><span class="co">## [106] sass_0.4.10            digest_0.6.39          progressr_0.18.0      </span></span>
+<span><span class="co">## [109] ggrepel_0.9.6          htmlwidgets_1.6.4      farver_2.1.2          </span></span>
+<span><span class="co">## [112] htmltools_0.5.9        pkgdown_2.2.0          lifecycle_1.0.5       </span></span>
+<span><span class="co">## [115] httr_1.4.7             statmod_1.5.1          mime_0.13             </span></span>
+<span><span class="co">## [118] MASS_7.3-65</span></span></code></pre>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

@@ -1,39 +1,7 @@
 # Workflow for building and deploying pkgdown site
-# Package versions are strictly pinned to match local development environment
+# Uses renv for reproducible package versions
 #
-# IMPORTANT: When updating packages locally, update versions here too!
 # Last updated: 2025-01-14
-#
-# =========================================================
-# PINNED VERSIONS (must match local environment exactly)
-# =========================================================
-# R version:        4.5.2
-# Bioconductor:     3.22
-#
-# CRAN packages:
-#   Seurat          5.4.0
-#   SeuratObject    5.3.0
-#   harmony         1.2.4
-#   ggplot2         4.0.1
-#   patchwork       1.3.2
-#   dplyr           1.1.4
-#   tidyr           1.3.2
-#   RColorBrewer    1.1.3
-#   clustree        0.5.1
-#   pheatmap        1.0.13
-#   knitr           1.51
-#   rmarkdown       2.30
-#   pkgdown         2.2.0
-#
-# Bioconductor packages:
-#   scDblFinder             1.24.0
-#   SingleCellExperiment    1.32.0
-#   edgeR                   4.8.2
-#   limma                   3.66.0
-#   speckle                 1.10.0
-#   org.Hs.eg.db            3.22.0
-#   AnnotationDbi           1.72.0
-# =========================================================
 
 on:
   push:
@@ -55,7 +23,7 @@ jobs:
       group: pkgdown-${{ github.event_name != 'pull_request' || github.run_id }}
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-      R_KEEP_PKG_SOURCE: yes
+      RENV_PATHS_ROOT: ~/.local/share/renv
     permissions:
       contents: write
     steps:
@@ -68,16 +36,7 @@ jobs:
           r-version: '4.5.2'
           use-public-rspm: true
 
-      # Cache R packages for faster builds
-      - name: Cache R packages
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.R_LIBS_USER }}
-          key: ${{ runner.os }}-r-4.5.2-bioc-3.22-v1-${{ hashFiles('.github/workflows/pkgdown.yml') }}
-          restore-keys: |
-            ${{ runner.os }}-r-4.5.2-bioc-3.22-v1-
-
-      # Install system dependencies for R packages
+      # Install system dependencies
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -97,121 +56,20 @@ jobs:
             libgmp3-dev \
             libhdf5-dev
 
-      # Install packages with exact versions
-      - name: Install pinned R packages
+      # Cache renv library
+      - name: Cache renv packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.RENV_PATHS_ROOT }}
+          key: ${{ runner.os }}-renv-${{ hashFiles('renv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-renv-
+
+      # Restore renv packages from lockfile
+      - name: Restore renv packages
         run: |
-          # Install remotes and BiocManager first
-          install.packages(c("remotes", "BiocManager"), repos = "https://cloud.r-project.org")
-
-          # Set Bioconductor version
-          BiocManager::install(version = "3.22", ask = FALSE, update = FALSE)
-
-          # Helper function to install CRAN package with specific version
-          install_cran <- function(pkg, version) {
-            current <- tryCatch(as.character(packageVersion(pkg)), error = function(e) "")
-            if (current != version) {
-              message(sprintf("Installing %s version %s...", pkg, version))
-              remotes::install_version(pkg, version = version, repos = "https://cloud.r-project.org", upgrade = "never", quiet = TRUE)
-            } else {
-              message(sprintf("%s %s already installed", pkg, version))
-            }
-          }
-
-          # Helper function to install Bioconductor package
-          install_bioc <- function(pkg, version) {
-            current <- tryCatch(as.character(packageVersion(pkg)), error = function(e) "")
-            if (current != version) {
-              message(sprintf("Installing %s version %s from Bioconductor...", pkg, version))
-              BiocManager::install(pkg, ask = FALSE, update = FALSE, quiet = TRUE)
-            } else {
-              message(sprintf("%s %s already installed", pkg, version))
-            }
-          }
-
-          # Install Bioconductor packages first (dependencies for Seurat)
-          message("\n=== Installing Bioconductor packages ===\n")
-          install_bioc("limma", "3.66.0")
-          install_bioc("edgeR", "4.8.2")
-          install_bioc("SingleCellExperiment", "1.32.0")
-          install_bioc("AnnotationDbi", "1.72.0")
-          install_bioc("org.Hs.eg.db", "3.22.0")
-          install_bioc("scDblFinder", "1.24.0")
-          install_bioc("speckle", "1.10.0")
-
-          # Install CRAN packages with exact versions
-          message("\n=== Installing CRAN packages ===\n")
-          install_cran("ggplot2", "4.0.1")
-          install_cran("dplyr", "1.1.4")
-          install_cran("tidyr", "1.3.2")
-          install_cran("patchwork", "1.3.2")
-          install_cran("RColorBrewer", "1.1.3")
-          install_cran("pheatmap", "1.0.13")
-          install_cran("clustree", "0.5.1")
-          install_cran("SeuratObject", "5.3.0")
-          install_cran("Seurat", "5.4.0")
-          install_cran("harmony", "1.2.4")
-
-          # Install documentation packages
-          message("\n=== Installing documentation packages ===\n")
-          install_cran("knitr", "1.51")
-          install_cran("rmarkdown", "2.30")
-          install_cran("pkgdown", "2.2.0")
-
-          # Install devtools for local package installation
-          if (!requireNamespace("devtools", quietly = TRUE)) {
-            message("Installing devtools...")
-            install.packages("devtools", repos = "https://cloud.r-project.org", quiet = TRUE)
-          }
-
-          message("\n=== Package installation complete ===\n")
-        shell: Rscript {0}
-
-      # Verify all package versions match expected
-      - name: Verify package versions
-        run: |
-          expected <- list(
-            # CRAN
-            Seurat = "5.4.0",
-            SeuratObject = "5.3.0",
-            harmony = "1.2.4",
-            ggplot2 = "4.0.1",
-            patchwork = "1.3.2",
-            dplyr = "1.1.4",
-            tidyr = "1.3.2",
-            RColorBrewer = "1.1.3",
-            clustree = "0.5.1",
-            pheatmap = "1.0.13",
-            knitr = "1.51",
-            rmarkdown = "2.30",
-            pkgdown = "2.2.0",
-            # Bioconductor
-            scDblFinder = "1.24.0",
-            SingleCellExperiment = "1.32.0",
-            edgeR = "4.8.2",
-            limma = "3.66.0",
-            speckle = "1.10.0",
-            org.Hs.eg.db = "3.22.0",
-            AnnotationDbi = "1.72.0"
-          )
-
-          cat("=== Package Version Verification ===\n\n")
-          cat("R version:", R.version.string, "\n")
-          cat("Bioconductor:", as.character(BiocManager::version()), "\n\n")
-
-          all_ok <- TRUE
-          for (pkg in names(expected)) {
-            actual <- as.character(packageVersion(pkg))
-            exp <- expected[[pkg]]
-            status <- if (actual == exp) "✓" else "✗ MISMATCH"
-            cat(sprintf("%-25s expected: %-10s actual: %-10s %s\n", pkg, exp, actual, status))
-            if (actual != exp) all_ok <- FALSE
-          }
-
-          if (!all_ok) {
-            stop("\n\nERROR: Package version mismatch detected! Update workflow or local environment.")
-          }
-
-          cat("\n=== All versions match! ===\n")
+          install.packages("renv")
+          renv::restore()
         shell: Rscript {0}
 
       # Cache workshop data
@@ -247,10 +105,15 @@ jobs:
           test -s data/heart-counts.Rds || exit 1
           test -s data/cellinfo_updated.Rds || exit 1
 
-      # Install local package (required for pkgdown to build reference docs)
-      - name: Install local package
+      # Print package versions for verification
+      - name: Print package versions
         run: |
-          devtools::install_local(".", force = TRUE, upgrade = "never")
+          cat("R version:", R.version.string, "\n\n")
+          pkgs <- c("Seurat", "SeuratObject", "harmony", "scDblFinder",
+                    "edgeR", "limma", "speckle", "ggplot2", "pkgdown")
+          for (pkg in pkgs) {
+            cat(sprintf("%-20s %s\n", pkg, as.character(packageVersion(pkg))))
+          }
         shell: Rscript {0}
 
       # Build pkgdown site

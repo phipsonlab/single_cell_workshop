@@ -4,7 +4,6 @@ template:
   bootstrap: 5
   bootswatch: flatly
 
-# Exclude internal files from the site
 home:
   title: Single-Cell RNA-seq Workshop
   description: >
@@ -30,7 +29,6 @@ navbar:
     articles:
       text: Workshop Modules
       menu:
-        - text: "Session 1: scRNA-seq Fundamentals"
         - text: "Module 0: Setup"
           href: articles/00_setup.html
         - text: "Module 1: Quality Control"
@@ -41,11 +39,6 @@ navbar:
           href: articles/03_cell_type_annotation.html
         - text: "Module 4: Differential Expression"
           href: articles/04_differential_expression.html
-        - text: "-------"
-        - text: "Session 2: [Afternoon Topics]"
-        - text: "[Module 5: Topic]"
-        - text: "[Module 6: Topic]"
-        - text: "[Module 7: Topic]"
     resources:
       text: Resources
       href: articles/resources.html
@@ -54,7 +47,7 @@ navbar:
       href: news/index.html
 
 articles:
-  - title: "Session 1: Single-Cell RNA-seq Analysis Fundamentals"
+  - title: "Workshop Modules"
     navbar: ~
     contents:
       - 00_setup

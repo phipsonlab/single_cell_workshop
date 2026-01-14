@@ -110,7 +110,7 @@ jobs:
         run: |
           cat("R version:", R.version.string, "\n\n")
           pkgs <- c("Seurat", "SeuratObject", "harmony",
-                    "edgeR", "limma", "speckle", "ggplot2", "pkgdown")
+                    "edgeR", "limma", "speckle", "ggplot2")
           for (pkg in pkgs) {
             cat(sprintf("%-20s %s\n", pkg, as.character(packageVersion(pkg))))
           }

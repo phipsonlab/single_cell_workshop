@@ -116,6 +116,12 @@ jobs:
           }
         shell: Rscript {0}
 
+      # Install pkgdown (not in renv.lock, needed for site building)
+      - name: Install pkgdown
+        run: |
+          install.packages("pkgdown")
+        shell: Rscript {0}
+
       # Install local package (needed for pkgdown to build reference docs)
       - name: Install local package
         run: R CMD INSTALL --no-multiarch --with-keep.source .

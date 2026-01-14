@@ -6,8 +6,8 @@ Quality control (QC) is a critical first step in any single cell
 RNA-sequencing (scRNA-seq) analysis. The goal of QC is to identify and
 remove low-quality cells that could confound downstream analysis. Poor
 quality cells can arise from several sources: empty droplets that
-contain only ambient RNA, dying cells that have compromised membranes,
-or doublets where two cells are captured in a single droplet.
+contain only ambient RNA, or dying cells that have compromised
+membranes.
 
 In this module, we work with single nuclei RNA-sequencing (snRNA-seq)
 data from human heart tissue. The data comes from a study examining
@@ -45,9 +45,8 @@ By the end of this module, you will be able to:
 1.  Load and explore scRNA-seq count data in R
 2.  Understand the structure of a Seurat object
 3.  Calculate and interpret per-cell quality control metrics
-4.  Identify and remove doublets using computational methods
-5.  Apply filtering thresholds to remove low-quality cells
-6.  Visualise sample-level relationships using pseudobulk aggregation
+4.  Apply filtering thresholds to remove low-quality cells
+5.  Visualise sample-level relationships using pseudobulk aggregation
 
 ### Setup: Loading Required Libraries
 
@@ -57,9 +56,6 @@ module. Each package provides specific functionality:
 - **Seurat**: The primary framework for single cell analysis, providing
   functions for data manipulation, normalisation, clustering, and
   visualisation
-- **scDblFinder**: Computational detection of doublets
-- **SingleCellExperiment**: A standardised data structure for single
-  cell data, required by scDblFinder
 - **ggplot2**: Creating publication-quality plots using the grammar of
   graphics
 - **patchwork**: Combining multiple plots into composite figures
@@ -71,8 +67,6 @@ module. Each package provides specific functionality:
 
 ``` r
 library(Seurat)
-library(scDblFinder)
-library(SingleCellExperiment)
 library(ggplot2)
 library(patchwork)
 library(dplyr)
@@ -307,8 +301,8 @@ gc()  # Garbage collection to release memory
 ```
 
     ##             used   (Mb) gc trigger   (Mb)   max used   (Mb)
-    ## Ncells  14711744  785.7   26484698 1414.5   19861120 1060.7
-    ## Vcells 294315468 2245.5 1025721071 7825.7 1282149408 9782.1
+    ## Ncells   7675894  410.0   13112328  700.3   12633784  674.8
+    ## Vcells 281850960 2150.4 1210252145 9233.5 1179981636 9002.6
 
 ### Examining the Seurat Object
 
@@ -481,7 +475,7 @@ Let us understand what these metrics tell us:
 
 - **nCount_RNA** (library size): The total number of UMI counts in a
   cell. Very low values suggest empty droplets; very high values may
-  indicate doublets.
+  indicate technical artefacts.
 - **nFeature_RNA** (gene count): The number of genes detected.
   Correlates with library size but provides additional information about
   transcriptome complexity.
@@ -584,146 +578,10 @@ p1 + p2
 
 - **Left panel**: The strong positive correlation between nCount_RNA and
   nFeature_RNA is expected. Cells deviating from this trend (high counts
-  but few genes) might be doublets or have other quality issues.
+  but few genes) may have quality issues.
 - **Right panel**: We look for cells with both low library size and high
   mitochondrial content (upper-left region), which are strong candidates
   for removal.
-
-## Doublet Detection
-
-### What are Doublets?
-
-Doublets occur when two cells are captured in the same droplet during
-the 10X Genomics workflow. This happens because cell loading follows a
-Poisson distribution, and occasionally two cells enter the same droplet
-by chance. The expected doublet rate increases with the number of cells
-loaded.
-
-Doublets are problematic because they:
-
-- Appear as artificial “intermediate” cell states
-- Can confuse clustering algorithms
-- May be mistaken for rare transitional cell populations
-- Inflate the apparent number of cells
-
-There are two types of doublets:
-
-1.  **Homotypic doublets**: Two cells of the same type captured
-    together. These are difficult to detect computationally because they
-    look like normal cells with higher library size.
-2.  **Heterotypic doublets**: Two cells of different types captured
-    together. These are easier to detect because they express markers
-    from both cell types.
-
-### The scDblFinder Algorithm
-
-*scDblFinder* is a computational method that identifies likely doublets
-by:
-
-1.  Creating artificial doublets by combining randomly selected pairs of
-    cells
-2.  Training a classifier to distinguish artificial doublets from real
-    cells
-3.  Applying the classifier to identify real cells that resemble
-    artificial doublets
-
-We run scDblFinder separately for each sample because doublet rates can
-vary between samples, and combining cells from different samples could
-create artificial heterogeneity.
-
-``` r
-# Convert Seurat object to SingleCellExperiment format (required by scDblFinder)
-sce <- as.SingleCellExperiment(seu)
-
-# Run scDblFinder
-# samples = "sample" tells it to process each sample separately
-# Setting a seed ensures reproducibility
-set.seed(42)
-sce <- scDblFinder(sce, samples = "sample")
-```
-
-    ##   |                                                                              |                                                                      |   0%  |                                                                              |========                                                              |  11%  |                                                                              |================                                                      |  22%  |                                                                              |=======================                                               |  33%  |                                                                              |===============================                                       |  44%  |                                                                              |=======================================                               |  56%  |                                                                              |===============================================                       |  67%  |                                                                              |======================================================                |  78%  |                                                                              |==============================================================        |  89%  |                                                                              |======================================================================| 100%
-
-``` r
-# Transfer the results back to our Seurat object
-seu$scDblFinder.score <- sce$scDblFinder.score
-seu$scDblFinder.class <- sce$scDblFinder.class
-
-# Clean up
-rm(sce)
-gc()
-```
-
-    ##             used   (Mb) gc trigger   (Mb)   max used   (Mb)
-    ## Ncells  15288018  816.5   26484698 1414.5   26484698 1414.5
-    ## Vcells 296582833 2262.8  820576857 6260.6 1282149408 9782.1
-
-### Examining Doublet Detection Results
-
-Let us examine how many doublets were detected:
-
-``` r
-# Overall doublet summary
-table(seu$scDblFinder.class)
-```
-
-    ## 
-    ## singlet doublet 
-    ##   49546    4589
-
-``` r
-# Doublet rate per sample
-seu@meta.data %>%
-  group_by(sample) %>%
-  summarise(
-    total_cells = n(),
-    doublets = sum(scDblFinder.class == "doublet"),
-    doublet_rate_pct = round(doublets / total_cells * 100, 2),
-    .groups = "drop"
-  )
-```
-
-    ## # A tibble: 9 × 4
-    ##   sample total_cells doublets doublet_rate_pct
-    ##   <chr>        <int>    <int>            <dbl>
-    ## 1 a1            4360      259             5.94
-    ## 2 a2            3374      179             5.31
-    ## 3 a3            1681       75             4.46
-    ## 4 f1            8294      707             8.52
-    ## 5 f2           10947     1326            12.1 
-    ## 6 f3            8515      799             9.38
-    ## 7 y1            4422      194             4.39
-    ## 8 y2            5558      395             7.11
-    ## 9 y3            6984      655             9.38
-
-The expected doublet rate depends on the number of cells loaded. As a
-rule of thumb, loading ~10,000 cells results in approximately 8%
-doublets. Our observed rates should be in a similar range.
-
-### Visualising Doublet Scores
-
-The doublet score indicates how likely a cell is to be a doublet (higher
-= more likely). Let us visualise the distribution:
-
-``` r
-VlnPlot(
-    seu,
-    features = "scDblFinder.score",
-    group.by = "sample",
-    pt.size = 0
-) +
-    geom_hline(yintercept = 0.5, linetype = "dashed", colour = "red") +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    labs(
-        title = "Doublet Scores by Sample",
-        subtitle = "Higher scores indicate likely doublets"
-    )
-```
-
-![](01_quality_control_files/figure-html/doublet-violin-1.png)
-
-Cells classified as doublets typically have scores above 0.5, though the
-exact threshold is determined by scDblFinder’s internal classifier.
 
 ## Applying Quality Control Filters
 
@@ -746,12 +604,11 @@ max_mt <- 20           # Maximum mitochondrial percentage
   or debris. The 500-gene threshold is commonly used for snRNA-seq.
 - **min_counts = 2500**: Ensures sufficient sequencing depth for
   reliable downstream analysis.
-- **max_counts = 40000**: Extremely high counts may indicate doublets
-  that escaped detection or technical artefacts.
+- **max_counts = 40000**: Extremely high counts may indicate technical
+  artefacts.
 - **max_mt = 20%**: High mitochondrial content indicates cell stress or
   death. The 20% threshold is appropriate for snRNA-seq; for scRNA-seq,
   10% might be more suitable.
-- **singlets only**: Removes computationally identified doublets.
 
 ### Visualising Thresholds
 
@@ -808,8 +665,7 @@ seu_filtered <- subset(
     subset = nFeature_RNA >= min_genes &
              nCount_RNA >= min_counts &
              nCount_RNA <= max_counts &
-             percent.mt <= max_mt &
-             scDblFinder.class == "singlet"
+             percent.mt <= max_mt
 )
 
 # Record the number of cells after filtering
@@ -831,19 +687,19 @@ cat("- Cells before:", cells_before, "\n")
 cat("- Cells after:", cells_after, "\n")
 ```
 
-    ## - Cells after: 42993
+    ## - Cells after: 47405
 
 ``` r
 cat("- Cells removed:", cells_before - cells_after, "\n")
 ```
 
-    ## - Cells removed: 11142
+    ## - Cells removed: 6730
 
 ``` r
 cat("- Retention:", round(cells_after / cells_before * 100, 1), "%\n")
 ```
 
-    ## - Retention: 79.4 %
+    ## - Retention: 87.6 %
 
 ### Examining Filtering Effects by Sample
 
@@ -877,15 +733,15 @@ filter_summary
 ```
 
     ##   sample before after removed retention_pct  group
-    ## 1     a1   4360  3779     581          86.7  adult
-    ## 2     a2   3374  2438     936          72.3  adult
-    ## 3     a3   1681  1152     529          68.5  adult
-    ## 4     f1   8294  7253    1041          87.4 foetal
-    ## 5     f2  10947  9071    1876          82.9 foetal
-    ## 6     f3   8515  6750    1765          79.3 foetal
-    ## 7     y1   4422  4113     309          93.0  young
-    ## 8     y2   5558  4334    1224          78.0  young
-    ## 9     y3   6984  4103    2881          58.7  young
+    ## 1     a1   4360  3998     362          91.7  adult
+    ## 2     a2   3374  2605     769          77.2  adult
+    ## 3     a3   1681  1226     455          72.9  adult
+    ## 4     f1   8294  7952     342          95.9 foetal
+    ## 5     f2  10947 10389     558          94.9 foetal
+    ## 6     f3   8515  7489    1026          88.0 foetal
+    ## 7     y1   4422  4306     116          97.4  young
+    ## 8     y2   5558  4695     863          84.5  young
+    ## 9     y3   6984  4745    2239          67.9  young
 
 ``` r
 # Visualise filtering effect
@@ -1166,7 +1022,7 @@ dge <- calcNormFactors(dge)
 dim(dge)
 ```
 
-    ## [1] 16553     9
+    ## [1] 16685     9
 
 ### Multidimensional Scaling (MDS) Plot
 
@@ -1273,9 +1129,7 @@ data from human heart tissue. We:
 - Created a Seurat object and annotated genes using org.Hs.eg.db
 - Calculated QC metrics: library size, genes detected, mitochondrial
   content, and ribosomal content
-- Detected doublets using scDblFinder
-- Applied cell filtering thresholds to remove low-quality cells and
-  doublets
+- Applied cell filtering thresholds to remove low-quality cells
 - Applied gene filtering to remove mitochondrial, ribosomal, sex
   chromosome, and unannotated genes
 - Performed pseudobulk aggregation and MDS visualisation
@@ -1315,71 +1169,54 @@ sessionInfo()
     ## [8] base     
     ## 
     ## other attached packages:
-    ##  [1] org.Hs.eg.db_3.22.0         AnnotationDbi_1.72.0       
-    ##  [3] edgeR_4.8.2                 limma_3.66.0               
-    ##  [5] dplyr_1.1.4                 patchwork_1.3.2            
-    ##  [7] ggplot2_4.0.1               scDblFinder_1.24.0         
-    ##  [9] SingleCellExperiment_1.32.0 SummarizedExperiment_1.40.0
-    ## [11] Biobase_2.70.0              GenomicRanges_1.62.1       
-    ## [13] Seqinfo_1.0.0               IRanges_2.44.0             
-    ## [15] S4Vectors_0.48.0            BiocGenerics_0.56.0        
-    ## [17] generics_0.1.4              MatrixGenerics_1.22.0      
-    ## [19] matrixStats_1.5.0           Seurat_5.4.0               
-    ## [21] SeuratObject_5.3.0          sp_2.2-0                   
+    ##  [1] org.Hs.eg.db_3.22.0  AnnotationDbi_1.72.0 IRanges_2.44.0      
+    ##  [4] S4Vectors_0.48.0     Biobase_2.70.0       BiocGenerics_0.56.0 
+    ##  [7] generics_0.1.4       edgeR_4.8.2          limma_3.66.0        
+    ## [10] dplyr_1.1.4          patchwork_1.3.2      ggplot2_4.0.1       
+    ## [13] Seurat_5.4.0         SeuratObject_5.3.0   sp_2.2-0            
     ## 
     ## loaded via a namespace (and not attached):
-    ##   [1] RcppAnnoy_0.0.23         splines_4.5.2            later_1.4.5             
-    ##   [4] BiocIO_1.20.0            bitops_1.0-9             tibble_3.3.1            
-    ##   [7] polyclip_1.10-7          XML_3.99-0.20            fastDummies_1.7.5       
-    ##  [10] lifecycle_1.0.5          globals_0.18.0           lattice_0.22-7          
-    ##  [13] MASS_7.3-65              magrittr_2.0.4           plotly_4.11.0           
-    ##  [16] sass_0.4.10              rmarkdown_2.30           jquerylib_0.1.4         
-    ##  [19] yaml_2.3.12              metapod_1.18.0           httpuv_1.6.16           
-    ##  [22] otel_0.2.0               sctransform_0.4.3        spam_2.11-3             
-    ##  [25] spatstat.sparse_3.1-0    reticulate_1.44.1        DBI_1.2.3               
-    ##  [28] cowplot_1.2.0            pbapply_1.7-4            RColorBrewer_1.1-3      
-    ##  [31] abind_1.4-8              Rtsne_0.17               purrr_1.2.1             
-    ##  [34] RCurl_1.98-1.17          ggrepel_0.9.6            irlba_2.3.5.1           
-    ##  [37] listenv_0.10.0           spatstat.utils_3.2-1     goftest_1.2-3           
-    ##  [40] RSpectra_0.16-2          dqrng_0.4.1              spatstat.random_3.4-3   
-    ##  [43] fitdistrplus_1.2-4       parallelly_1.46.1        pkgdown_2.2.0           
-    ##  [46] codetools_0.2-20         DelayedArray_0.36.0      scuttle_1.20.0          
-    ##  [49] tidyselect_1.2.1         UCSC.utils_1.6.1         farver_2.1.2            
-    ##  [52] viridis_0.6.5            ScaledMatrix_1.18.0      spatstat.explore_3.6-0  
-    ##  [55] GenomicAlignments_1.46.0 jsonlite_2.0.0           BiocNeighbors_2.4.0     
-    ##  [58] progressr_0.18.0         scater_1.38.0            ggridges_0.5.7          
-    ##  [61] survival_3.8-3           systemfonts_1.3.1        tools_4.5.2             
-    ##  [64] ragg_1.5.0               ica_1.0-3                Rcpp_1.1.1              
-    ##  [67] glue_1.8.0               gridExtra_2.3            SparseArray_1.10.8      
-    ##  [70] mgcv_1.9-3               xfun_0.55                GenomeInfoDb_1.46.2     
-    ##  [73] withr_3.0.2              BiocManager_1.30.27      fastmap_1.2.0           
-    ##  [76] bluster_1.20.0           digest_0.6.39            rsvd_1.0.5              
-    ##  [79] R6_2.6.1                 mime_0.13                textshaping_1.0.4       
-    ##  [82] scattermore_1.2          tensor_1.5.1             RSQLite_2.4.5           
-    ##  [85] spatstat.data_3.1-9      cigarillo_1.0.0          utf8_1.2.6              
-    ##  [88] tidyr_1.3.2              renv_1.1.5               data.table_1.18.0       
-    ##  [91] rtracklayer_1.70.1       httr_1.4.7               htmlwidgets_1.6.4       
-    ##  [94] S4Arrays_1.10.1          uwot_0.2.4               pkgconfig_2.0.3         
-    ##  [97] gtable_0.3.6             blob_1.2.4               lmtest_0.9-40           
-    ## [100] S7_0.2.1                 XVector_0.50.0           htmltools_0.5.9         
-    ## [103] dotCall64_1.2            scales_1.4.0             png_0.1-8               
-    ## [106] spatstat.univar_3.1-5    scran_1.38.0             knitr_1.51              
-    ## [109] reshape2_1.4.5           rjson_0.2.23             nlme_3.1-168            
-    ## [112] curl_7.0.0               cachem_1.1.0             zoo_1.8-15              
-    ## [115] stringr_1.6.0            KernSmooth_2.23-26       vipor_0.4.7             
-    ## [118] parallel_4.5.2           miniUI_0.1.2             ggrastr_1.0.2           
-    ## [121] restfulr_0.0.16          desc_1.4.3               pillar_1.11.1           
-    ## [124] grid_4.5.2               vctrs_0.6.5              RANN_2.6.2              
-    ## [127] promises_1.5.0           BiocSingular_1.26.1      beachmat_2.26.0         
-    ## [130] xtable_1.8-4             cluster_2.1.8.1          beeswarm_0.4.0          
-    ## [133] evaluate_1.0.5           locfit_1.5-9.12          cli_3.6.5               
-    ## [136] compiler_4.5.2           Rsamtools_2.26.0         rlang_1.1.7             
-    ## [139] crayon_1.5.3             future.apply_1.20.1      labeling_0.4.3          
-    ## [142] ggbeeswarm_0.7.3         plyr_1.8.9               fs_1.6.6                
-    ## [145] stringi_1.8.7            viridisLite_0.4.2        deldir_2.0-4            
-    ## [148] BiocParallel_1.44.0      Biostrings_2.78.0        lazyeval_0.2.2          
-    ## [151] spatstat.geom_3.6-1      Matrix_1.7-4             RcppHNSW_0.6.0          
-    ## [154] bit64_4.6.0-1            future_1.68.0            KEGGREST_1.50.0         
-    ## [157] statmod_1.5.1            shiny_1.12.1             ROCR_1.0-11             
-    ## [160] memoise_2.0.1            igraph_2.2.1             bslib_0.9.0             
-    ## [163] bit_4.6.0                xgboost_3.1.3.1
+    ##   [1] RColorBrewer_1.1-3     jsonlite_2.0.0         magrittr_2.0.4        
+    ##   [4] spatstat.utils_3.2-1   farver_2.1.2           rmarkdown_2.30        
+    ##   [7] fs_1.6.6               ragg_1.5.0             vctrs_0.6.5           
+    ##  [10] ROCR_1.0-11            memoise_2.0.1          spatstat.explore_3.6-0
+    ##  [13] htmltools_0.5.9        sass_0.4.10            sctransform_0.4.3     
+    ##  [16] parallelly_1.46.1      KernSmooth_2.23-26     bslib_0.9.0           
+    ##  [19] htmlwidgets_1.6.4      desc_1.4.3             ica_1.0-3             
+    ##  [22] plyr_1.8.9             plotly_4.11.0          zoo_1.8-15            
+    ##  [25] cachem_1.1.0           igraph_2.2.1           mime_0.13             
+    ##  [28] lifecycle_1.0.5        pkgconfig_2.0.3        Matrix_1.7-4          
+    ##  [31] R6_2.6.1               fastmap_1.2.0          fitdistrplus_1.2-4    
+    ##  [34] future_1.68.0          shiny_1.12.1           digest_0.6.39         
+    ##  [37] tensor_1.5.1           RSpectra_0.16-2        irlba_2.3.5.1         
+    ##  [40] RSQLite_2.4.5          textshaping_1.0.4      labeling_0.4.3        
+    ##  [43] progressr_0.18.0       spatstat.sparse_3.1-0  mgcv_1.9-3            
+    ##  [46] httr_1.4.7             polyclip_1.10-7        abind_1.4-8           
+    ##  [49] compiler_4.5.2         bit64_4.6.0-1          withr_3.0.2           
+    ##  [52] S7_0.2.1               DBI_1.2.3              fastDummies_1.7.5     
+    ##  [55] MASS_7.3-65            tools_4.5.2            lmtest_0.9-40         
+    ##  [58] otel_0.2.0             httpuv_1.6.16          future.apply_1.20.1   
+    ##  [61] goftest_1.2-3          glue_1.8.0             nlme_3.1-168          
+    ##  [64] promises_1.5.0         grid_4.5.2             Rtsne_0.17            
+    ##  [67] cluster_2.1.8.1        reshape2_1.4.5         gtable_0.3.6          
+    ##  [70] spatstat.data_3.1-9    tidyr_1.3.2            data.table_1.18.0     
+    ##  [73] XVector_0.50.0         spatstat.geom_3.6-1    RcppAnnoy_0.0.23      
+    ##  [76] ggrepel_0.9.6          RANN_2.6.2             pillar_1.11.1         
+    ##  [79] stringr_1.6.0          spam_2.11-3            RcppHNSW_0.6.0        
+    ##  [82] later_1.4.5            splines_4.5.2          lattice_0.22-7        
+    ##  [85] bit_4.6.0              renv_1.1.5             survival_3.8-3        
+    ##  [88] deldir_2.0-4           tidyselect_1.2.1       locfit_1.5-9.12       
+    ##  [91] Biostrings_2.78.0      miniUI_0.1.2           pbapply_1.7-4         
+    ##  [94] knitr_1.51             gridExtra_2.3          Seqinfo_1.0.0         
+    ##  [97] scattermore_1.2        xfun_0.55              statmod_1.5.1         
+    ## [100] matrixStats_1.5.0      stringi_1.8.7          lazyeval_0.2.2        
+    ## [103] yaml_2.3.12            evaluate_1.0.5         codetools_0.2-20      
+    ## [106] tibble_3.3.1           BiocManager_1.30.27    cli_3.6.5             
+    ## [109] uwot_0.2.4             xtable_1.8-4           reticulate_1.44.1     
+    ## [112] systemfonts_1.3.1      jquerylib_0.1.4        Rcpp_1.1.1            
+    ## [115] globals_0.18.0         spatstat.random_3.4-3  png_0.1-8             
+    ## [118] spatstat.univar_3.1-5  parallel_4.5.2         blob_1.2.4            
+    ## [121] pkgdown_2.2.0          dotCall64_1.2          listenv_0.10.0        
+    ## [124] viridisLite_0.4.2      scales_1.4.0           ggridges_0.5.7        
+    ## [127] crayon_1.5.3           purrr_1.2.1            rlang_1.1.7           
+    ## [130] KEGGREST_1.50.0        cowplot_1.2.0

@@ -56,7 +56,7 @@ By the end of this workshop, participants will be able to:
 
 - Load and explore 10X Genomics scRNA-seq data in R using Seurat
 - Calculate and interpret per-cell quality control metrics
-- Identify and remove doublets using computational methods
+- Apply appropriate filtering thresholds to remove low-quality cells
 - Normalise data using SCTransform and correct batch effects with
   Harmony
 - Perform graph-based clustering and visualise results with UMAP
@@ -78,14 +78,13 @@ The workshop uses snRNA-seq data from human heart tissue (Sim et al.,
 | Young  | 3       | 4-14 years  | Postnatal maturation |
 | Adult  | 3       | 35-42 years | Mature heart         |
 
-**Total**: 9 samples, ~43,000 nuclei after quality control
+**Total**: 9 samples, ~47,000 nuclei after quality control
 
 ## Methods Covered
 
 | Analysis Step            | Method                      | Package      |
 |--------------------------|-----------------------------|--------------|
 | Quality control          | Per-cell metrics, filtering | Seurat       |
-| Doublet detection        | Simulation-based            | scDblFinder  |
 | Normalisation            | SCTransform v2              | Seurat       |
 | Batch correction         | Harmony                     | harmony      |
 | Dimensionality reduction | PCA, UMAP                   | Seurat       |
@@ -104,10 +103,10 @@ tutorial outputs were generated with these exact versions:
 | Package      | Version | Package      | Version |
 |--------------|---------|--------------|---------|
 | R            | 4.5.2   | Bioconductor | 3.22    |
-| Seurat       | 5.4.0   | scDblFinder  | 1.24.0  |
-| SeuratObject | 5.3.0   | edgeR        | 4.8.2   |
-| harmony      | 1.2.4   | limma        | 3.66.0  |
-| ggplot2      | 4.0.1   | speckle      | 1.10.0  |
+| Seurat       | 5.4.0   | edgeR        | 4.8.2   |
+| SeuratObject | 5.3.0   | limma        | 3.66.0  |
+| harmony      | 1.2.4   | speckle      | 1.10.0  |
+| ggplot2      | 4.0.1   |              |         |
 
 ### Step 1: Install Required Packages
 
@@ -120,8 +119,6 @@ BiocManager::install(version = "3.22", ask = FALSE)
 
 # Install Bioconductor packages
 BiocManager::install(c(
-    "scDblFinder",
-    "SingleCellExperiment",
     "edgeR",
     "limma",
     "org.Hs.eg.db",
@@ -161,7 +158,7 @@ for (f in c("heart-counts.Rds", "cellinfo_updated.Rds")) {
 
 ``` r
 # Check that key packages load correctly
-packages <- c("Seurat", "harmony", "scDblFinder", "edgeR", "limma", "speckle")
+packages <- c("Seurat", "harmony", "edgeR", "limma", "speckle")
 sapply(packages, requireNamespace, quietly = TRUE)
 ```
 

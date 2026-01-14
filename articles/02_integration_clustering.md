@@ -109,7 +109,7 @@ seu <- readRDS(file.path(data_dir, "processed/01_qc_filtered.rds"))
 dim(seu)
 ```
 
-    ## [1] 18953 42993
+    ## [1] 18953 47405
 
 Let us verify the cell counts per sample:
 
@@ -118,8 +118,8 @@ table(seu$sample)
 ```
 
     ## 
-    ##   a1   a2   a3   f1   f2   f3   y1   y2   y3 
-    ## 3779 2438 1152 7253 9071 6750 4113 4334 4103
+    ##    a1    a2    a3    f1    f2    f3    y1    y2    y3 
+    ##  3998  2605  1226  7952 10389  7489  4306  4695  4745
 
 ## Downsampling for Computational Efficiency
 
@@ -165,15 +165,15 @@ cells_per_sample
     ## # A tibble: 9 × 4
     ##   sample n_cells proportion n_sample
     ##   <chr>    <int>      <dbl>    <dbl>
-    ## 1 a1        3779     0.0879      879
-    ## 2 a2        2438     0.0567      567
-    ## 3 a3        1152     0.0268      268
-    ## 4 f1        7253     0.169      1687
-    ## 5 f2        9071     0.211      2110
-    ## 6 f3        6750     0.157      1570
-    ## 7 y1        4113     0.0957      957
-    ## 8 y2        4334     0.101      1008
-    ## 9 y3        4103     0.0954      954
+    ## 1 a1        3998     0.0843      843
+    ## 2 a2        2605     0.0550      550
+    ## 3 a3        1226     0.0259      259
+    ## 4 f1        7952     0.168      1677
+    ## 5 f2       10389     0.219      2192
+    ## 6 f3        7489     0.158      1580
+    ## 7 y1        4306     0.0908      908
+    ## 8 y2        4695     0.0990      990
+    ## 9 y3        4745     0.100      1001
 
 Now we sample cells from each group:
 
@@ -219,7 +219,7 @@ table(seu$sample)
 
     ## 
     ##   a1   a2   a3   f1   f2   f3   y1   y2   y3 
-    ##  879  567  268 1687 2110 1570  957 1008  954
+    ##  843  550  259 1677 2192 1580  908  990 1001
 
 ## Normalisation with SCTransform
 
@@ -271,8 +271,8 @@ top_features <- head(VariableFeatures(seu), 10)
 top_features
 ```
 
-    ##  [1] "F13A1"     "NRXN1"     "SLC8A1"    "ACSM3"     "XKR4"      "CNTNAP2"  
-    ##  [7] "LINC02388" "KAZN"      "PKHD1L1"   "NEGR1"
+    ##  [1] "F13A1"     "NRXN1"     "CNTNAP2"   "ACSM3"     "XKR4"      "KAZN"     
+    ##  [7] "PKHD1L1"   "LINC02388" "NEGR1"     "LDB2"
 
 We can visualise the mean-variance relationship:
 
@@ -665,16 +665,16 @@ for (res in resolutions) {
 }
 ```
 
-    ##   Resolution 0.1: 12 clusters
-    ##   Resolution 0.2: 15 clusters
+    ##   Resolution 0.1: 13 clusters
+    ##   Resolution 0.2: 16 clusters
     ##   Resolution 0.3: 18 clusters
     ##   Resolution 0.4: 19 clusters
     ##   Resolution 0.5: 20 clusters
     ##   Resolution 0.6: 20 clusters
     ##   Resolution 0.7: 20 clusters
-    ##   Resolution 0.8: 21 clusters
-    ##   Resolution 0.9: 21 clusters
-    ##   Resolution 1.0: 22 clusters
+    ##   Resolution 0.8: 22 clusters
+    ##   Resolution 0.9: 23 clusters
+    ##   Resolution 1.0: 25 clusters
 
 ### Visualising Cluster Resolution with Clustree
 
@@ -727,18 +727,20 @@ question. For this heart development dataset, we observe that:
 
 - Resolution 0.1-0.2 groups cells into broad categories but may merge
   distinct populations
-- Resolution 0.4-0.6 shows stable cluster structure (similar cluster
-  numbers)
-- Higher resolutions begin to split what appear to be continuous
-  populations
+- Resolution 0.3-0.4 produces a stable cluster structure
+- Higher resolutions progressively split clusters further
 
-We select resolution 0.5 for this analysis, which produces 19 clusters
-with good separation of major cell types. This choice is specific to
-this dataset—other datasets may require different resolutions:
+We select resolution 0.4 for this analysis, which produces 17 clusters
+with good separation of major cell types. Notably, several clusters are
+strongly enriched for fetal cells (\>95%), reflecting the distinct
+transcriptional programmes active during early heart development. The
+remaining clusters contain cells from multiple developmental stages,
+representing shared cell types like fibroblasts, endothelial cells, and
+immune cells that are present throughout development:
 
 ``` r
 # Set the active identity to our chosen resolution
-selected_res <- 0.5
+selected_res <- 0.4
 Idents(seu) <- paste0("SCT_snn_res.", selected_res)
 
 # Store in a standard column
@@ -754,13 +756,13 @@ cat("Clustering results:\n")
 cat("- Resolution:", selected_res, "\n")
 ```
 
-    ## - Resolution: 0.5
+    ## - Resolution: 0.4
 
 ``` r
 cat("- Number of clusters:", length(unique(seu$seurat_clusters)), "\n")
 ```
 
-    ## - Number of clusters: 20
+    ## - Number of clusters: 19
 
 ### UMAP with Clusters
 
@@ -873,7 +875,7 @@ In this module, we:
 - Reduced dimensions with PCA (20 components)
 - Integrated samples with Harmony
 - Visualised with UMAP
-- Identified 20 clusters at resolution 0.5
+- Identified 19 clusters at resolution 0.4
 
 The clustered object is now ready for cell type annotation in Module 3.
 

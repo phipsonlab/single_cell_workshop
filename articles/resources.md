@@ -9,11 +9,10 @@ for the tools and methods used in this workshop.
 
 ### Data Processing & Visualisation
 
-| Tool            | Description                                      | Links                                                                                                                                                          |
-|-----------------|--------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Seurat**      | Comprehensive R toolkit for single-cell analysis | [Website](https://satijalab.org/seurat/) · [Vignettes](https://satijalab.org/seurat/articles/get_started.html) · [GitHub](https://github.com/satijalab/seurat) |
-| **Harmony**     | Fast integration of single-cell data             | [GitHub](https://github.com/immunogenomics/harmony) · [Paper](https://doi.org/10.1038/s41592-019-0619-0)                                                       |
-| **scDblFinder** | Doublet detection for single-cell data           | [Bioconductor](https://bioconductor.org/packages/scDblFinder/) · [Paper](https://doi.org/10.12688/f1000research.73600.2)                                       |
+| Tool        | Description                                      | Links                                                                                                                                                          |
+|-------------|--------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Seurat**  | Comprehensive R toolkit for single-cell analysis | [Website](https://satijalab.org/seurat/) · [Vignettes](https://satijalab.org/seurat/articles/get_started.html) · [GitHub](https://github.com/satijalab/seurat) |
+| **Harmony** | Fast integration of single-cell data             | [GitHub](https://github.com/immunogenomics/harmony) · [Paper](https://doi.org/10.1038/s41592-019-0619-0)                                                       |
 
 ### Differential Expression
 

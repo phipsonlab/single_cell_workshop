@@ -169,7 +169,7 @@
 <ul>
 <li>Load and explore 10X Genomics scRNA-seq data in R using Seurat</li>
 <li>Calculate and interpret per-cell quality control metrics</li>
-<li>Identify and remove doublets using computational methods</li>
+<li>Apply appropriate filtering thresholds to remove low-quality cells</li>
 <li>Normalise data using SCTransform and correct batch effects with Harmony</li>
 <li>Perform graph-based clustering and visualise results with UMAP</li>
 <li>Annotate cell types using canonical marker genes</li>
@@ -210,7 +210,7 @@
 </tr>
 </tbody>
 </table>
-<p><strong>Total</strong>: 9 samples, ~43,000 nuclei after quality control</p>
+<p><strong>Total</strong>: 9 samples, ~47,000 nuclei after quality control</p>
 </div>
 <div class="section level2">
 <h2 id="methods-covered">Methods Covered<a class="anchor" aria-label="anchor" href="#methods-covered"></a>
@@ -228,41 +228,36 @@
 <td>Seurat</td>
 </tr>
 <tr class="even">
-<td>Doublet detection</td>
-<td>Simulation-based</td>
-<td>scDblFinder</td>
-</tr>
-<tr class="odd">
 <td>Normalisation</td>
 <td>SCTransform v2</td>
 <td>Seurat</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Batch correction</td>
 <td>Harmony</td>
 <td>harmony</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Dimensionality reduction</td>
 <td>PCA, UMAP</td>
 <td>Seurat</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Clustering</td>
 <td>Louvain algorithm</td>
 <td>Seurat</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Cell type annotation</td>
 <td>Marker-based (manual)</td>
 <td>Seurat</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Differential expression</td>
 <td>Pseudobulk + limma-voom</td>
 <td>edgeR, limma</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Composition analysis</td>
 <td>propeller</td>
 <td>speckle</td>
@@ -294,26 +289,26 @@
 <tr class="even">
 <td>Seurat</td>
 <td>5.4.0</td>
-<td>scDblFinder</td>
-<td>1.24.0</td>
+<td>edgeR</td>
+<td>4.8.2</td>
 </tr>
 <tr class="odd">
 <td>SeuratObject</td>
 <td>5.3.0</td>
-<td>edgeR</td>
-<td>4.8.2</td>
+<td>limma</td>
+<td>3.66.0</td>
 </tr>
 <tr class="even">
 <td>harmony</td>
 <td>1.2.4</td>
-<td>limma</td>
-<td>3.66.0</td>
+<td>speckle</td>
+<td>1.10.0</td>
 </tr>
 <tr class="odd">
 <td>ggplot2</td>
 <td>4.0.1</td>
-<td>speckle</td>
-<td>1.10.0</td>
+<td></td>
+<td></td>
 </tr>
 </tbody>
 </table>
@@ -330,8 +325,6 @@
 <span></span>
 <span><span class="co"># Install Bioconductor packages</span></span>
 <span><span class="fu">BiocManager</span><span class="fu">::</span><span class="fu"><a href="https://bioconductor.github.io/BiocManager/reference/install.html" class="external-link">install</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
-<span>    <span class="st">"scDblFinder"</span>,</span>
-<span>    <span class="st">"SingleCellExperiment"</span>,</span>
 <span>    <span class="st">"edgeR"</span>,</span>
 <span>    <span class="st">"limma"</span>,</span>
 <span>    <span class="st">"org.Hs.eg.db"</span>,</span>
@@ -370,7 +363,7 @@
 </h3>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Check that key packages load correctly</span></span>
-<span><span class="va">packages</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Seurat"</span>, <span class="st">"harmony"</span>, <span class="st">"scDblFinder"</span>, <span class="st">"edgeR"</span>, <span class="st">"limma"</span>, <span class="st">"speckle"</span><span class="op">)</span></span>
+<span><span class="va">packages</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Seurat"</span>, <span class="st">"harmony"</span>, <span class="st">"edgeR"</span>, <span class="st">"limma"</span>, <span class="st">"speckle"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">packages</span>, <span class="va">requireNamespace</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>

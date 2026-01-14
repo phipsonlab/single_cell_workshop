@@ -13,8 +13,8 @@
 - Module 1: Quality Control
   - Load and explore 10X Genomics data
   - Calculate per-cell QC metrics
-  - Doublet detection with scDblFinder
-  - Cell filtering and pseudobulk overview
+  - Cell and gene filtering
+  - Pseudobulk overview
 - Module 2: Normalisation, Integration & Clustering
   - SCTransform v2 normalisation
   - Harmony batch correction

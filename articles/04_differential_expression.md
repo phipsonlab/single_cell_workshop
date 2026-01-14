@@ -155,7 +155,7 @@ cat("- Genes:", format(nrow(counts), big.mark = ","), "\n")
 cat("- Cells:", format(ncol(counts), big.mark = ","), "\n")
 ```
 
-    ## - Cells: 42,993
+    ## - Cells: 47,405
 
 ### Examine Cell Type Labels
 
@@ -176,9 +176,9 @@ print(table(cellinfo$Celltype))
 
     ## 
     ##      Cardiomyocytes   Endothelial cells    Epicardial cells           Erythroid 
-    ##               24047                3368                2845                  50 
+    ##               26677                3727                3397                  56 
     ##          Fibroblast        Immune cells             Neurons Smooth muscle cells 
-    ##                8679                2877                 737                 390
+    ##                9160                3145                 818                 425
 
 ``` r
 # Cell type by developmental stage
@@ -194,14 +194,14 @@ print(table(cellinfo$Celltype, cellinfo$Group))
 
     ##                      
     ##                       adult fetal young
-    ##   Cardiomyocytes       1975 17084  4988
-    ##   Endothelial cells    1087  1066  1215
-    ##   Epicardial cells      870   915  1060
-    ##   Erythroid               0    50     0
-    ##   Fibroblast           2198  2913  3568
-    ##   Immune cells         1058   575  1244
-    ##   Neurons               101   286   350
-    ##   Smooth muscle cells    80   185   125
+    ##   Cardiomyocytes       2129 18957  5591
+    ##   Endothelial cells    1131  1250  1346
+    ##   Epicardial cells      905  1381  1111
+    ##   Erythroid               0    56     0
+    ##   Fibroblast           2361  2974  3825
+    ##   Immune cells         1114   662  1369
+    ##   Neurons               107   341   370
+    ##   Smooth muscle cells    82   209   134
 
 ### Define Colour Palettes
 
@@ -268,7 +268,7 @@ n_erythroid <- sum(cellinfo$Celltype == "Erythroid", na.rm = TRUE)
 cat("Erythroid cells found:", n_erythroid, "\n")
 ```
 
-    ## Erythroid cells found: 50
+    ## Erythroid cells found: 56
 
 ``` r
 # Remove erythroid cells if present
@@ -284,7 +284,7 @@ if (n_erythroid > 0) {
 cat("Cells for DE analysis:", ncol(counts_filtered), "\n")
 ```
 
-    ## Cells for DE analysis: 42943
+    ## Cells for DE analysis: 47349
 
 ``` r
 cat("\nCell type distribution:\n")
@@ -299,9 +299,9 @@ print(table(cellinfo_filtered$Celltype))
 
     ## 
     ##      Cardiomyocytes   Endothelial cells    Epicardial cells          Fibroblast 
-    ##               24047                3368                2845                8679 
+    ##               26677                3727                3397                9160 
     ##        Immune cells             Neurons Smooth muscle cells 
-    ##                2877                 737                 390
+    ##                3145                 818                 425
 
 > **Note:** Gene filtering (mitochondrial, ribosomal, sex chromosome,
 > and unannotated genes) was performed in Module 1. Filtering of lowly
@@ -375,15 +375,15 @@ composition_data %>%
     ## # A tibble: 9 × 3
     ##   Sample Group total_cells
     ##   <chr>  <chr>       <int>
-    ## 1 a1     adult        3779
-    ## 2 a2     adult        2438
-    ## 3 a3     adult        1152
-    ## 4 f1     fetal        7236
-    ## 5 f2     fetal        9055
-    ## 6 f3     fetal        6733
-    ## 7 y1     young        4113
-    ## 8 y2     young        4334
-    ## 9 y3     young        4103
+    ## 1 a1     adult        3998
+    ## 2 a2     adult        2605
+    ## 3 a3     adult        1226
+    ## 4 f1     fetal        7935
+    ## 5 f2     fetal       10369
+    ## 6 f3     fetal        7470
+    ## 7 y1     young        4306
+    ## 8 y2     young        4695
+    ## 9 y3     young        4745
 
 ### Visualise Composition Changes
 
@@ -483,21 +483,21 @@ print(propeller_results)
 ```
 
     ##                     BaselineProp PropMean.adult PropMean.fetal PropMean.young
-    ## Cardiomyocytes       0.559974850     0.21548148    0.733788987     0.39749745
-    ## Immune cells         0.066995785     0.18617797    0.025183961     0.09894800
-    ## Endothelial cells    0.078429546     0.13982738    0.047519819     0.09708729
-    ## Fibroblast           0.202105116     0.31844683    0.131404704     0.28339776
-    ## Epicardial cells     0.066250611     0.11489272    0.040816245     0.08489414
-    ## Neurons              0.017162285     0.01327039    0.012549952     0.02814835
-    ## Smooth muscle cells  0.009081806     0.01190322    0.008736332     0.01002700
-    ##                     Fstatistic      P.Value          FDR
-    ## Cardiomyocytes      14.0281301 0.0000973816 0.0006816712
-    ## Immune cells        12.1189229 0.0002407271 0.0008425449
-    ## Endothelial cells    4.8969039 0.0166635906 0.0388817114
-    ## Fibroblast           4.3202398 0.0252212881 0.0441372542
-    ## Epicardial cells     3.1013397 0.0637471295 0.0892459813
-    ## Neurons              1.7241876 0.2000808597 0.2334276697
-    ## Smooth muscle cells  0.6534677 0.5294193445 0.5294193445
+    ## Cardiomyocytes       0.563412110     0.22139920    0.726306287    0.401684990
+    ## Immune cells         0.066421677     0.18451941    0.025994487    0.098811970
+    ## Fibroblast           0.193457095     0.32006855    0.120641229    0.281129831
+    ## Endothelial cells    0.078713384     0.13655202    0.049910648    0.098440512
+    ## Neurons              0.017275972     0.01306597    0.013334485    0.027495960
+    ## Epicardial cells     0.071743859     0.11296741    0.054877394    0.082579815
+    ## Smooth muscle cells  0.008975902     0.01142744    0.008935469    0.009856922
+    ##                     Fstatistic      P.Value         FDR
+    ## Cardiomyocytes      12.9210032 0.0002597433 0.001556095
+    ## Immune cells        11.7120982 0.0004445985 0.001556095
+    ## Fibroblast           5.2176310 0.0151856215 0.035433117
+    ## Endothelial cells    4.5516336 0.0237056743 0.041484930
+    ## Neurons              1.4626661 0.2556889886 0.311072777
+    ## Epicardial cells     1.4146330 0.2666338091 0.311072777
+    ## Smooth muscle cells  0.5677644 0.5757903786 0.575790379
 
 ``` r
 # Identify significant changes
@@ -518,27 +518,28 @@ if (nrow(sig_celltypes) > 0) {
     ## 
     ## Cell types with significant composition changes (FDR < 0.05):
     ##                   PropMean.fetal PropMean.young PropMean.adult Fstatistic
-    ## Cardiomyocytes        0.73378899     0.39749745      0.2154815  14.028130
-    ## Immune cells          0.02518396     0.09894800      0.1861780  12.118923
-    ## Endothelial cells     0.04751982     0.09708729      0.1398274   4.896904
-    ## Fibroblast            0.13140470     0.28339776      0.3184468   4.320240
-    ##                            FDR
-    ## Cardiomyocytes    0.0006816712
-    ## Immune cells      0.0008425449
-    ## Endothelial cells 0.0388817114
-    ## Fibroblast        0.0441372542
+    ## Cardiomyocytes        0.72630629     0.40168499      0.2213992  12.921003
+    ## Immune cells          0.02599449     0.09881197      0.1845194  11.712098
+    ## Fibroblast            0.12064123     0.28112983      0.3200686   5.217631
+    ## Endothelial cells     0.04991065     0.09844051      0.1365520   4.551634
+    ##                           FDR
+    ## Cardiomyocytes    0.001556095
+    ## Immune cells      0.001556095
+    ## Fibroblast        0.035433117
+    ## Endothelial cells 0.041484930
 
 **Interpretation**: The propeller test reveals statistically significant
 changes in cell type composition during heart development (FDR \< 0.05):
 
 - **Cardiomyocytes** show the most dramatic change, decreasing from ~73%
-  in fetal hearts to ~40% in young and ~22% in adult hearts (FDR \<
-  0.001)
-- **Immune cells** increase substantially, from ~2.5% in fetal to ~10%
-  in young and ~19% in adult hearts (FDR \< 0.001)
-- **Fibroblasts** increase from ~13% in fetal to ~28% in young and ~32%
-  in adult hearts (FDR \< 0.05)
-- **Endothelial cells** also increase during development (FDR \< 0.05)
+  in fetal hearts to ~40% in young and ~22% in adult hearts (FDR =
+  0.002)
+- **Immune cells** increase substantially, from ~3% in fetal to ~10% in
+  young and ~18% in adult hearts (FDR = 0.002)
+- **Fibroblasts** increase from ~12% in fetal to ~28% in young and ~32%
+  in adult hearts (FDR = 0.035)
+- **Endothelial cells** increase from ~5% in fetal to ~10% in young and
+  ~14% in adult hearts (FDR = 0.041)
 
 These findings align closely with those reported by Sim et al. (2021),
 who found significant expansion of cardiac fibroblasts and immune cells,
@@ -590,47 +591,47 @@ print(table(pseudobulk_group))
 
     ## pseudobulk_group
     ##      Cardiomyocytes.a1      Cardiomyocytes.a2      Cardiomyocytes.a3 
-    ##                   1549                    291                    135 
+    ##                   1661                    308                    160 
     ##      Cardiomyocytes.f1      Cardiomyocytes.f2      Cardiomyocytes.f3 
-    ##                   4983                   7471                   4630 
+    ##                   5436                   8448                   5073 
     ##      Cardiomyocytes.y1      Cardiomyocytes.y2      Cardiomyocytes.y3 
-    ##                    991                   1741                   2256 
+    ##                   1045                   1920                   2626 
     ##   Endothelial cells.a1   Endothelial cells.a2   Endothelial cells.a3 
-    ##                    565                    400                    122 
+    ##                    590                    415                    126 
     ##   Endothelial cells.f1   Endothelial cells.f2   Endothelial cells.f3 
-    ##                    424                    299                    343 
+    ##                    474                    371                    405 
     ##   Endothelial cells.y1   Endothelial cells.y2   Endothelial cells.y3 
-    ##                    468                    353                    394 
+    ##                    502                    387                    457 
     ##    Epicardial cells.a1    Epicardial cells.a2    Epicardial cells.a3 
-    ##                    329                    463                     78 
+    ##                    338                    482                     85 
     ##    Epicardial cells.f1    Epicardial cells.f2    Epicardial cells.f3 
-    ##                    421                    239                    255 
+    ##                    562                    423                    396 
     ##    Epicardial cells.y1    Epicardial cells.y2    Epicardial cells.y3 
-    ##                    595                    255                    210 
+    ##                    605                    267                    239 
     ##          Fibroblast.a1          Fibroblast.a2          Fibroblast.a3 
-    ##                    914                    876                    408 
+    ##                    966                    971                    424 
     ##          Fibroblast.f1          Fibroblast.f2          Fibroblast.f3 
-    ##                   1011                    735                   1167 
+    ##                   1027                    752                   1195 
     ##          Fibroblast.y1          Fibroblast.y2          Fibroblast.y3 
-    ##                   1502                   1426                    640 
+    ##                   1576                   1522                    727 
     ##        Immune cells.a1        Immune cells.a2        Immune cells.a3 
-    ##                    349                    326                    383 
+    ##                    366                    343                    405 
     ##        Immune cells.f1        Immune cells.f2        Immune cells.f3 
-    ##                    253                    190                    132 
+    ##                    273                    227                    162 
     ##        Immune cells.y1        Immune cells.y2        Immune cells.y3 
-    ##                    301                    475                    468 
+    ##                    315                    514                    540 
     ##             Neurons.a1             Neurons.a2             Neurons.a3 
-    ##                     52                     36                     13 
+    ##                     56                     38                     13 
     ##             Neurons.f1             Neurons.f2             Neurons.f3 
-    ##                     95                    101                     90 
+    ##                    109                    128                    104 
     ##             Neurons.y1             Neurons.y2             Neurons.y3 
-    ##                    199                     57                     94 
+    ##                    204                     57                    109 
     ## Smooth muscle cells.a1 Smooth muscle cells.a2 Smooth muscle cells.a3 
-    ##                     21                     46                     13 
+    ##                     21                     48                     13 
     ## Smooth muscle cells.f1 Smooth muscle cells.f2 Smooth muscle cells.f3 
-    ##                     49                     20                    116 
+    ##                     54                     20                    135 
     ## Smooth muscle cells.y1 Smooth muscle cells.y2 Smooth muscle cells.y3 
-    ##                     57                     27                     41
+    ##                     59                     28                     47
 
 ### Aggregate Counts
 
@@ -709,12 +710,12 @@ head(dge$samples)
 ```
 
     ##                   lib.size norm.factors     pseudobulk_id       celltype sample
-    ## Cardiomyocytes.a1 29650342            1 Cardiomyocytes.a1 Cardiomyocytes     a1
-    ## Cardiomyocytes.a2  6855965            1 Cardiomyocytes.a2 Cardiomyocytes     a2
-    ## Cardiomyocytes.a3  2146823            1 Cardiomyocytes.a3 Cardiomyocytes     a3
-    ## Cardiomyocytes.f1 51168612            1 Cardiomyocytes.f1 Cardiomyocytes     f1
-    ## Cardiomyocytes.f2 66528657            1 Cardiomyocytes.f2 Cardiomyocytes     f2
-    ## Cardiomyocytes.f3 62958142            1 Cardiomyocytes.f3 Cardiomyocytes     f3
+    ## Cardiomyocytes.a1 32392120            1 Cardiomyocytes.a1 Cardiomyocytes     a1
+    ## Cardiomyocytes.a2  7280354            1 Cardiomyocytes.a2 Cardiomyocytes     a2
+    ## Cardiomyocytes.a3  2715798            1 Cardiomyocytes.a3 Cardiomyocytes     a3
+    ## Cardiomyocytes.f1 59294709            1 Cardiomyocytes.f1 Cardiomyocytes     f1
+    ## Cardiomyocytes.f2 82244242            1 Cardiomyocytes.f2 Cardiomyocytes     f2
+    ## Cardiomyocytes.f3 72452381            1 Cardiomyocytes.f3 Cardiomyocytes     f3
     ##                   group sex
     ## Cardiomyocytes.a1 adult   f
     ## Cardiomyocytes.a2 adult   m
@@ -942,7 +943,7 @@ cat("Genes before filtering:", nrow(dge), "\n")
 cat("Genes after filtering:", nrow(dge_filtered), "\n")
 ```
 
-    ## Genes after filtering: 15972
+    ## Genes after filtering: 16085
 
 ``` r
 # Apply TMM normalisation
@@ -959,69 +960,69 @@ print(dge_filtered$samples[, c("lib.size", "norm.factors")])
 ```
 
     ##                        lib.size norm.factors
-    ## Cardiomyocytes.a1      29636931    0.5991534
-    ## Cardiomyocytes.a2       6852897    0.6848412
-    ## Cardiomyocytes.a3       2145212    0.8301117
-    ## Cardiomyocytes.f1      51141688    0.8096875
-    ## Cardiomyocytes.f2      66501392    0.7777464
-    ## Cardiomyocytes.f3      62934775    0.7188752
-    ## Cardiomyocytes.y1      12401468    0.6425480
-    ## Cardiomyocytes.y2      28198390    0.6211136
-    ## Cardiomyocytes.y3      16473502    0.8792502
-    ## Endothelial cells.a1    3727002    1.0515394
-    ## Endothelial cells.a2    2595083    1.0127823
-    ## Endothelial cells.a3     781345    1.1089051
-    ## Endothelial cells.f1    3483816    1.1314038
-    ## Endothelial cells.f2    2555777    1.1383690
-    ## Endothelial cells.f3    3973992    1.0636597
-    ## Endothelial cells.y1    3127830    1.0669312
-    ## Endothelial cells.y2    2411574    0.9973083
-    ## Endothelial cells.y3    2100604    0.9555307
-    ## Epicardial cells.a1     1758216    1.0384055
-    ## Epicardial cells.a2     3535704    0.8715015
-    ## Epicardial cells.a3      532305    1.0644509
-    ## Epicardial cells.f1     3070826    1.1402689
-    ## Epicardial cells.f2     1685454    1.0926364
-    ## Epicardial cells.f3     2564646    1.0491854
-    ## Epicardial cells.y1     3699642    0.9721303
-    ## Epicardial cells.y2     1600548    0.9609367
-    ## Epicardial cells.y3     1124205    0.9290104
-    ## Fibroblast.a1           7131283    1.0892055
-    ## Fibroblast.a2           7471964    0.9858132
-    ## Fibroblast.a3           3836311    1.0767413
-    ## Fibroblast.f1           7568500    1.0468032
-    ## Fibroblast.f2           5202890    1.0288392
-    ## Fibroblast.f3          11012063    1.0048931
-    ## Fibroblast.y1          12458028    0.9618019
-    ## Fibroblast.y2          10920232    0.9608698
-    ## Fibroblast.y3           4960727    0.9775423
-    ## Immune cells.a1         2579063    1.0314769
-    ## Immune cells.a2         2063336    1.0806001
-    ## Immune cells.a3         2888685    1.1576423
-    ## Immune cells.f1         1634057    1.1094381
-    ## Immune cells.f2         1102475    1.2304178
-    ## Immune cells.f3          963489    1.1099125
-    ## Immune cells.y1         2270368    1.1239500
-    ## Immune cells.y2         3207015    1.0394530
-    ## Immune cells.y3         2419202    1.0224861
-    ## Neurons.a1               256788    1.1763478
-    ## Neurons.a2               207811    1.0614116
-    ## Neurons.a3                74057    1.3393162
-    ## Neurons.f1               555067    1.1119175
-    ## Neurons.f2               651058    1.1194837
-    ## Neurons.f3               681885    1.0543713
-    ## Neurons.y1              1038652    1.0808971
-    ## Neurons.y2               209761    1.0742698
-    ## Neurons.y3               336061    1.0409169
-    ## Smooth muscle cells.a1   118999    1.1783179
-    ## Smooth muscle cells.a2   359770    0.9596999
-    ## Smooth muscle cells.a3    96592    1.1750697
-    ## Smooth muscle cells.f1   369140    1.0258847
-    ## Smooth muscle cells.f2   145847    1.1396795
-    ## Smooth muscle cells.f3  1263580    0.9735165
-    ## Smooth muscle cells.y1   344165    1.0328166
-    ## Smooth muscle cells.y2   159936    0.9801815
-    ## Smooth muscle cells.y3   256712    0.9588462
+    ## Cardiomyocytes.a1      32379510    0.6062195
+    ## Cardiomyocytes.a2       7277544    0.6871822
+    ## Cardiomyocytes.a3       2714040    0.8796562
+    ## Cardiomyocytes.f1      59267741    0.8122854
+    ## Cardiomyocytes.f2      82215178    0.7780581
+    ## Cardiomyocytes.f3      72428402    0.7224807
+    ## Cardiomyocytes.y1      13418896    0.6523640
+    ## Cardiomyocytes.y2      31912809    0.6315278
+    ## Cardiomyocytes.y3      19313451    0.9023738
+    ## Endothelial cells.a1    4125389    1.0507578
+    ## Endothelial cells.a2    2778450    1.0091423
+    ## Endothelial cells.a3     838838    1.1131212
+    ## Endothelial cells.f1    4334507    1.1422059
+    ## Endothelial cells.f2    3826307    1.1090792
+    ## Endothelial cells.f3    5304616    1.0560309
+    ## Endothelial cells.y1    3618850    1.0725650
+    ## Endothelial cells.y2    2958916    0.9896856
+    ## Endothelial cells.y3    2738058    0.9695908
+    ## Epicardial cells.a1     1858312    1.0385323
+    ## Epicardial cells.a2     3758676    0.8723308
+    ## Epicardial cells.a3      637172    1.0710208
+    ## Epicardial cells.f1     5473502    1.1198427
+    ## Epicardial cells.f2     4725334    1.0363738
+    ## Epicardial cells.f3     5804650    0.9882715
+    ## Epicardial cells.y1     3799209    0.9767808
+    ## Epicardial cells.y2     1717993    0.9644361
+    ## Epicardial cells.y3     1343036    0.9462232
+    ## Fibroblast.a1           7750305    1.0867079
+    ## Fibroblast.a2           8812958    0.9867011
+    ## Fibroblast.a3           4052897    1.0859247
+    ## Fibroblast.f1           7830817    1.0555564
+    ## Fibroblast.f2           5476825    1.0310459
+    ## Fibroblast.f3          11550623    1.0052905
+    ## Fibroblast.y1          13480942    0.9618096
+    ## Fibroblast.y2          12218557    0.9621212
+    ## Fibroblast.y3           5870367    0.9887452
+    ## Immune cells.a1         2869009    1.0391055
+    ## Immune cells.a2         2276808    1.0725683
+    ## Immune cells.a3         3192409    1.1483534
+    ## Immune cells.f1         1960762    1.1266492
+    ## Immune cells.f2         1675070    1.1731315
+    ## Immune cells.f3         1580118    1.0676369
+    ## Immune cells.y1         2529505    1.1267478
+    ## Immune cells.y2         3734520    1.0432559
+    ## Immune cells.y3         3091938    1.0305902
+    ## Neurons.a1               328005    1.1719423
+    ## Neurons.a2               218624    1.0640886
+    ## Neurons.a3                74057    1.3408405
+    ## Neurons.f1               769716    1.1090986
+    ## Neurons.f2              1053894    1.0953821
+    ## Neurons.f3               955923    1.0477880
+    ## Neurons.y1              1098075    1.0945203
+    ## Neurons.y2               209762    1.0747981
+    ## Neurons.y3               443229    1.0579727
+    ## Smooth muscle cells.a1   119000    1.1801528
+    ## Smooth muscle cells.a2   389758    0.9537409
+    ## Smooth muscle cells.a3    96593    1.1759140
+    ## Smooth muscle cells.f1   471111    1.0362309
+    ## Smooth muscle cells.f2   145848    1.1343509
+    ## Smooth muscle cells.f3  1682502    0.9653342
+    ## Smooth muscle cells.y1   376185    1.0336519
+    ## Smooth muscle cells.y2   164171    0.9875187
+    ## Smooth muscle cells.y3   305519    0.9628307
 
 ### Voom Transformation
 
@@ -1155,9 +1156,9 @@ summary(dt_cardio)
 ```
 
     ##          YvF   AvF   AvY
-    ## Down    1191  1214     9
-    ## NotSig 13755 13693 15933
-    ## Up      1026  1065    30
+    ## Down    1133  1121     4
+    ## NotSig 13795 13854 16064
+    ## Up      1157  1110    17
 
 ``` r
 # MD plots for each contrast
@@ -1191,68 +1192,68 @@ topTreat(treat_cardio, coef = "AvF", n = 20)[, c("SYMBOL", "GENENAME", "logFC", 
 ```
 
     ##                SYMBOL
-    ## TMEM178B     TMEM178B
     ## TOGARAM2     TOGARAM2
-    ## FILIP1L       FILIP1L
-    ## DGKG             DGKG
-    ## EMILIN2       EMILIN2
+    ## TMEM178B     TMEM178B
     ## MIR29B2CHG MIR29B2CHG
-    ## CCSER1         CCSER1
-    ## AAK1             AAK1
-    ## NCEH1           NCEH1
-    ## PPP1R13L     PPP1R13L
-    ## GRAMD1B       GRAMD1B
-    ## ADRA1A         ADRA1A
-    ## EMC10           EMC10
-    ## MBOAT2         MBOAT2
-    ## FYB2             FYB2
-    ## FAM3D-AS1   FAM3D-AS1
-    ## AGPAT4         AGPAT4
-    ## PFKFB2         PFKFB2
+    ## FILIP1L       FILIP1L
     ## HECW2           HECW2
-    ## LINC01428   LINC01428
+    ## NCEH1           NCEH1
+    ## MBOAT2         MBOAT2
+    ## DGKG             DGKG
+    ## PFKFB2         PFKFB2
+    ## AGPAT4         AGPAT4
+    ## AQP7             AQP7
+    ## AAK1             AAK1
+    ## CFAP61         CFAP61
+    ## FRMD5           FRMD5
+    ## PPP1R13L     PPP1R13L
+    ## FYB2             FYB2
+    ## ALS2CL         ALS2CL
+    ## CCSER1         CCSER1
+    ## IGF2BP3       IGF2BP3
+    ## CSDC2           CSDC2
     ##                                                                   GENENAME
-    ## TMEM178B                                        transmembrane protein 178B
     ## TOGARAM2                    TOG array regulator of axonemal microtubules 2
-    ## FILIP1L                               filamin A interacting protein 1 like
-    ## DGKG                                           diacylglycerol kinase gamma
-    ## EMILIN2                                   elastin microfibril interfacer 2
+    ## TMEM178B                                        transmembrane protein 178B
     ## MIR29B2CHG                                    MIR29B2 and MIR29C host gene
-    ## CCSER1                                   coiled-coil serine rich protein 1
-    ## AAK1                                               AP2 associated kinase 1
-    ## NCEH1                                neutral cholesterol ester hydrolase 1
-    ## PPP1R13L                  protein phosphatase 1 regulatory subunit 13 like
-    ## GRAMD1B                                          GRAM domain containing 1B
-    ## ADRA1A                                               adrenoceptor alpha 1A
-    ## EMC10                               ER membrane protein complex subunit 10
-    ## MBOAT2              membrane bound glycerophospholipid O-acyltransferase 2
-    ## FYB2                                                 FYN binding protein 2
-    ## FAM3D-AS1                                            FAM3D antisense RNA 1
-    ## AGPAT4                      1-acylglycerol-3-phosphate O-acyltransferase 4
-    ## PFKFB2               6-phosphofructo-2-kinase/fructose-2,6-biphosphatase 2
+    ## FILIP1L                               filamin A interacting protein 1 like
     ## HECW2      HECT, C2 and WW domain containing E3 ubiquitin protein ligase 2
-    ## LINC01428                      long intergenic non-protein coding RNA 1428
+    ## NCEH1                                neutral cholesterol ester hydrolase 1
+    ## MBOAT2              membrane bound glycerophospholipid O-acyltransferase 2
+    ## DGKG                                           diacylglycerol kinase gamma
+    ## PFKFB2               6-phosphofructo-2-kinase/fructose-2,6-biphosphatase 2
+    ## AGPAT4                      1-acylglycerol-3-phosphate O-acyltransferase 4
+    ## AQP7                                                           aquaporin 7
+    ## AAK1                                               AP2 associated kinase 1
+    ## CFAP61                            cilia and flagella associated protein 61
+    ## FRMD5                                             FERM domain containing 5
+    ## PPP1R13L                  protein phosphatase 1 regulatory subunit 13 like
+    ## FYB2                                                 FYN binding protein 2
+    ## ALS2CL                                                ALS2 C-terminal like
+    ## CCSER1                                   coiled-coil serine rich protein 1
+    ## IGF2BP3                insulin like growth factor 2 mRNA binding protein 3
+    ## CSDC2                                      cold shock domain containing C2
     ##                logFC      P.Value    adj.P.Val
-    ## TMEM178B    7.628093 2.884375e-20 4.606924e-16
-    ## TOGARAM2    7.479380 1.411795e-18 1.127459e-14
-    ## FILIP1L     4.043817 1.351546e-16 7.195629e-13
-    ## DGKG        5.039077 3.811173e-16 1.521801e-12
-    ## EMILIN2    -3.996823 7.460532e-16 1.952642e-12
-    ## MIR29B2CHG  4.325584 8.233531e-16 1.952642e-12
-    ## CCSER1      3.690560 8.557787e-16 1.952642e-12
-    ## AAK1        1.909761 1.251832e-15 2.499283e-12
-    ## NCEH1       4.055115 1.802379e-15 3.198621e-12
-    ## PPP1R13L    3.740165 2.101760e-15 3.356931e-12
-    ## GRAMD1B     2.817592 2.396837e-15 3.480207e-12
-    ## ADRA1A      4.046825 3.001270e-15 3.994690e-12
-    ## EMC10      -3.246674 3.573090e-15 4.389954e-12
-    ## MBOAT2     -3.302337 7.324992e-15 8.356769e-12
-    ## FYB2        5.662234 1.021594e-14 1.087793e-11
-    ## FAM3D-AS1   6.083960 1.430189e-14 1.427686e-11
-    ## AGPAT4     -4.241339 2.836790e-14 2.665248e-11
-    ## PFKFB2      3.694850 4.135339e-14 3.566695e-11
-    ## HECW2      -5.511888 4.242875e-14 3.566695e-11
-    ## LINC01428   6.917623 4.910722e-14 3.921703e-11
+    ## TOGARAM2    7.587000 3.899368e-17 6.272133e-13
+    ## TMEM178B    7.625653 1.926397e-16 1.549305e-12
+    ## MIR29B2CHG  4.268846 1.491658e-15 6.241013e-12
+    ## FILIP1L     3.992102 1.552008e-15 6.241013e-12
+    ## HECW2      -5.405868 9.936295e-15 3.196506e-11
+    ## NCEH1       3.998083 1.985695e-14 5.323316e-11
+    ## MBOAT2     -3.246819 4.667049e-14 1.032247e-10
+    ## DGKG        5.027604 5.133961e-14 1.032247e-10
+    ## PFKFB2      3.661924 9.101528e-14 1.626645e-10
+    ## AGPAT4     -3.943577 1.252613e-13 1.938594e-10
+    ## AQP7        6.290223 1.325740e-13 1.938594e-10
+    ## AAK1        1.890045 1.478445e-13 1.963979e-10
+    ## CFAP61      4.798169 1.587301e-13 1.963979e-10
+    ## FRMD5      -3.514541 1.839919e-13 2.113935e-10
+    ## PPP1R13L    3.686884 2.524058e-13 2.521864e-10
+    ## FYB2        5.612310 2.589991e-13 2.521864e-10
+    ## ALS2CL      4.562674 2.665321e-13 2.521864e-10
+    ## CCSER1      3.630818 3.099571e-13 2.683000e-10
+    ## IGF2BP3    -5.468587 3.169226e-13 2.683000e-10
+    ## CSDC2       7.946951 3.388722e-13 2.725380e-10
 
 ### Fibroblast Differential Expression
 
@@ -1295,9 +1296,9 @@ summary(dt_fibro)
 ```
 
     ##          YvF   AvF   AvY
-    ## Down     885   689     8
-    ## NotSig 14413 14751 15957
-    ## Up       674   532     7
+    ## Down     883   695     6
+    ## NotSig 14560 14868 16072
+    ## Up       642   522     7
 
 ``` r
 # Top DE genes
@@ -1311,48 +1312,69 @@ cat("\nTop 20 DE genes: Adult vs Fetal Fibroblasts\n")
 topTreat(treat_fibro, coef = "AvF", n = 20)[, c("SYMBOL", "GENENAME", "logFC", "P.Value", "adj.P.Val")]
 ```
 
-    ##              SYMBOL                                               GENENAME
-    ## CNTNAP2     CNTNAP2                         contactin associated protein 2
-    ## VIT             VIT                                                 vitrin
-    ## MTUS1         MTUS1              microtubule associated scaffold protein 1
-    ## LINC02511 LINC02511            long intergenic non-protein coding RNA 2511
-    ## EMILIN2     EMILIN2                       elastin microfibril interfacer 2
-    ## MEST           MEST                           mesoderm specific transcript
-    ## PIEZO2       PIEZO2    piezo type mechanosensitive ion channel component 2
-    ## HHIP           HHIP                           hedgehog interacting protein
-    ## COL28A1     COL28A1                     collagen type XXVIII alpha 1 chain
-    ## COL6A6       COL6A6                         collagen type VI alpha 6 chain
-    ## LAMA2         LAMA2                                laminin subunit alpha 2
-    ## IGF2BP3     IGF2BP3    insulin like growth factor 2 mRNA binding protein 3
-    ## CACNB4       CACNB4 calcium voltage-gated channel auxiliary subunit beta 4
-    ## MME-AS1     MME-AS1                                    MME antisense RNA 1
-    ## ECHDC2       ECHDC2                enoyl-CoA hydratase domain containing 2
-    ## PRSS35       PRSS35                                     serine protease 35
-    ## CCL11         CCL11                          C-C motif chemokine ligand 11
-    ## GSN             GSN                                               gelsolin
-    ## TMEM26       TMEM26                               transmembrane protein 26
-    ## SAMD5         SAMD5                sterile alpha motif domain containing 5
+    ##              SYMBOL
+    ## PIEZO2       PIEZO2
+    ## MTUS1         MTUS1
+    ## LAMA2         LAMA2
+    ## MEST           MEST
+    ## CNTNAP2     CNTNAP2
+    ## LINC02511 LINC02511
+    ## COL28A1     COL28A1
+    ## IGF2BP3     IGF2BP3
+    ## HHIP           HHIP
+    ## VIT             VIT
+    ## PRSS35       PRSS35
+    ## PEG10         PEG10
+    ## KHDRBS2     KHDRBS2
+    ## GRID2         GRID2
+    ## MANCR         MANCR
+    ## TMEM26       TMEM26
+    ## COL6A6       COL6A6
+    ## C11orf87   C11orf87
+    ## SEMA5A       SEMA5A
+    ## SAMD5         SAMD5
+    ##                                                                     GENENAME
+    ## PIEZO2                   piezo type mechanosensitive ion channel component 2
+    ## MTUS1                              microtubule associated scaffold protein 1
+    ## LAMA2                                                laminin subunit alpha 2
+    ## MEST                                            mesoderm specific transcript
+    ## CNTNAP2                                       contactin associated protein 2
+    ## LINC02511                        long intergenic non-protein coding RNA 2511
+    ## COL28A1                                   collagen type XXVIII alpha 1 chain
+    ## IGF2BP3                  insulin like growth factor 2 mRNA binding protein 3
+    ## HHIP                                            hedgehog interacting protein
+    ## VIT                                                                   vitrin
+    ## PRSS35                                                    serine protease 35
+    ## PEG10                                                paternally expressed 10
+    ## KHDRBS2   KH RNA binding domain containing, signal transduction associated 2
+    ## GRID2                     glutamate ionotropic receptor delta type subunit 2
+    ## MANCR                             mitotically associated long non coding RNA
+    ## TMEM26                                              transmembrane protein 26
+    ## COL6A6                                        collagen type VI alpha 6 chain
+    ## C11orf87                                 chromosome 11 open reading frame 87
+    ## SEMA5A                                                         semaphorin 5A
+    ## SAMD5                                sterile alpha motif domain containing 5
     ##               logFC      P.Value    adj.P.Val
-    ## CNTNAP2   -3.167238 4.144616e-15 6.619780e-11
-    ## VIT        5.687436 4.488375e-14 3.584417e-10
-    ## MTUS1      3.487891 1.171861e-13 6.238987e-10
-    ## LINC02511  4.724299 3.666649e-13 1.221497e-09
-    ## EMILIN2   -4.226971 3.823870e-13 1.221497e-09
-    ## MEST      -6.163864 6.903606e-13 1.515767e-09
-    ## PIEZO2    -5.911528 6.984343e-13 1.515767e-09
-    ## HHIP      -5.784088 7.592123e-13 1.515767e-09
-    ## COL28A1    4.640992 1.153005e-12 2.046199e-09
-    ## COL6A6    -2.649063 3.187631e-12 5.091283e-09
-    ## LAMA2      3.940293 4.071836e-12 5.912306e-09
-    ## IGF2BP3   -5.822081 5.642516e-12 7.172859e-09
-    ## CACNB4    -3.755820 5.838165e-12 7.172859e-09
-    ## MME-AS1    5.672477 8.117702e-12 9.261138e-09
-    ## ECHDC2     2.436573 9.976631e-12 1.062312e-08
-    ## PRSS35    -6.727923 1.780639e-11 1.777523e-08
-    ## CCL11      5.273334 2.323484e-11 2.125862e-08
-    ## GSN        3.660629 2.395787e-11 2.125862e-08
-    ## TMEM26    -8.478859 4.529853e-11 3.807937e-08
-    ## SAMD5     -4.719951 4.770148e-11 3.809440e-08
+    ## PIEZO2    -5.903270 6.411440e-14 6.292989e-10
+    ## MTUS1      3.403517 7.824668e-14 6.292989e-10
+    ## LAMA2      3.883501 1.208852e-12 5.430662e-09
+    ## MEST      -6.108686 1.825539e-12 5.430662e-09
+    ## CNTNAP2   -3.124996 1.904295e-12 5.430662e-09
+    ## LINC02511  4.797146 2.224419e-12 5.430662e-09
+    ## COL28A1    4.547963 2.363359e-12 5.430662e-09
+    ## IGF2BP3   -5.769645 3.152811e-12 6.339120e-09
+    ## HHIP      -5.764199 5.119151e-12 9.149061e-09
+    ## VIT        5.699455 5.900527e-12 9.490997e-09
+    ## PRSS35    -6.824149 1.002282e-11 1.465610e-08
+    ## PEG10     -6.694164 1.154682e-11 1.547755e-08
+    ## KHDRBS2   -5.246471 1.602825e-11 1.877958e-08
+    ## GRID2     -5.139266 1.634530e-11 1.877958e-08
+    ## MANCR      8.245547 2.492662e-11 2.672965e-08
+    ## TMEM26    -8.593291 2.843030e-11 2.858133e-08
+    ## COL6A6    -2.625479 4.234987e-11 3.876535e-08
+    ## C11orf87  -6.557953 4.338056e-11 3.876535e-08
+    ## SEMA5A    -4.407908 4.708686e-11 3.986274e-08
+    ## SAMD5     -4.724801 6.128396e-11 4.928763e-08
 
 ### Endothelial Cell Differential Expression
 
@@ -1392,9 +1414,9 @@ summary(dt_endo)
 ```
 
     ##          YvF   AvF   AvY
-    ## Down     311   354     0
-    ## NotSig 15450 15379 15972
-    ## Up       211   239     0
+    ## Down     326   424     0
+    ## NotSig 15513 15385 16085
+    ## Up       246   276     0
 
 ### Immune Cell Differential Expression
 
@@ -1436,9 +1458,9 @@ summary(dt_immune)
 ```
 
     ##          YvF   AvF   AvY
-    ## Down      94   109     1
-    ## NotSig 15786 15769 15970
-    ## Up        92    94     1
+    ## Down     178   288     2
+    ## NotSig 15768 15662 16082
+    ## Up       139   135     1
 
 ## Visualisation of DE Results
 
@@ -1506,10 +1528,11 @@ ggplot(de_summary_long, aes(x = contrast, y = n_genes, fill = direction)) +
     transcriptional stability thereafter.
 
 2.  **Cell type-specific responses**: Cardiomyocytes show the largest
-    number of DE genes (~2,200), followed by fibroblasts (~1,200-1,500),
-    endothelial cells (~500-600), and immune cells (~190). This ranking
-    is consistent with the original study findings, where cardiomyocytes
-    showed the most transcriptional remodelling during development.
+    number of DE genes (~2,200-2,300), followed by fibroblasts
+    (~1,200-1,500), endothelial cells (~570-700), and immune cells
+    (~320-420). This ranking is consistent with the original study
+    findings, where cardiomyocytes showed the most transcriptional
+    remodelling during development.
 
 3.  **Directional patterns**: In cardiomyocytes and fibroblasts,
     downregulated genes slightly outnumber upregulated genes when
@@ -1745,10 +1768,13 @@ al. (2021):
 - The human heart undergoes significant changes in cellular composition
   during development (FDR \< 0.05 for four major cell types)
 - Cardiomyocyte proportions decrease dramatically from ~73% (fetal) to
-  ~22% (adult)
-- Immune cell proportions increase from ~2.5% (fetal) to ~19% (adult)
-- Fibroblast and endothelial cell proportions also increase during
-  maturation
+  ~40% (young) to ~22% (adult)
+- Immune cell proportions increase from ~3% (fetal) to ~10% (young) to
+  ~18% (adult)
+- Fibroblast proportions increase from ~12% (fetal) to ~28% (young) to
+  ~32% (adult)
+- Endothelial cell proportions increase from ~5% (fetal) to ~10% (young)
+  to ~14% (adult)
 - These compositional changes reflect fundamental biological processes
   in cardiac development, consistent with the original study findings
 
@@ -1757,15 +1783,16 @@ al. (2021):
 - The pseudobulk approach correctly treats samples (not cells) as the
   unit of biological replication, avoiding the pseudoreplication problem
 - Cardiomyocytes show the largest number of differentially expressed
-  genes (~2,200 genes for both Young vs Fetal and Adult vs Fetal
+  genes (~2,200-2,300 genes for both Young vs Fetal and Adult vs Fetal
   comparisons), consistent with major functional maturation involving
   metabolic reprogramming and cell cycle exit reported in the original
   study
 - Fibroblasts show substantial transcriptional changes (~1,200-1,500 DE
   genes), reflecting their expanding role in extracellular matrix
   production
-- Endothelial and immune cells show more modest changes (~200-600 DE
-  genes), though still biologically meaningful
+- Endothelial cells show ~570-700 DE genes and immune cells ~320-420 DE
+  genes, representing more modest but still biologically meaningful
+  changes
 - Interestingly, the Adult vs Young comparison yields very few DE genes
   across all cell types, suggesting that most developmental
   transcriptional changes occur during the fetal-to-postnatal transition

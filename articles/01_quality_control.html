@@ -80,8 +80,8 @@ Workshop</h4>
 RNA-sequencing (scRNA-seq) analysis. The goal of QC is to identify and
 remove low-quality cells that could confound downstream analysis. Poor
 quality cells can arise from several sources: empty droplets that
-contain only ambient RNA, dying cells that have compromised membranes,
-or doublets where two cells are captured in a single droplet.</p>
+contain only ambient RNA, or dying cells that have compromised
+membranes.</p>
 <p>In this module, we work with single nuclei RNA-sequencing (snRNA-seq)
 data from human heart tissue. The data comes from a study examining
 human heart development across three stages: foetal, young, and adult
@@ -125,7 +125,6 @@ individual RNA molecules, removing PCR amplification bias</li>
 <li>Load and explore scRNA-seq count data in R</li>
 <li>Understand the structure of a Seurat object</li>
 <li>Calculate and interpret per-cell quality control metrics</li>
-<li>Identify and remove doublets using computational methods</li>
 <li>Apply filtering thresholds to remove low-quality cells</li>
 <li>Visualise sample-level relationships using pseudobulk
 aggregation</li>
@@ -141,12 +140,6 @@ module. Each package provides specific functionality:</p>
 <strong>Seurat</strong>: The primary framework for single cell
 analysis, providing functions for data manipulation, normalisation,
 clustering, and visualisation</li>
-<li>
-<strong>scDblFinder</strong>: Computational detection of
-doublets</li>
-<li>
-<strong>SingleCellExperiment</strong>: A standardised data structure
-for single cell data, required by scDblFinder</li>
 <li>
 <strong>ggplot2</strong>: Creating publication-quality plots using
 the grammar of graphics</li>
@@ -165,8 +158,6 @@ annotations</li>
 </ul>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://satijalab.org/seurat" class="external-link">Seurat</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/plger/scDblFinder" class="external-link">scDblFinder</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">SingleCellExperiment</span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://patchwork.data-imaginist.com" class="external-link">patchwork</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
@@ -376,8 +367,8 @@ statistical analyses.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/rm.html" class="external-link">rm</a></span><span class="op">(</span><span class="va">counts</span>, <span class="va">cellinfo</span>, <span class="va">cellinfo_matched</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/gc.html" class="external-link">gc</a></span><span class="op">(</span><span class="op">)</span>  <span class="co"># Garbage collection to release memory</span></span></code></pre></div>
 <pre><code><span><span class="co">##             used   (Mb) gc trigger   (Mb)   max used   (Mb)</span></span>
-<span><span class="co">## Ncells  14711744  785.7   26484698 1414.5   19861120 1060.7</span></span>
-<span><span class="co">## Vcells 294315468 2245.5 1025721071 7825.7 1282149408 9782.1</span></span></code></pre>
+<span><span class="co">## Ncells   7675894  410.0   13112328  700.3   12633784  674.8</span></span>
+<span><span class="co">## Vcells 281850960 2150.4 1210252145 9233.5 1179981636 9002.6</span></span></code></pre>
 </div>
 <div class="section level3">
 <h3 id="examining-the-seurat-object">Examining the Seurat Object<a class="anchor" aria-label="anchor" href="#examining-the-seurat-object"></a>
@@ -529,7 +520,7 @@ percentage of counts from a specified set of genes.</p>
 <li>
 <strong>nCount_RNA</strong> (library size): The total number of UMI
 counts in a cell. Very low values suggest empty droplets; very high
-values may indicate doublets.</li>
+values may indicate technical artefacts.</li>
 <li>
 <strong>nFeature_RNA</strong> (gene count): The number of genes
 detected. Correlates with library size but provides additional
@@ -631,141 +622,12 @@ genes.</p>
 <li>
 <strong>Left panel</strong>: The strong positive correlation between
 nCount_RNA and nFeature_RNA is expected. Cells deviating from this trend
-(high counts but few genes) might be doublets or have other quality
-issues.</li>
+(high counts but few genes) may have quality issues.</li>
 <li>
 <strong>Right panel</strong>: We look for cells with both low
 library size and high mitochondrial content (upper-left region), which
 are strong candidates for removal.</li>
 </ul>
-</div>
-</div>
-<div class="section level2">
-<h2 id="doublet-detection">Doublet Detection<a class="anchor" aria-label="anchor" href="#doublet-detection"></a>
-</h2>
-<div class="section level3">
-<h3 id="what-are-doublets">What are Doublets?<a class="anchor" aria-label="anchor" href="#what-are-doublets"></a>
-</h3>
-<p>Doublets occur when two cells are captured in the same droplet during
-the 10X Genomics workflow. This happens because cell loading follows a
-Poisson distribution, and occasionally two cells enter the same droplet
-by chance. The expected doublet rate increases with the number of cells
-loaded.</p>
-<p>Doublets are problematic because they:</p>
-<ul>
-<li>Appear as artificial “intermediate” cell states</li>
-<li>Can confuse clustering algorithms</li>
-<li>May be mistaken for rare transitional cell populations</li>
-<li>Inflate the apparent number of cells</li>
-</ul>
-<p>There are two types of doublets:</p>
-<ol style="list-style-type: decimal">
-<li>
-<strong>Homotypic doublets</strong>: Two cells of the same type
-captured together. These are difficult to detect computationally because
-they look like normal cells with higher library size.</li>
-<li>
-<strong>Heterotypic doublets</strong>: Two cells of different types
-captured together. These are easier to detect because they express
-markers from both cell types.</li>
-</ol>
-</div>
-<div class="section level3">
-<h3 id="the-scdblfinder-algorithm">The scDblFinder Algorithm<a class="anchor" aria-label="anchor" href="#the-scdblfinder-algorithm"></a>
-</h3>
-<p><em>scDblFinder</em> is a computational method that identifies likely
-doublets by:</p>
-<ol style="list-style-type: decimal">
-<li>Creating artificial doublets by combining randomly selected pairs of
-cells</li>
-<li>Training a classifier to distinguish artificial doublets from real
-cells</li>
-<li>Applying the classifier to identify real cells that resemble
-artificial doublets</li>
-</ol>
-<p>We run scDblFinder separately for each sample because doublet rates
-can vary between samples, and combining cells from different samples
-could create artificial heterogeneity.</p>
-<div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Convert Seurat object to SingleCellExperiment format (required by scDblFinder)</span></span>
-<span><span class="va">sce</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://satijalab.org/seurat/reference/as.SingleCellExperiment.html" class="external-link">as.SingleCellExperiment</a></span><span class="op">(</span><span class="va">seu</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Run scDblFinder</span></span>
-<span><span class="co"># samples = "sample" tells it to process each sample separately</span></span>
-<span><span class="co"># Setting a seed ensures reproducibility</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
-<span><span class="va">sce</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://plger.github.io/scDblFinder/reference/scDblFinder.html" class="external-link">scDblFinder</a></span><span class="op">(</span><span class="va">sce</span>, samples <span class="op">=</span> <span class="st">"sample"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">##   |                                                                              |                                                                      |   0%  |                                                                              |========                                                              |  11%  |                                                                              |================                                                      |  22%  |                                                                              |=======================                                               |  33%  |                                                                              |===============================                                       |  44%  |                                                                              |=======================================                               |  56%  |                                                                              |===============================================                       |  67%  |                                                                              |======================================================                |  78%  |                                                                              |==============================================================        |  89%  |                                                                              |======================================================================| 100%</span></span></code></pre>
-<div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Transfer the results back to our Seurat object</span></span>
-<span><span class="va">seu</span><span class="op">$</span><span class="va">scDblFinder.score</span> <span class="op">&lt;-</span> <span class="va">sce</span><span class="op">$</span><span class="va">scDblFinder.score</span></span>
-<span><span class="va">seu</span><span class="op">$</span><span class="va">scDblFinder.class</span> <span class="op">&lt;-</span> <span class="va">sce</span><span class="op">$</span><span class="va">scDblFinder.class</span></span>
-<span></span>
-<span><span class="co"># Clean up</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/rm.html" class="external-link">rm</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/gc.html" class="external-link">gc</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">##             used   (Mb) gc trigger   (Mb)   max used   (Mb)</span></span>
-<span><span class="co">## Ncells  15288018  816.5   26484698 1414.5   26484698 1414.5</span></span>
-<span><span class="co">## Vcells 296582833 2262.8  820576857 6260.6 1282149408 9782.1</span></span></code></pre>
-</div>
-<div class="section level3">
-<h3 id="examining-doublet-detection-results">Examining Doublet Detection Results<a class="anchor" aria-label="anchor" href="#examining-doublet-detection-results"></a>
-</h3>
-<p>Let us examine how many doublets were detected:</p>
-<div class="sourceCode" id="cb53"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Overall doublet summary</span></span>
-<span><span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">seu</span><span class="op">$</span><span class="va">scDblFinder.class</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## </span></span>
-<span><span class="co">## singlet doublet </span></span>
-<span><span class="co">##   49546    4589</span></span></code></pre>
-<div class="sourceCode" id="cb55"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Doublet rate per sample</span></span>
-<span><span class="va">seu</span><span class="op">@</span><span class="va">meta.data</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">sample</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise</a></span><span class="op">(</span></span>
-<span>    total_cells <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/context.html" class="external-link">n</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>    doublets <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">scDblFinder.class</span> <span class="op">==</span> <span class="st">"doublet"</span><span class="op">)</span>,</span>
-<span>    doublet_rate_pct <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">doublets</span> <span class="op">/</span> <span class="va">total_cells</span> <span class="op">*</span> <span class="fl">100</span>, <span class="fl">2</span><span class="op">)</span>,</span>
-<span>    .groups <span class="op">=</span> <span class="st">"drop"</span></span>
-<span>  <span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## <span style="color: #949494;"># A tibble: 9 × 4</span></span></span>
-<span><span class="co">##   sample total_cells doublets doublet_rate_pct</span></span>
-<span><span class="co">##   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">1</span> a1            <span style="text-decoration: underline;">4</span>360      259             5.94</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">2</span> a2            <span style="text-decoration: underline;">3</span>374      179             5.31</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">3</span> a3            <span style="text-decoration: underline;">1</span>681       75             4.46</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">4</span> f1            <span style="text-decoration: underline;">8</span>294      707             8.52</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">5</span> f2           <span style="text-decoration: underline;">10</span>947     <span style="text-decoration: underline;">1</span>326            12.1 </span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">6</span> f3            <span style="text-decoration: underline;">8</span>515      799             9.38</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">7</span> y1            <span style="text-decoration: underline;">4</span>422      194             4.39</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">8</span> y2            <span style="text-decoration: underline;">5</span>558      395             7.11</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">9</span> y3            <span style="text-decoration: underline;">6</span>984      655             9.38</span></span></code></pre>
-<p>The expected doublet rate depends on the number of cells loaded. As a
-rule of thumb, loading ~10,000 cells results in approximately 8%
-doublets. Our observed rates should be in a similar range.</p>
-</div>
-<div class="section level3">
-<h3 id="visualising-doublet-scores">Visualising Doublet Scores<a class="anchor" aria-label="anchor" href="#visualising-doublet-scores"></a>
-</h3>
-<p>The doublet score indicates how likely a cell is to be a doublet
-(higher = more likely). Let us visualise the distribution:</p>
-<div class="sourceCode" id="cb57"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://satijalab.org/seurat/reference/VlnPlot.html" class="external-link">VlnPlot</a></span><span class="op">(</span></span>
-<span>    <span class="va">seu</span>,</span>
-<span>    features <span class="op">=</span> <span class="st">"scDblFinder.score"</span>,</span>
-<span>    group.by <span class="op">=</span> <span class="st">"sample"</span>,</span>
-<span>    pt.size <span class="op">=</span> <span class="fl">0</span></span>
-<span><span class="op">)</span> <span class="op">+</span></span>
-<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_abline.html" class="external-link">geom_hline</a></span><span class="op">(</span>yintercept <span class="op">=</span> <span class="fl">0.5</span>, linetype <span class="op">=</span> <span class="st">"dashed"</span>, colour <span class="op">=</span> <span class="st">"red"</span><span class="op">)</span> <span class="op">+</span></span>
-<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>axis.text.x <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>angle <span class="op">=</span> <span class="fl">45</span>, hjust <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
-<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
-<span>        title <span class="op">=</span> <span class="st">"Doublet Scores by Sample"</span>,</span>
-<span>        subtitle <span class="op">=</span> <span class="st">"Higher scores indicate likely doublets"</span></span>
-<span>    <span class="op">)</span></span></code></pre></div>
-<p><img src="01_quality_control_files/figure-html/doublet-violin-1.png" class="r-plt" alt="" width="960" style="display: block; margin: auto;"></p>
-<p>Cells classified as doublets typically have scores above 0.5, though
-the exact threshold is determined by scDblFinder’s internal
-classifier.</p>
 </div>
 </div>
 <div class="section level2">
@@ -776,7 +638,7 @@ classifier.</p>
 </h3>
 <p>Based on our QC visualisations and established guidelines for
 snRNA-seq data, we define the following filtering thresholds:</p>
-<div class="sourceCode" id="cb58"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Define filtering thresholds</span></span>
 <span><span class="va">min_genes</span> <span class="op">&lt;-</span> <span class="fl">500</span>       <span class="co"># Minimum genes detected per cell</span></span>
 <span><span class="va">min_counts</span> <span class="op">&lt;-</span> <span class="fl">2500</span>     <span class="co"># Minimum UMI counts per cell</span></span>
@@ -793,14 +655,11 @@ snRNA-seq.</li>
 depth for reliable downstream analysis.</li>
 <li>
 <strong>max_counts = 40000</strong>: Extremely high counts may
-indicate doublets that escaped detection or technical artefacts.</li>
+indicate technical artefacts.</li>
 <li>
 <strong>max_mt = 20%</strong>: High mitochondrial content indicates
 cell stress or death. The 20% threshold is appropriate for snRNA-seq;
 for scRNA-seq, 10% might be more suitable.</li>
-<li>
-<strong>singlets only</strong>: Removes computationally identified
-doublets.</li>
 </ul>
 </div>
 <div class="section level3">
@@ -808,7 +667,7 @@ doublets.</li>
 </h3>
 <p>Before applying filters, it is helpful to visualise where the
 thresholds fall relative to the data distribution:</p>
-<div class="sourceCode" id="cb59"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb50"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Create histograms with threshold lines</span></span>
 <span><span class="va">p1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">seu</span><span class="op">@</span><span class="va">meta.data</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">nFeature_RNA</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_histogram.html" class="external-link">geom_histogram</a></span><span class="op">(</span>bins <span class="op">=</span> <span class="fl">50</span>, fill <span class="op">=</span> <span class="st">"steelblue"</span>, colour <span class="op">=</span> <span class="st">"white"</span>, alpha <span class="op">=</span> <span class="fl">0.8</span><span class="op">)</span> <span class="op">+</span></span>
@@ -846,7 +705,7 @@ removed.</p>
 <h3 id="applying-filters">Applying Filters<a class="anchor" aria-label="anchor" href="#applying-filters"></a>
 </h3>
 <p>Now we apply all filtering criteria simultaneously:</p>
-<div class="sourceCode" id="cb60"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Record the number of cells before filtering</span></span>
 <span><span class="va">cells_before</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">seu</span><span class="op">)</span></span>
 <span></span>
@@ -856,8 +715,7 @@ removed.</p>
 <span>    subset <span class="op">=</span> <span class="va">nFeature_RNA</span> <span class="op">&gt;=</span> <span class="va">min_genes</span> <span class="op">&amp;</span></span>
 <span>             <span class="va">nCount_RNA</span> <span class="op">&gt;=</span> <span class="va">min_counts</span> <span class="op">&amp;</span></span>
 <span>             <span class="va">nCount_RNA</span> <span class="op">&lt;=</span> <span class="va">max_counts</span> <span class="op">&amp;</span></span>
-<span>             <span class="va">percent.mt</span> <span class="op">&lt;=</span> <span class="va">max_mt</span> <span class="op">&amp;</span></span>
-<span>             <span class="va">scDblFinder.class</span> <span class="op">==</span> <span class="st">"singlet"</span></span>
+<span>             <span class="va">percent.mt</span> <span class="op">&lt;=</span> <span class="va">max_mt</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Record the number of cells after filtering</span></span>
@@ -866,18 +724,18 @@ removed.</p>
 <span><span class="co"># Report filtering results</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Filtering results:\n"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Filtering results:</span></span></code></pre>
-<div class="sourceCode" id="cb62"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb53"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"- Cells before:"</span>, <span class="va">cells_before</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## - Cells before: 54135</span></span></code></pre>
-<div class="sourceCode" id="cb64"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb55"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"- Cells after:"</span>, <span class="va">cells_after</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## - Cells after: 42993</span></span></code></pre>
-<div class="sourceCode" id="cb66"><pre class="downlit sourceCode r">
+<pre><code><span><span class="co">## - Cells after: 47405</span></span></code></pre>
+<div class="sourceCode" id="cb57"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"- Cells removed:"</span>, <span class="va">cells_before</span> <span class="op">-</span> <span class="va">cells_after</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## - Cells removed: 11142</span></span></code></pre>
-<div class="sourceCode" id="cb68"><pre class="downlit sourceCode r">
+<pre><code><span><span class="co">## - Cells removed: 6730</span></span></code></pre>
+<div class="sourceCode" id="cb59"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"- Retention:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">cells_after</span> <span class="op">/</span> <span class="va">cells_before</span> <span class="op">*</span> <span class="fl">100</span>, <span class="fl">1</span><span class="op">)</span>, <span class="st">"%\n"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## - Retention: 79.4 %</span></span></code></pre>
+<pre><code><span><span class="co">## - Retention: 87.6 %</span></span></code></pre>
 </div>
 <div class="section level3">
 <h3 id="examining-filtering-effects-by-sample">Examining Filtering Effects by Sample<a class="anchor" aria-label="anchor" href="#examining-filtering-effects-by-sample"></a>
@@ -885,7 +743,7 @@ removed.</p>
 <p>It is important to verify that filtering does not disproportionately
 affect certain samples, which could indicate sample-specific quality
 issues:</p>
-<div class="sourceCode" id="cb70"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb61"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Calculate cells per sample before and after filtering</span></span>
 <span><span class="va">before_counts</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">seu</span><span class="op">$</span><span class="va">sample</span><span class="op">)</span></span>
 <span><span class="va">after_counts</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">seu_filtered</span><span class="op">$</span><span class="va">sample</span><span class="op">)</span></span>
@@ -909,16 +767,16 @@ issues:</p>
 <span></span>
 <span><span class="va">filter_summary</span></span></code></pre></div>
 <pre><code><span><span class="co">##   sample before after removed retention_pct  group</span></span>
-<span><span class="co">## 1     a1   4360  3779     581          86.7  adult</span></span>
-<span><span class="co">## 2     a2   3374  2438     936          72.3  adult</span></span>
-<span><span class="co">## 3     a3   1681  1152     529          68.5  adult</span></span>
-<span><span class="co">## 4     f1   8294  7253    1041          87.4 foetal</span></span>
-<span><span class="co">## 5     f2  10947  9071    1876          82.9 foetal</span></span>
-<span><span class="co">## 6     f3   8515  6750    1765          79.3 foetal</span></span>
-<span><span class="co">## 7     y1   4422  4113     309          93.0  young</span></span>
-<span><span class="co">## 8     y2   5558  4334    1224          78.0  young</span></span>
-<span><span class="co">## 9     y3   6984  4103    2881          58.7  young</span></span></code></pre>
-<div class="sourceCode" id="cb72"><pre class="downlit sourceCode r">
+<span><span class="co">## 1     a1   4360  3998     362          91.7  adult</span></span>
+<span><span class="co">## 2     a2   3374  2605     769          77.2  adult</span></span>
+<span><span class="co">## 3     a3   1681  1226     455          72.9  adult</span></span>
+<span><span class="co">## 4     f1   8294  7952     342          95.9 foetal</span></span>
+<span><span class="co">## 5     f2  10947 10389     558          94.9 foetal</span></span>
+<span><span class="co">## 6     f3   8515  7489    1026          88.0 foetal</span></span>
+<span><span class="co">## 7     y1   4422  4306     116          97.4  young</span></span>
+<span><span class="co">## 8     y2   5558  4695     863          84.5  young</span></span>
+<span><span class="co">## 9     y3   6984  4745    2239          67.9  young</span></span></code></pre>
+<div class="sourceCode" id="cb63"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Visualise filtering effect</span></span>
 <span><span class="va">filter_long</span> <span class="op">&lt;-</span> <span class="va">filter_summary</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>    <span class="fu">tidyr</span><span class="fu">::</span><span class="fu"><a href="https://tidyr.tidyverse.org/reference/pivot_longer.html" class="external-link">pivot_longer</a></span><span class="op">(</span></span>
@@ -965,7 +823,7 @@ investigation.</p>
 </h3>
 <p>Finally, we verify that our filtered dataset shows improved QC
 characteristics:</p>
-<div class="sourceCode" id="cb73"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb64"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://satijalab.org/seurat/reference/VlnPlot.html" class="external-link">VlnPlot</a></span><span class="op">(</span></span>
 <span>    <span class="va">seu_filtered</span>,</span>
 <span>    features <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"nCount_RNA"</span>, <span class="st">"nFeature_RNA"</span>, <span class="st">"percent.mt"</span>, <span class="st">"percent.ribo"</span><span class="op">)</span>,</span>
@@ -1025,7 +883,7 @@ prevents confounding.</p>
 <div class="section level3">
 <h3 id="identify-genes-for-removal">Identify Genes for Removal<a class="anchor" aria-label="anchor" href="#identify-genes-for-removal"></a>
 </h3>
-<div class="sourceCode" id="cb74"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb65"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Get gene annotation for filtered object</span></span>
 <span><span class="va">gene_symbols_filt</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/row_colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">seu_filtered</span><span class="op">)</span></span>
 <span><span class="va">ann_filt</span> <span class="op">&lt;-</span> <span class="va">ann</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/match.html" class="external-link">match</a></span><span class="op">(</span><span class="va">gene_symbols_filt</span>, <span class="va">ann</span><span class="op">$</span><span class="va">SYMBOL</span><span class="op">)</span>, <span class="op">]</span></span>
@@ -1036,39 +894,39 @@ prevents confounding.</p>
 <span><span class="va">mito_idx</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">mt_prefix_idx</span>, <span class="va">mt_nuclear_idx</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Mitochondrial genes (MT- prefix):"</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">mt_prefix_idx</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Mitochondrial genes (MT- prefix): 13</span></span></code></pre>
-<div class="sourceCode" id="cb76"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb67"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Mitochondrial genes (nuclear-encoded):"</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">mt_nuclear_idx</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Mitochondrial genes (nuclear-encoded): 209</span></span></code></pre>
-<div class="sourceCode" id="cb78"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb69"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># 2. Ribosomal genes: both RP[SL] prefixed and by gene name</span></span>
 <span><span class="va">rp_prefix_idx</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/grep.html" class="external-link">grep</a></span><span class="op">(</span><span class="st">"^RP[SL][0-9]"</span>, <span class="va">gene_symbols_filt</span><span class="op">)</span></span>
 <span><span class="va">rp_genename_idx</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/grep.html" class="external-link">grep</a></span><span class="op">(</span><span class="st">"ribosomal"</span>, <span class="va">ann_filt</span><span class="op">$</span><span class="va">GENENAME</span>, ignore.case <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="va">ribo_idx</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">rp_prefix_idx</span>, <span class="va">rp_genename_idx</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Ribosomal genes (RP[SL] prefix):"</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">rp_prefix_idx</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Ribosomal genes (RP[SL] prefix): 99</span></span></code></pre>
-<div class="sourceCode" id="cb80"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb71"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Ribosomal genes (by gene name):"</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">rp_genename_idx</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Ribosomal genes (by gene name): 191</span></span></code></pre>
-<div class="sourceCode" id="cb82"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb73"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># 3. Genes without Entrez IDs</span></span>
 <span><span class="va">no_entrez_idx</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/which.html" class="external-link">which</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">ann_filt</span><span class="op">$</span><span class="va">ENTREZID</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Genes without Entrez ID:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">no_entrez_idx</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Genes without Entrez ID: 9252</span></span></code></pre>
-<div class="sourceCode" id="cb84"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb75"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># 4. Sex chromosome genes</span></span>
 <span><span class="va">x_genes</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/which.html" class="external-link">which</a></span><span class="op">(</span><span class="va">ann_filt</span><span class="op">$</span><span class="va">CHR</span> <span class="op">==</span> <span class="st">"X"</span><span class="op">)</span></span>
 <span><span class="va">y_genes</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/which.html" class="external-link">which</a></span><span class="op">(</span><span class="va">ann_filt</span><span class="op">$</span><span class="va">CHR</span> <span class="op">==</span> <span class="st">"Y"</span><span class="op">)</span></span>
 <span><span class="va">sex_chr_idx</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">x_genes</span>, <span class="va">y_genes</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"X chromosome genes:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">x_genes</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## X chromosome genes: 750</span></span></code></pre>
-<div class="sourceCode" id="cb86"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb77"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Y chromosome genes:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">y_genes</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Y chromosome genes: 36</span></span></code></pre>
 </div>
 <div class="section level3">
 <h3 id="apply-gene-filtering">Apply Gene Filtering<a class="anchor" aria-label="anchor" href="#apply-gene-filtering"></a>
 </h3>
-<div class="sourceCode" id="cb88"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb79"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Combine all genes to remove (some may overlap between categories)</span></span>
 <span><span class="va">genes_remove_idx</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">mito_idx</span>, <span class="va">ribo_idx</span>, <span class="va">no_entrez_idx</span>, <span class="va">sex_chr_idx</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">genes_remove</span> <span class="op">&lt;-</span> <span class="va">gene_symbols_filt</span><span class="op">[</span><span class="va">genes_remove_idx</span><span class="op">]</span></span>
@@ -1076,20 +934,20 @@ prevents confounding.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"\nGene filtering summary:\n"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">## Gene filtering summary:</span></span></code></pre>
-<div class="sourceCode" id="cb90"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb81"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"- Genes before filtering:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">gene_symbols_filt</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## - Genes before filtering: 29323</span></span></code></pre>
-<div class="sourceCode" id="cb92"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb83"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"- Genes to remove:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">genes_remove</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## - Genes to remove: 10370</span></span></code></pre>
-<div class="sourceCode" id="cb94"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb85"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Subset Seurat object to keep only desired genes</span></span>
 <span><span class="va">genes_keep</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://generics.r-lib.org/reference/setops.html" class="external-link">setdiff</a></span><span class="op">(</span><span class="va">gene_symbols_filt</span>, <span class="va">genes_remove</span><span class="op">)</span></span>
 <span><span class="va">seu_filtered</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">seu_filtered</span>, features <span class="op">=</span> <span class="va">genes_keep</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"- Genes after filtering:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">seu_filtered</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## - Genes after filtering: 18953</span></span></code></pre>
-<div class="sourceCode" id="cb96"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb87"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"- Retention rate:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">seu_filtered</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">gene_symbols_filt</span><span class="op">)</span> <span class="op">*</span> <span class="fl">100</span>, <span class="fl">1</span><span class="op">)</span>, <span class="st">"%\n"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## - Retention rate: 64.6 %</span></span></code></pre>
 <p>This filtering removes approximately one-third of genes, retaining
@@ -1114,7 +972,7 @@ profiles. This allows us to:</p>
 </ul>
 <p>This approach uses techniques from traditional bulk RNA-seq analysis,
 which are well-established and robust.</p>
-<div class="sourceCode" id="cb98"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb89"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Aggregate counts by sample</span></span>
 <span><span class="co"># This sums all counts for each gene across all cells in each sample</span></span>
 <span><span class="va">pseudobulk</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://satijalab.org/seurat/reference/AggregateExpression.html" class="external-link">AggregateExpression</a></span><span class="op">(</span></span>
@@ -1132,7 +990,7 @@ which are well-established and robust.</p>
 </h3>
 <p>We use <em>edgeR</em>’s DGEList object to store the pseudobulk data
 and perform filtering:</p>
-<div class="sourceCode" id="cb100"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb91"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Create DGEList object</span></span>
 <span><span class="va">dge</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/edgeR/man/DGEList.html" class="external-link">DGEList</a></span><span class="op">(</span>counts <span class="op">=</span> <span class="va">pseudobulk</span><span class="op">)</span></span>
 <span></span>
@@ -1155,7 +1013,7 @@ and perform filtering:</p>
 <span><span class="va">dge</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/edgeR/man/calcNormFactors.html" class="external-link">calcNormFactors</a></span><span class="op">(</span><span class="va">dge</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">dge</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## [1] 16553     9</span></span></code></pre>
+<pre><code><span><span class="co">## [1] 16685     9</span></span></code></pre>
 </div>
 <div class="section level3">
 <h3 id="multidimensional-scaling-mds-plot">Multidimensional Scaling (MDS) Plot<a class="anchor" aria-label="anchor" href="#multidimensional-scaling-mds-plot"></a>
@@ -1164,7 +1022,7 @@ and perform filtering:</p>
 technique that visualises the similarity between samples. Samples that
 are more similar in their overall gene expression profiles appear closer
 together in the plot.</p>
-<div class="sourceCode" id="cb102"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb93"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Calculate MDS coordinates</span></span>
 <span><span class="va">mds</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/limma/man/plotMDS.html" class="external-link">plotMDS</a></span><span class="op">(</span><span class="va">dge</span>, plot <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span></span>
@@ -1235,7 +1093,7 @@ technical artefacts.</p>
 </h3>
 <p>We save the filtered Seurat object so it can be loaded in subsequent
 modules:</p>
-<div class="sourceCode" id="cb103"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb94"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Create output directory if it doesn't exist</span></span>
 <span><span class="va">output_dir</span> <span class="op">&lt;-</span> <span class="st">"../data/processed"</span></span>
 <span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.exists</a></span><span class="op">(</span><span class="va">output_dir</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
@@ -1260,9 +1118,7 @@ developmental stages (Fetal, Young, Adult)</li>
 <li>Created a Seurat object and annotated genes using org.Hs.eg.db</li>
 <li>Calculated QC metrics: library size, genes detected, mitochondrial
 content, and ribosomal content</li>
-<li>Detected doublets using scDblFinder</li>
-<li>Applied cell filtering thresholds to remove low-quality cells and
-doublets</li>
+<li>Applied cell filtering thresholds to remove low-quality cells</li>
 <li>Applied gene filtering to remove mitochondrial, ribosomal, sex
 chromosome, and unannotated genes</li>
 <li>Performed pseudobulk aggregation and MDS visualisation</li>
@@ -1276,7 +1132,7 @@ in Module 2.</p>
 </h2>
 <p>For reproducibility, we record the R session information, including
 package versions:</p>
-<div class="sourceCode" id="cb104"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb95"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## R version 4.5.2 (2025-10-31)</span></span>
 <span><span class="co">## Platform: x86_64-pc-linux-gnu</span></span>
@@ -1300,74 +1156,57 @@ package versions:</p>
 <span><span class="co">## [8] base     </span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## other attached packages:</span></span>
-<span><span class="co">##  [1] org.Hs.eg.db_3.22.0         AnnotationDbi_1.72.0       </span></span>
-<span><span class="co">##  [3] edgeR_4.8.2                 limma_3.66.0               </span></span>
-<span><span class="co">##  [5] dplyr_1.1.4                 patchwork_1.3.2            </span></span>
-<span><span class="co">##  [7] ggplot2_4.0.1               scDblFinder_1.24.0         </span></span>
-<span><span class="co">##  [9] SingleCellExperiment_1.32.0 SummarizedExperiment_1.40.0</span></span>
-<span><span class="co">## [11] Biobase_2.70.0              GenomicRanges_1.62.1       </span></span>
-<span><span class="co">## [13] Seqinfo_1.0.0               IRanges_2.44.0             </span></span>
-<span><span class="co">## [15] S4Vectors_0.48.0            BiocGenerics_0.56.0        </span></span>
-<span><span class="co">## [17] generics_0.1.4              MatrixGenerics_1.22.0      </span></span>
-<span><span class="co">## [19] matrixStats_1.5.0           Seurat_5.4.0               </span></span>
-<span><span class="co">## [21] SeuratObject_5.3.0          sp_2.2-0                   </span></span>
+<span><span class="co">##  [1] org.Hs.eg.db_3.22.0  AnnotationDbi_1.72.0 IRanges_2.44.0      </span></span>
+<span><span class="co">##  [4] S4Vectors_0.48.0     Biobase_2.70.0       BiocGenerics_0.56.0 </span></span>
+<span><span class="co">##  [7] generics_0.1.4       edgeR_4.8.2          limma_3.66.0        </span></span>
+<span><span class="co">## [10] dplyr_1.1.4          patchwork_1.3.2      ggplot2_4.0.1       </span></span>
+<span><span class="co">## [13] Seurat_5.4.0         SeuratObject_5.3.0   sp_2.2-0            </span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## loaded via a namespace (and not attached):</span></span>
-<span><span class="co">##   [1] RcppAnnoy_0.0.23         splines_4.5.2            later_1.4.5             </span></span>
-<span><span class="co">##   [4] BiocIO_1.20.0            bitops_1.0-9             tibble_3.3.1            </span></span>
-<span><span class="co">##   [7] polyclip_1.10-7          XML_3.99-0.20            fastDummies_1.7.5       </span></span>
-<span><span class="co">##  [10] lifecycle_1.0.5          globals_0.18.0           lattice_0.22-7          </span></span>
-<span><span class="co">##  [13] MASS_7.3-65              magrittr_2.0.4           plotly_4.11.0           </span></span>
-<span><span class="co">##  [16] sass_0.4.10              rmarkdown_2.30           jquerylib_0.1.4         </span></span>
-<span><span class="co">##  [19] yaml_2.3.12              metapod_1.18.0           httpuv_1.6.16           </span></span>
-<span><span class="co">##  [22] otel_0.2.0               sctransform_0.4.3        spam_2.11-3             </span></span>
-<span><span class="co">##  [25] spatstat.sparse_3.1-0    reticulate_1.44.1        DBI_1.2.3               </span></span>
-<span><span class="co">##  [28] cowplot_1.2.0            pbapply_1.7-4            RColorBrewer_1.1-3      </span></span>
-<span><span class="co">##  [31] abind_1.4-8              Rtsne_0.17               purrr_1.2.1             </span></span>
-<span><span class="co">##  [34] RCurl_1.98-1.17          ggrepel_0.9.6            irlba_2.3.5.1           </span></span>
-<span><span class="co">##  [37] listenv_0.10.0           spatstat.utils_3.2-1     goftest_1.2-3           </span></span>
-<span><span class="co">##  [40] RSpectra_0.16-2          dqrng_0.4.1              spatstat.random_3.4-3   </span></span>
-<span><span class="co">##  [43] fitdistrplus_1.2-4       parallelly_1.46.1        pkgdown_2.2.0           </span></span>
-<span><span class="co">##  [46] codetools_0.2-20         DelayedArray_0.36.0      scuttle_1.20.0          </span></span>
-<span><span class="co">##  [49] tidyselect_1.2.1         UCSC.utils_1.6.1         farver_2.1.2            </span></span>
-<span><span class="co">##  [52] viridis_0.6.5            ScaledMatrix_1.18.0      spatstat.explore_3.6-0  </span></span>
-<span><span class="co">##  [55] GenomicAlignments_1.46.0 jsonlite_2.0.0           BiocNeighbors_2.4.0     </span></span>
-<span><span class="co">##  [58] progressr_0.18.0         scater_1.38.0            ggridges_0.5.7          </span></span>
-<span><span class="co">##  [61] survival_3.8-3           systemfonts_1.3.1        tools_4.5.2             </span></span>
-<span><span class="co">##  [64] ragg_1.5.0               ica_1.0-3                Rcpp_1.1.1              </span></span>
-<span><span class="co">##  [67] glue_1.8.0               gridExtra_2.3            SparseArray_1.10.8      </span></span>
-<span><span class="co">##  [70] mgcv_1.9-3               xfun_0.55                GenomeInfoDb_1.46.2     </span></span>
-<span><span class="co">##  [73] withr_3.0.2              BiocManager_1.30.27      fastmap_1.2.0           </span></span>
-<span><span class="co">##  [76] bluster_1.20.0           digest_0.6.39            rsvd_1.0.5              </span></span>
-<span><span class="co">##  [79] R6_2.6.1                 mime_0.13                textshaping_1.0.4       </span></span>
-<span><span class="co">##  [82] scattermore_1.2          tensor_1.5.1             RSQLite_2.4.5           </span></span>
-<span><span class="co">##  [85] spatstat.data_3.1-9      cigarillo_1.0.0          utf8_1.2.6              </span></span>
-<span><span class="co">##  [88] tidyr_1.3.2              renv_1.1.5               data.table_1.18.0       </span></span>
-<span><span class="co">##  [91] rtracklayer_1.70.1       httr_1.4.7               htmlwidgets_1.6.4       </span></span>
-<span><span class="co">##  [94] S4Arrays_1.10.1          uwot_0.2.4               pkgconfig_2.0.3         </span></span>
-<span><span class="co">##  [97] gtable_0.3.6             blob_1.2.4               lmtest_0.9-40           </span></span>
-<span><span class="co">## [100] S7_0.2.1                 XVector_0.50.0           htmltools_0.5.9         </span></span>
-<span><span class="co">## [103] dotCall64_1.2            scales_1.4.0             png_0.1-8               </span></span>
-<span><span class="co">## [106] spatstat.univar_3.1-5    scran_1.38.0             knitr_1.51              </span></span>
-<span><span class="co">## [109] reshape2_1.4.5           rjson_0.2.23             nlme_3.1-168            </span></span>
-<span><span class="co">## [112] curl_7.0.0               cachem_1.1.0             zoo_1.8-15              </span></span>
-<span><span class="co">## [115] stringr_1.6.0            KernSmooth_2.23-26       vipor_0.4.7             </span></span>
-<span><span class="co">## [118] parallel_4.5.2           miniUI_0.1.2             ggrastr_1.0.2           </span></span>
-<span><span class="co">## [121] restfulr_0.0.16          desc_1.4.3               pillar_1.11.1           </span></span>
-<span><span class="co">## [124] grid_4.5.2               vctrs_0.6.5              RANN_2.6.2              </span></span>
-<span><span class="co">## [127] promises_1.5.0           BiocSingular_1.26.1      beachmat_2.26.0         </span></span>
-<span><span class="co">## [130] xtable_1.8-4             cluster_2.1.8.1          beeswarm_0.4.0          </span></span>
-<span><span class="co">## [133] evaluate_1.0.5           locfit_1.5-9.12          cli_3.6.5               </span></span>
-<span><span class="co">## [136] compiler_4.5.2           Rsamtools_2.26.0         rlang_1.1.7             </span></span>
-<span><span class="co">## [139] crayon_1.5.3             future.apply_1.20.1      labeling_0.4.3          </span></span>
-<span><span class="co">## [142] ggbeeswarm_0.7.3         plyr_1.8.9               fs_1.6.6                </span></span>
-<span><span class="co">## [145] stringi_1.8.7            viridisLite_0.4.2        deldir_2.0-4            </span></span>
-<span><span class="co">## [148] BiocParallel_1.44.0      Biostrings_2.78.0        lazyeval_0.2.2          </span></span>
-<span><span class="co">## [151] spatstat.geom_3.6-1      Matrix_1.7-4             RcppHNSW_0.6.0          </span></span>
-<span><span class="co">## [154] bit64_4.6.0-1            future_1.68.0            KEGGREST_1.50.0         </span></span>
-<span><span class="co">## [157] statmod_1.5.1            shiny_1.12.1             ROCR_1.0-11             </span></span>
-<span><span class="co">## [160] memoise_2.0.1            igraph_2.2.1             bslib_0.9.0             </span></span>
-<span><span class="co">## [163] bit_4.6.0                xgboost_3.1.3.1</span></span></code></pre>
+<span><span class="co">##   [1] RColorBrewer_1.1-3     jsonlite_2.0.0         magrittr_2.0.4        </span></span>
+<span><span class="co">##   [4] spatstat.utils_3.2-1   farver_2.1.2           rmarkdown_2.30        </span></span>
+<span><span class="co">##   [7] fs_1.6.6               ragg_1.5.0             vctrs_0.6.5           </span></span>
+<span><span class="co">##  [10] ROCR_1.0-11            memoise_2.0.1          spatstat.explore_3.6-0</span></span>
+<span><span class="co">##  [13] htmltools_0.5.9        sass_0.4.10            sctransform_0.4.3     </span></span>
+<span><span class="co">##  [16] parallelly_1.46.1      KernSmooth_2.23-26     bslib_0.9.0           </span></span>
+<span><span class="co">##  [19] htmlwidgets_1.6.4      desc_1.4.3             ica_1.0-3             </span></span>
+<span><span class="co">##  [22] plyr_1.8.9             plotly_4.11.0          zoo_1.8-15            </span></span>
+<span><span class="co">##  [25] cachem_1.1.0           igraph_2.2.1           mime_0.13             </span></span>
+<span><span class="co">##  [28] lifecycle_1.0.5        pkgconfig_2.0.3        Matrix_1.7-4          </span></span>
+<span><span class="co">##  [31] R6_2.6.1               fastmap_1.2.0          fitdistrplus_1.2-4    </span></span>
+<span><span class="co">##  [34] future_1.68.0          shiny_1.12.1           digest_0.6.39         </span></span>
+<span><span class="co">##  [37] tensor_1.5.1           RSpectra_0.16-2        irlba_2.3.5.1         </span></span>
+<span><span class="co">##  [40] RSQLite_2.4.5          textshaping_1.0.4      labeling_0.4.3        </span></span>
+<span><span class="co">##  [43] progressr_0.18.0       spatstat.sparse_3.1-0  mgcv_1.9-3            </span></span>
+<span><span class="co">##  [46] httr_1.4.7             polyclip_1.10-7        abind_1.4-8           </span></span>
+<span><span class="co">##  [49] compiler_4.5.2         bit64_4.6.0-1          withr_3.0.2           </span></span>
+<span><span class="co">##  [52] S7_0.2.1               DBI_1.2.3              fastDummies_1.7.5     </span></span>
+<span><span class="co">##  [55] MASS_7.3-65            tools_4.5.2            lmtest_0.9-40         </span></span>
+<span><span class="co">##  [58] otel_0.2.0             httpuv_1.6.16          future.apply_1.20.1   </span></span>
+<span><span class="co">##  [61] goftest_1.2-3          glue_1.8.0             nlme_3.1-168          </span></span>
+<span><span class="co">##  [64] promises_1.5.0         grid_4.5.2             Rtsne_0.17            </span></span>
+<span><span class="co">##  [67] cluster_2.1.8.1        reshape2_1.4.5         gtable_0.3.6          </span></span>
+<span><span class="co">##  [70] spatstat.data_3.1-9    tidyr_1.3.2            data.table_1.18.0     </span></span>
+<span><span class="co">##  [73] XVector_0.50.0         spatstat.geom_3.6-1    RcppAnnoy_0.0.23      </span></span>
+<span><span class="co">##  [76] ggrepel_0.9.6          RANN_2.6.2             pillar_1.11.1         </span></span>
+<span><span class="co">##  [79] stringr_1.6.0          spam_2.11-3            RcppHNSW_0.6.0        </span></span>
+<span><span class="co">##  [82] later_1.4.5            splines_4.5.2          lattice_0.22-7        </span></span>
+<span><span class="co">##  [85] bit_4.6.0              renv_1.1.5             survival_3.8-3        </span></span>
+<span><span class="co">##  [88] deldir_2.0-4           tidyselect_1.2.1       locfit_1.5-9.12       </span></span>
+<span><span class="co">##  [91] Biostrings_2.78.0      miniUI_0.1.2           pbapply_1.7-4         </span></span>
+<span><span class="co">##  [94] knitr_1.51             gridExtra_2.3          Seqinfo_1.0.0         </span></span>
+<span><span class="co">##  [97] scattermore_1.2        xfun_0.55              statmod_1.5.1         </span></span>
+<span><span class="co">## [100] matrixStats_1.5.0      stringi_1.8.7          lazyeval_0.2.2        </span></span>
+<span><span class="co">## [103] yaml_2.3.12            evaluate_1.0.5         codetools_0.2-20      </span></span>
+<span><span class="co">## [106] tibble_3.3.1           BiocManager_1.30.27    cli_3.6.5             </span></span>
+<span><span class="co">## [109] uwot_0.2.4             xtable_1.8-4           reticulate_1.44.1     </span></span>
+<span><span class="co">## [112] systemfonts_1.3.1      jquerylib_0.1.4        Rcpp_1.1.1            </span></span>
+<span><span class="co">## [115] globals_0.18.0         spatstat.random_3.4-3  png_0.1-8             </span></span>
+<span><span class="co">## [118] spatstat.univar_3.1-5  parallel_4.5.2         blob_1.2.4            </span></span>
+<span><span class="co">## [121] pkgdown_2.2.0          dotCall64_1.2          listenv_0.10.0        </span></span>
+<span><span class="co">## [124] viridisLite_0.4.2      scales_1.4.0           ggridges_0.5.7        </span></span>
+<span><span class="co">## [127] crayon_1.5.3           purrr_1.2.1            rlang_1.1.7           </span></span>
+<span><span class="co">## [130] KEGGREST_1.50.0        cowplot_1.2.0</span></span></code></pre>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

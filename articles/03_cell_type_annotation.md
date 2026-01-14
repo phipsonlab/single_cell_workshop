@@ -41,6 +41,7 @@ library(tidyr)
 library(patchwork)
 library(RColorBrewer)
 library(pheatmap)
+library(future)
 ```
 
 We load the integrated and clustered Seurat object from Module 2.
@@ -65,13 +66,13 @@ cat("- Cells:", ncol(seu), "\n")
 cat("- Genes:", nrow(seu), "\n")
 ```
 
-    ## - Genes: 17732
+    ## - Genes: 17726
 
 ``` r
 cat("- Clusters:", length(unique(seu$seurat_clusters)), "\n")
 ```
 
-    ## - Clusters: 20
+    ## - Clusters: 19
 
 Let us first examine the cluster distribution to understand what we are
 annotating.
@@ -91,26 +92,25 @@ for (i in seq_along(cluster_sizes)) {
 }
 ```
 
-    ##   Cluster 0: 2588 cells
-    ##   Cluster 1: 1166 cells
-    ##   Cluster 2: 1125 cells
-    ##   Cluster 3: 619 cells
-    ##   Cluster 4: 572 cells
-    ##   Cluster 5: 511 cells
-    ##   Cluster 6: 492 cells
-    ##   Cluster 7: 433 cells
-    ##   Cluster 8: 418 cells
-    ##   Cluster 9: 257 cells
-    ##   Cluster 10: 222 cells
-    ##   Cluster 11: 211 cells
-    ##   Cluster 12: 211 cells
-    ##   Cluster 13: 201 cells
-    ##   Cluster 14: 192 cells
-    ##   Cluster 15: 187 cells
-    ##   Cluster 16: 184 cells
-    ##   Cluster 17: 154 cells
-    ##   Cluster 18: 133 cells
-    ##   Cluster 19: 124 cells
+    ##   Cluster 0: 2834 cells
+    ##   Cluster 1: 1528 cells
+    ##   Cluster 2: 1151 cells
+    ##   Cluster 3: 699 cells
+    ##   Cluster 4: 555 cells
+    ##   Cluster 5: 539 cells
+    ##   Cluster 6: 472 cells
+    ##   Cluster 7: 426 cells
+    ##   Cluster 8: 218 cells
+    ##   Cluster 9: 213 cells
+    ##   Cluster 10: 205 cells
+    ##   Cluster 11: 190 cells
+    ##   Cluster 12: 182 cells
+    ##   Cluster 13: 164 cells
+    ##   Cluster 14: 155 cells
+    ##   Cluster 15: 147 cells
+    ##   Cluster 16: 130 cells
+    ##   Cluster 17: 124 cells
+    ##   Cluster 18: 68 cells
 
 ## Define Colour Palette
 
@@ -173,10 +173,11 @@ ggplot(comp_data, aes(x = seurat_clusters, y = pct, fill = group)) +
 ![](03_cell_type_annotation_files/figure-html/cluster-composition-1.png)
 
 We observe that some clusters are highly enriched for specific
-developmental stages. For example, clusters 0, 6, 8, 9, 12, 15, 16, and
-17 are nearly exclusively fetal, while cluster 2 contains predominantly
-young and adult cells, and cluster 18 is exclusively young. This
-developmental segregation often reflects biological differences in cell
+developmental stages. For example, clusters 0, 7, 9, 10, 13, and 14 are
+nearly exclusively fetal (\>95%), while cluster 2 contains predominantly
+young and adult cells. Cluster 8 (proliferating cells) is 96% fetal,
+consistent with the high proliferative capacity of fetal cardiac cells.
+This developmental segregation reflects biological differences in cell
 state, particularly among cardiomyocytes where fetal cells have distinct
 transcriptional profiles from mature cells.
 
@@ -188,6 +189,13 @@ to identify genes that distinguish each cluster from all other cells.
 This is the foundation of marker-based annotation.
 
 ``` r
+# Set memory limits for large datasets
+options(future.globals.maxSize = 8000 * 1024^2)
+
+# Use sequential processing to avoid memory issues
+library(future)
+plan("sequential")
+
 # Set default assay to SCT
 DefaultAssay(seu) <- "SCT"
 
@@ -209,7 +217,7 @@ markers <- FindAllMarkers(
 cat("Found", nrow(markers), "marker genes across all clusters\n")
 ```
 
-    ## Found 22502 marker genes across all clusters
+    ## Found 20475 marker genes across all clusters
 
 Let us examine the top markers for each cluster.
 
@@ -236,144 +244,137 @@ for (cl in levels(seu$seurat_clusters)) {
 
     ## 
     ## --- Cluster 0 ---
-    ##   LINC02008: log2FC=2.79, pct.1=38%, pct.2=8%
-    ##   GALNTL6: log2FC=2.73, pct.1=32%, pct.2=11%
-    ##   CUX2: log2FC=2.62, pct.1=57%, pct.2=12%
-    ##   GPR39: log2FC=2.59, pct.1=47%, pct.2=8%
-    ##   RNF175: log2FC=2.57, pct.1=43%, pct.2=8%
+    ##   LINC02008: log2FC=3.01, pct.1=38%, pct.2=8%
+    ##   GPR39: log2FC=2.75, pct.1=48%, pct.2=8%
+    ##   BANCR: log2FC=2.71, pct.1=71%, pct.2=13%
+    ##   GLP1R: log2FC=2.71, pct.1=47%, pct.2=8%
+    ##   RNF175: log2FC=2.70, pct.1=43%, pct.2=8%
     ## 
     ## --- Cluster 1 ---
-    ##   VIT: log2FC=5.54, pct.1=59%, pct.2=3%
-    ##   CATSPERB: log2FC=5.16, pct.1=65%, pct.2=4%
-    ##   ADH1B: log2FC=5.16, pct.1=79%, pct.2=6%
-    ##   CFD: log2FC=5.03, pct.1=79%, pct.2=9%
-    ##   MGST1: log2FC=5.01, pct.1=67%, pct.2=5%
+    ##   ADH1B: log2FC=5.27, pct.1=60%, pct.2=6%
+    ##   SCARA5: log2FC=4.93, pct.1=49%, pct.2=3%
+    ##   VIT: log2FC=4.93, pct.1=44%, pct.2=3%
+    ##   C3: log2FC=4.64, pct.1=52%, pct.2=4%
+    ##   CATSPERB: log2FC=4.63, pct.1=48%, pct.2=5%
     ## 
     ## --- Cluster 2 ---
-    ##   LINC01880: log2FC=6.60, pct.1=34%, pct.2=1%
-    ##   APOB: log2FC=5.71, pct.1=25%, pct.2=1%
-    ##   UGT2B4: log2FC=5.57, pct.1=47%, pct.2=1%
-    ##   TMEM178B: log2FC=5.30, pct.1=84%, pct.2=7%
-    ##   LINC01428: log2FC=5.18, pct.1=54%, pct.2=2%
+    ##   LINC01880: log2FC=6.04, pct.1=32%, pct.2=1%
+    ##   APOB: log2FC=5.64, pct.1=26%, pct.2=1%
+    ##   ADRB1: log2FC=5.43, pct.1=41%, pct.2=1%
+    ##   UGT2B4: log2FC=5.32, pct.1=45%, pct.2=1%
+    ##   LINC01428: log2FC=5.17, pct.1=54%, pct.2=2%
     ## 
     ## --- Cluster 3 ---
-    ##   AGAP2: log2FC=6.69, pct.1=44%, pct.2=1%
-    ##   EGFLAM: log2FC=6.66, pct.1=87%, pct.2=5%
-    ##   LINC02237: log2FC=6.41, pct.1=43%, pct.2=2%
-    ##   FHL5: log2FC=6.29, pct.1=29%, pct.2=1%
-    ##   AVPR1A: log2FC=6.28, pct.1=26%, pct.2=0%
+    ##   FHL5: log2FC=6.78, pct.1=28%, pct.2=1%
+    ##   EGFLAM: log2FC=6.41, pct.1=77%, pct.2=5%
+    ##   AGAP2: log2FC=6.38, pct.1=40%, pct.2=1%
+    ##   LINC02237: log2FC=6.11, pct.1=38%, pct.2=2%
+    ##   FAM162B: log2FC=6.06, pct.1=67%, pct.2=2%
     ## 
     ## --- Cluster 4 ---
-    ##   CA4: log2FC=6.82, pct.1=38%, pct.2=1%
-    ##   TPO: log2FC=6.74, pct.1=50%, pct.2=3%
-    ##   BTNL9: log2FC=6.65, pct.1=70%, pct.2=2%
-    ##   TM4SF18: log2FC=6.61, pct.1=32%, pct.2=0%
-    ##   NR5A2: log2FC=6.57, pct.1=46%, pct.2=1%
+    ##   NR5A2: log2FC=6.91, pct.1=47%, pct.2=1%
+    ##   CA4: log2FC=6.51, pct.1=39%, pct.2=1%
+    ##   NOTCH4: log2FC=6.50, pct.1=75%, pct.2=2%
+    ##   BTNL9: log2FC=6.45, pct.1=72%, pct.2=3%
+    ##   CYYR1: log2FC=6.39, pct.1=92%, pct.2=4%
     ## 
     ## --- Cluster 5 ---
-    ##   MARCO: log2FC=8.02, pct.1=30%, pct.2=0%
-    ##   LILRB5: log2FC=7.57, pct.1=46%, pct.2=1%
-    ##   F13A1: log2FC=7.47, pct.1=91%, pct.2=11%
-    ##   SIGLEC1: log2FC=7.23, pct.1=65%, pct.2=1%
-    ##   FGD2: log2FC=7.04, pct.1=84%, pct.2=2%
+    ##   MARCO: log2FC=7.65, pct.1=29%, pct.2=0%
+    ##   F13A1: log2FC=7.21, pct.1=92%, pct.2=12%
+    ##   LILRB5: log2FC=7.15, pct.1=45%, pct.2=1%
+    ##   PLEK: log2FC=7.13, pct.1=51%, pct.2=1%
+    ##   SIGLEC1: log2FC=7.05, pct.1=66%, pct.2=2%
     ## 
     ## --- Cluster 6 ---
-    ##   PTCH2: log2FC=4.60, pct.1=35%, pct.2=5%
-    ##   PTPRT: log2FC=4.51, pct.1=50%, pct.2=10%
-    ##   EPHB2: log2FC=4.51, pct.1=53%, pct.2=4%
-    ##   ARHGAP20: log2FC=4.40, pct.1=28%, pct.2=3%
-    ##   NTRK2: log2FC=4.22, pct.1=51%, pct.2=6%
+    ##   HLA-DQB1: log2FC=3.82, pct.1=41%, pct.2=3%
+    ##   HLA-DRA: log2FC=3.64, pct.1=68%, pct.2=7%
+    ##   HLA-DPA1: log2FC=3.63, pct.1=54%, pct.2=6%
+    ##   HLA-DRB5: log2FC=3.20, pct.1=31%, pct.2=3%
+    ##   C1QA: log2FC=3.18, pct.1=51%, pct.2=6%
     ## 
     ## --- Cluster 7 ---
-    ##   CSMD1: log2FC=5.39, pct.1=70%, pct.2=18%
-    ##   OPCML: log2FC=4.57, pct.1=72%, pct.2=12%
-    ##   BRINP3: log2FC=3.68, pct.1=92%, pct.2=24%
-    ##   ZMAT4: log2FC=2.93, pct.1=64%, pct.2=16%
-    ##   SNAP91: log2FC=2.66, pct.1=32%, pct.2=10%
+    ##   PBK: log2FC=6.30, pct.1=50%, pct.2=1%
+    ##   TOP2A: log2FC=6.22, pct.1=63%, pct.2=3%
+    ##   KIF18B: log2FC=6.17, pct.1=57%, pct.2=2%
+    ##   TROAP: log2FC=6.17, pct.1=27%, pct.2=0%
+    ##   BUB1: log2FC=6.10, pct.1=58%, pct.2=2%
     ## 
     ## --- Cluster 8 ---
-    ##   HLA-DQB1: log2FC=3.97, pct.1=40%, pct.2=3%
-    ##   HLA-DPA1: log2FC=3.91, pct.1=54%, pct.2=5%
-    ##   HLA-DRA: log2FC=3.59, pct.1=70%, pct.2=7%
-    ##   RASD1: log2FC=3.39, pct.1=30%, pct.2=4%
-    ##   LAPTM5: log2FC=3.34, pct.1=50%, pct.2=6%
+    ##   CSMD1: log2FC=5.67, pct.1=82%, pct.2=20%
+    ##   OPCML: log2FC=5.19, pct.1=86%, pct.2=13%
+    ##   BRINP3: log2FC=3.95, pct.1=98%, pct.2=27%
+    ##   ZMAT4: log2FC=3.05, pct.1=73%, pct.2=18%
+    ##   ANO4: log2FC=2.95, pct.1=41%, pct.2=9%
     ## 
     ## --- Cluster 9 ---
-    ##   NRG1: log2FC=5.80, pct.1=57%, pct.2=11%
-    ##   DCHS2: log2FC=5.52, pct.1=38%, pct.2=2%
-    ##   DLK1: log2FC=5.02, pct.1=79%, pct.2=5%
-    ##   DSC3: log2FC=4.89, pct.1=60%, pct.2=3%
-    ##   NDST4: log2FC=4.87, pct.1=35%, pct.2=2%
+    ##   NRG1: log2FC=5.95, pct.1=68%, pct.2=11%
+    ##   DSC3: log2FC=5.13, pct.1=65%, pct.2=3%
+    ##   DCHS2: log2FC=5.07, pct.1=44%, pct.2=2%
+    ##   KHDRBS2: log2FC=4.93, pct.1=55%, pct.2=6%
+    ##   NDST4: log2FC=4.89, pct.1=41%, pct.2=2%
     ## 
     ## --- Cluster 10 ---
-    ##   CDC45: log2FC=5.36, pct.1=56%, pct.2=2%
-    ##   E2F1: log2FC=5.12, pct.1=67%, pct.2=3%
-    ##   MCM10: log2FC=5.05, pct.1=52%, pct.2=2%
-    ##   DTL: log2FC=5.00, pct.1=84%, pct.2=4%
-    ##   BRIP1: log2FC=4.71, pct.1=94%, pct.2=9%
+    ##   PANCR: log2FC=7.12, pct.1=50%, pct.2=1%
+    ##   KCNJ3: log2FC=6.77, pct.1=92%, pct.2=2%
+    ##   VWDE: log2FC=6.66, pct.1=64%, pct.2=1%
+    ##   KCNH7: log2FC=6.63, pct.1=89%, pct.2=9%
+    ##   ZNF385B: log2FC=6.51, pct.1=85%, pct.2=9%
     ## 
     ## --- Cluster 11 ---
-    ##   ACTA1: log2FC=4.34, pct.1=51%, pct.2=17%
-    ##   S100A1: log2FC=3.97, pct.1=28%, pct.2=5%
-    ##   TNNC1: log2FC=3.94, pct.1=87%, pct.2=48%
-    ##   CRYAB: log2FC=3.83, pct.1=92%, pct.2=47%
-    ##   COX6A2: log2FC=3.70, pct.1=82%, pct.2=32%
+    ##   SRARP: log2FC=7.04, pct.1=42%, pct.2=0%
+    ##   OTUD1: log2FC=5.37, pct.1=73%, pct.2=6%
+    ##   ATF3: log2FC=4.55, pct.1=68%, pct.2=7%
+    ##   FOSB: log2FC=4.47, pct.1=77%, pct.2=6%
+    ##   PNMT: log2FC=4.44, pct.1=42%, pct.2=4%
     ## 
     ## --- Cluster 12 ---
-    ##   PANCR: log2FC=7.54, pct.1=51%, pct.2=1%
-    ##   KCNJ3: log2FC=7.22, pct.1=94%, pct.2=2%
-    ##   KCNH7: log2FC=6.72, pct.1=87%, pct.2=8%
-    ##   ZNF385B: log2FC=6.65, pct.1=86%, pct.2=9%
-    ##   VWDE: log2FC=6.60, pct.1=66%, pct.2=1%
+    ##   PKHD1L1: log2FC=8.67, pct.1=88%, pct.2=3%
+    ##   SMOC1: log2FC=7.20, pct.1=74%, pct.2=2%
+    ##   MMRN1: log2FC=6.95, pct.1=42%, pct.2=1%
+    ##   LINC02388: log2FC=6.31, pct.1=69%, pct.2=10%
+    ##   PCDH15: log2FC=6.31, pct.1=80%, pct.2=13%
     ## 
     ## --- Cluster 13 ---
-    ##   PKHD1L1: log2FC=8.70, pct.1=94%, pct.2=3%
-    ##   SMOC1: log2FC=6.94, pct.1=70%, pct.2=2%
-    ##   MMRN1: log2FC=6.83, pct.1=38%, pct.2=1%
-    ##   PCDH15: log2FC=6.61, pct.1=74%, pct.2=12%
-    ##   INHBA: log2FC=6.40, pct.1=61%, pct.2=5%
+    ##   TFAP2A: log2FC=8.27, pct.1=38%, pct.2=0%
+    ##   NRXN1: log2FC=8.25, pct.1=100%, pct.2=12%
+    ##   INSC: log2FC=8.18, pct.1=75%, pct.2=1%
+    ##   XKR4: log2FC=7.85, pct.1=99%, pct.2=10%
+    ##   GRIK3: log2FC=7.72, pct.1=60%, pct.2=1%
     ## 
     ## --- Cluster 14 ---
-    ##   SRARP: log2FC=6.72, pct.1=36%, pct.2=0%
-    ##   OTUD1: log2FC=5.50, pct.1=74%, pct.2=5%
-    ##   ATF3: log2FC=4.82, pct.1=73%, pct.2=6%
-    ##   XIRP1: log2FC=4.54, pct.1=77%, pct.2=11%
-    ##   PNMT: log2FC=4.54, pct.1=43%, pct.2=3%
+    ##   TNNC1: log2FC=4.16, pct.1=100%, pct.2=50%
+    ##   S100A1: log2FC=4.08, pct.1=31%, pct.2=6%
+    ##   ACTA1: log2FC=4.01, pct.1=48%, pct.2=19%
+    ##   TNNI1: log2FC=4.00, pct.1=70%, pct.2=37%
+    ##   CRYAB: log2FC=3.87, pct.1=100%, pct.2=48%
     ## 
     ## --- Cluster 15 ---
-    ##   CENPF: log2FC=7.10, pct.1=93%, pct.2=5%
-    ##   TROAP: log2FC=7.02, pct.1=62%, pct.2=1%
-    ##   PBK: log2FC=7.02, pct.1=81%, pct.2=1%
-    ##   KIF18B: log2FC=6.97, pct.1=88%, pct.2=2%
-    ##   TOP2A: log2FC=6.96, pct.1=96%, pct.2=4%
+    ##   DHFR: log2FC=2.93, pct.1=92%, pct.2=46%
+    ##   KRT18: log2FC=2.93, pct.1=26%, pct.2=4%
+    ##   MYH7: log2FC=2.90, pct.1=100%, pct.2=67%
+    ##   TNNI1: log2FC=2.84, pct.1=99%, pct.2=36%
+    ##   SRP14: log2FC=2.50, pct.1=90%, pct.2=34%
     ## 
     ## --- Cluster 16 ---
-    ##   NRXN1: log2FC=8.71, pct.1=100%, pct.2=11%
-    ##   INSC: log2FC=8.48, pct.1=70%, pct.2=0%
-    ##   FOXD3: log2FC=8.44, pct.1=36%, pct.2=0%
-    ##   TFAP2A: log2FC=8.41, pct.1=36%, pct.2=0%
-    ##   GRIK3: log2FC=8.02, pct.1=58%, pct.2=1%
+    ##   CYP19A1: log2FC=4.56, pct.1=37%, pct.2=2%
+    ##   CILP: log2FC=4.22, pct.1=38%, pct.2=4%
+    ##   SEZ6L: log2FC=3.83, pct.1=26%, pct.2=4%
+    ##   HEY1: log2FC=3.81, pct.1=36%, pct.2=3%
+    ##   COL4A4: log2FC=3.61, pct.1=98%, pct.2=20%
     ## 
     ## --- Cluster 17 ---
-    ##   SKAP1: log2FC=8.15, pct.1=74%, pct.2=3%
-    ##   THEMIS: log2FC=7.76, pct.1=41%, pct.2=2%
-    ##   ITK: log2FC=7.70, pct.1=59%, pct.2=1%
-    ##   CD69: log2FC=7.55, pct.1=36%, pct.2=0%
-    ##   SCML4: log2FC=7.55, pct.1=48%, pct.2=1%
+    ##   SKAP1: log2FC=8.22, pct.1=80%, pct.2=3%
+    ##   THEMIS: log2FC=7.85, pct.1=48%, pct.2=2%
+    ##   SCML4: log2FC=7.64, pct.1=51%, pct.2=1%
+    ##   PRF1: log2FC=7.55, pct.1=29%, pct.2=0%
+    ##   CD2: log2FC=7.39, pct.1=42%, pct.2=0%
     ## 
     ## --- Cluster 18 ---
-    ##   CYP19A1: log2FC=4.94, pct.1=38%, pct.2=2%
-    ##   LINC01819: log2FC=4.68, pct.1=32%, pct.2=1%
-    ##   CILP: log2FC=3.66, pct.1=26%, pct.2=3%
-    ##   COL4A4: log2FC=3.61, pct.1=98%, pct.2=20%
-    ##   SMIM41: log2FC=3.48, pct.1=26%, pct.2=3%
-    ## 
-    ## --- Cluster 19 ---
-    ##   KRT18: log2FC=3.26, pct.1=30%, pct.2=4%
-    ##   MYH7: log2FC=3.08, pct.1=100%, pct.2=64%
-    ##   DHFR: log2FC=3.03, pct.1=90%, pct.2=44%
-    ##   TNNI1: log2FC=3.02, pct.1=98%, pct.2=34%
-    ##   KRT8: log2FC=2.60, pct.1=38%, pct.2=6%
+    ##   LUCAT1: log2FC=6.81, pct.1=37%, pct.2=5%
+    ##   XIRP2: log2FC=5.00, pct.1=52%, pct.2=23%
+    ##   GCLM: log2FC=3.38, pct.1=38%, pct.2=11%
+    ##   GBE1: log2FC=3.37, pct.1=91%, pct.2=73%
+    ##   LMCD1: log2FC=3.37, pct.1=37%, pct.2=23%
 
 ### Visualise Top Markers with DotPlot
 
@@ -512,8 +513,8 @@ gene_colors <- celltype_colors[marker_info$celltype]
 marker_info$celltype_f <- factor(marker_info$celltype, levels = names(celltype_colors))
 
 # Order clusters by cell type identity for diagonal pattern
-# Preferred order based on cell type (CM, Fibroblasts, Pericytes, Endothelial, Immune, Neural, etc.)
-preferred_order <- c("0", "6", "8", "17", "7", "9", "2", "11", "15", "1", "12", "3", "5", "13", "18", "4", "14", "16", "10")
+# Preferred order: CMs first (fetal, mature, atrial), then stromal, immune, neural
+preferred_order <- c("0", "7", "10", "14", "9", "2", "4", "8", "13", "1", "3", "15", "5", "11", "6", "16", "12")
 # Filter to only clusters that exist in our data
 actual_clusters <- as.character(unique(seu$seurat_clusters))
 cluster_order <- preferred_order[preferred_order %in% actual_clusters]
@@ -600,9 +601,10 @@ FeaturePlot(seu,
 ![](03_cell_type_annotation_files/figure-html/featureplot-cm-1.png)
 
 The cardiomyocyte markers reveal an interesting pattern: MYH6 (atrial
-isoform) is enriched in clusters 2 and 9, while MYH7 (ventricular
-isoform) is more expressed in clusters 0, 11, 15, and 17. This suggests
-we can distinguish atrial from ventricular cardiomyocytes.
+isoform) is enriched in clusters 2 (mature atrial CM) and 9 (fetal
+atrial CM), while MYH7 (ventricular isoform) is more expressed in
+clusters 0, 7, 10, and 14 (fetal ventricular CM populations). This
+suggests we can distinguish atrial from ventricular cardiomyocytes.
 
 ``` r
 # Stromal cell markers
@@ -639,50 +641,46 @@ rare populations or finer subclusters.
 The table below summarises our annotations with the supporting marker
 evidence:
 
-| Cluster | Cell Type         | Key Markers            | Notes                                              |
-|---------|-------------------|------------------------|----------------------------------------------------|
-| 0       | Fetal CM          | TNNT2+, TTN+, MYH7+    | Fetal ventricular cardiomyocytes (100% fetal)      |
-| 1       | Fibroblasts       | DCN+, COL1A1+          | Present across all developmental stages            |
-| 2       | Atrial CM         | TTN+, MYH6++           | Mature atrial CM (young/adult enriched)            |
-| 3       | Pericytes         | KCNJ8+, RGS5+, ABCC9+  | Vascular support cells                             |
-| 4       | Macrophages       | CD163+, F13A1+, PTPRC+ | Tissue-resident macrophages                        |
-| 5       | Endothelial       | PECAM1+, VWF+, CDH5+   | Main endothelial population                        |
-| 6       | Fetal CM          | TNNT2+, TTN+           | Fetal ventricular cardiomyocytes (100% fetal)      |
-| 7       | Activated CM      | TTN+, TNNT2+, HLA-DR+  | CM with immune activation/MHC class II (90% young) |
-| 8       | Fetal CM          | TNNT2+, TTN+           | Fetal ventricular cardiomyocytes (100% fetal)      |
-| 9       | Fetal Atrial CM   | TTN+, MYH6++           | Fetal atrial cardiomyocytes (100% fetal)           |
-| 10      | Proliferating     | MKI67+, TOP2A+         | Proliferating cells (fetal enriched)               |
-| 11      | Ventricular CM    | TNNT2++, TTN++, MYH7++ | High-expressing ventricular CM                     |
-| 12      | Fetal Fibroblasts | DCN+, COL1A1++         | Fetal fibroblasts (99% fetal)                      |
-| 13      | Endothelial       | PECAM1+                | Endothelial subset                                 |
-| 14      | Immune            | PTPRC+, CD3E+          | Mixed immune/lymphocytes                           |
-| 15      | Ventricular CM    | TTN+, MYH7+            | Ventricular CM (fetal enriched)                    |
-| 16      | Neurons           | NRXN1++                | Neural cells (100% fetal)                          |
-| 17      | Fetal CM          | TNNT2+, TTN++, MYH7+   | Fetal ventricular cardiomyocytes (98% fetal)       |
-| 18      | Young Endothelial | PECAM1+, VWF++         | Endothelial cells (100% young)                     |
+| Cluster | Cell Type            | Key Markers                 | Notes                                         |
+|---------|----------------------|-----------------------------|-----------------------------------------------|
+| 0       | Fetal CM             | TNNT2+, TTN+, MYH7+         | Fetal ventricular cardiomyocytes (100% fetal) |
+| 1       | Fibroblasts          | DCN+, COL1A1+, SCARA5+      | Present across all developmental stages       |
+| 2       | Atrial CM            | TTN+, MYH6++, ADRB1+        | Mature atrial CM (62% young, 37% adult)       |
+| 3       | Epicardial           | KCNJ8+, EGFLAM+, UPK3B+     | Epicardial/pericyte population                |
+| 4       | Activated CM         | HLA-DRA+, HLA-DQB1+, TNNT2+ | CM with MHC class II expression (75% young)   |
+| 5       | Endothelial          | PECAM1+, NOTCH4+, CA4+      | Main endothelial population                   |
+| 6       | Macrophages          | F13A1+, MARCO+, CD68+       | Tissue-resident macrophages                   |
+| 7       | Fetal CM             | TNNT2+, TTN+, CSMD1+        | Fetal cardiomyocytes (100% fetal)             |
+| 8       | Proliferating        | TOP2A+, MKI67+, KIF18B+     | Proliferating cells (96% fetal)               |
+| 9       | Fetal Atrial CM      | TTN+, MYH6+, KCNJ3+         | Fetal atrial cardiomyocytes (100% fetal)      |
+| 10      | Fetal CM (stress)    | TNNT2+, ATF3+, FOSB+        | Stress-response CM (100% fetal)               |
+| 11      | Endothelial          | PECAM1+, PKHD1L1+, SMOC1+   | Vascular endothelial subset                   |
+| 12      | Neurons              | NRXN1++, XKR4+, TFAP2A+     | Neural cells                                  |
+| 13      | Cycling CM           | E2F1+, CDC45+, DTL+         | S-phase cycling CM (99% fetal)                |
+| 14      | Fetal Ventricular CM | MYH7++, TNNI1+, DHFR+       | Fetal ventricular CM (98% fetal)              |
+| 15      | Mixed/Transitional   | XIRP2+, GCLM+               | Mixed epicardial/CM (50% fetal)               |
+| 16      | T cells              | CD2+, SKAP1+, THEMIS+       | T lymphocytes                                 |
 
 ``` r
-# Define cell type annotations for all 19 clusters
+# Define cell type annotations for all 17 clusters
 cluster_annotations <- c(
   "0" = "Fetal CM",
   "1" = "Fibroblasts",
   "2" = "Atrial CM",
-  "3" = "Pericytes",
-  "4" = "Macrophages",
+  "3" = "Epicardial",
+  "4" = "Activated CM",
   "5" = "Endothelial",
-  "6" = "Fetal CM",
-  "7" = "Activated CM",
-  "8" = "Fetal CM",
+  "6" = "Macrophages",
+  "7" = "Fetal CM",
+  "8" = "Proliferating",
   "9" = "Fetal Atrial CM",
-  "10" = "Proliferating",
-  "11" = "Ventricular CM",
-  "12" = "Fetal Fibroblasts",
-  "13" = "Endothelial",
-  "14" = "Immune",
-  "15" = "Ventricular CM",
-  "16" = "Neurons",
-  "17" = "Fetal CM",
-  "18" = "Young Endothelial"
+  "10" = "Fetal CM (stress)",
+  "11" = "Endothelial",
+  "12" = "Neurons",
+  "13" = "Cycling CM",
+  "14" = "Fetal Ventricular CM",
+  "15" = "Mixed/Transitional",
+  "16" = "T cells"
 )
 
 cell_type_df <- data.frame(
@@ -696,22 +694,20 @@ broad_annotations <- c(
   "0" = "Cardiomyocytes",
   "1" = "Fibroblasts",
   "2" = "Cardiomyocytes",
-  "3" = "Pericytes",
-  "4" = "Immune",
+  "3" = "Epicardial",
+  "4" = "Cardiomyocytes",
   "5" = "Endothelial",
-  "6" = "Cardiomyocytes",
+  "6" = "Immune",
   "7" = "Cardiomyocytes",
-  "8" = "Cardiomyocytes",
+  "8" = "Proliferating",
   "9" = "Cardiomyocytes",
-  "10" = "Proliferating",
-  "11" = "Cardiomyocytes",
-  "12" = "Fibroblasts",
-  "13" = "Endothelial",
-  "14" = "Immune",
-  "15" = "Cardiomyocytes",
-  "16" = "Neural",
-  "17" = "Cardiomyocytes",
-  "18" = "Endothelial"
+  "10" = "Cardiomyocytes",
+  "11" = "Endothelial",
+  "12" = "Neural",
+  "13" = "Cardiomyocytes",
+  "14" = "Cardiomyocytes",
+  "15" = "Mixed",
+  "16" = "Immune"
 )
 
 cell_type_broad_df <- data.frame(
@@ -735,22 +731,23 @@ our annotation workflow. We show both detailed annotations
 ventricular) and broad categories.
 
 ``` r
-# Define colours for cell types (14 unique detailed types)
+# Define colours for cell types (13 unique detailed types for 17 clusters)
 celltype_colors <- c(
     "Fetal CM" = "#E64B35",
     "Fibroblasts" = "#00A087",
     "Atrial CM" = "#3C5488",
-    "Ventricular CM" = "#4DBBD5",
     "Activated CM" = "#F4A582",
-    "Pericytes" = "#F39B7F",
+    "Epicardial" = "#F39B7F",
     "Endothelial" = "#8491B4",
     "Macrophages" = "#91D1C2",
     "Fetal Atrial CM" = "#B09C85",
-    "Fetal Fibroblasts" = "#00CED1",
+    "Fetal CM (stress)" = "#FF6B6B",
+    "Fetal Ventricular CM" = "#4DBBD5",
     "Neurons" = "#CD534C",
-    "Immune" = "#868686",
-    "Proliferating" = "#9370DB",
-    "Young Endothelial" = "#7570B3"
+    "Cycling CM" = "#9370DB",
+    "Proliferating" = "#DDA0DD",
+    "Mixed/Transitional" = "#868686",
+    "T cells" = "#7570B3"
 )
 
 # Broad categories
@@ -758,10 +755,11 @@ broad_colors <- c(
     "Cardiomyocytes" = "#E64B35",
     "Fibroblasts" = "#00A087",
     "Endothelial" = "#8491B4",
-    "Pericytes" = "#F39B7F",
+    "Epicardial" = "#F39B7F",
     "Immune" = "#91D1C2",
     "Neural" = "#CD534C",
-    "Proliferating" = "#9370DB"
+    "Proliferating" = "#9370DB",
+    "Mixed" = "#868686"
 )
 
 p1 <- DimPlot(seu, group.by = "cell_type", label = TRUE,
@@ -813,10 +811,10 @@ ggplot(cluster_size_data, aes(x = seurat_clusters, y = n, fill = cell_type)) +
 
 ![](03_cell_type_annotation_files/figure-html/cluster-sizes-1.png)
 
-Cluster 0 (Fetal CM) is the largest population with ~2,400 cells,
-consistent with fetal samples contributing the most cells. Clusters 16
-(Neurons) and 18 (Young Endothelial) are among the smallest,
-representing specialised populations.
+Cluster 0 (Fetal CM) is the largest population with ~2,700 cells,
+consistent with fetal samples contributing the most cells. Clusters 12
+(Neurons), 15 (Mixed/Transitional), and 16 (T cells) are among the
+smallest, representing specialised or transitional populations.
 
 ### Developmental Composition per Cluster
 
@@ -845,23 +843,21 @@ ggplot(cluster_dev_comp, aes(x = seurat_clusters, y = pct, fill = group)) +
 
 This figure reveals striking developmental patterns:
 
-- **Fetal-specific clusters** (0, 6, 8, 9, 12, 16, 17): These
-  cardiomyocyte, fibroblast, and neural populations are almost
-  exclusively fetal, reflecting the distinct transcriptional state of
-  immature heart cells
-- **Mature CM clusters** (2, 11, 15): Atrial and ventricular CM clusters
-  contain cells from all stages, with cluster 2 enriched for young and
-  adult cells
-- **Activated CM** (7): Cardiomyocytes with MHC class II expression,
-  predominantly from young samples, potentially reflecting immune
+- **Fetal-specific clusters** (0, 7, 9, 10, 13, 14): These cardiomyocyte
+  populations are almost exclusively fetal (\>95%), reflecting the
+  distinct transcriptional state of immature heart cells
+- **Mature CM cluster** (2): Atrial cardiomyocytes predominantly from
+  young (62%) and adult (37%) hearts
+- **Activated CM** (4): Cardiomyocytes with MHC class II expression,
+  predominantly from young samples (75%), potentially reflecting immune
   activation
-- **Young-enriched endothelial** (18): Endothelial cells exclusively
-  from young samples
-- **Shared populations** (1, 3, 4, 5, 13, 14): Fibroblasts, pericytes,
-  immune, and endothelial cells are present across all developmental
-  stages
-- **Proliferating cells** (10): Nearly exclusively fetal, consistent
-  with the high proliferative capacity of fetal cardiac cells
+- **Proliferating cells** (8): Nearly exclusively fetal (96%),
+  consistent with the high proliferative capacity of fetal cardiac cells
+- **Shared populations** (1, 3, 5, 6, 11, 12, 16): Fibroblasts,
+  epicardial, endothelial, immune, and neural cells are present across
+  all developmental stages
+- **Mixed/Transitional** (15): A heterogeneous population containing
+  both epicardial and cardiomyocyte signatures
 
 ### Cell Type Composition by Developmental Stage
 
@@ -914,12 +910,13 @@ DimPlot(seu, group.by = "cell_type", split.by = "group",
 The split view highlights several key observations:
 
 - **Fetal heart** is dominated by Fetal CM populations, with
-  proliferating cells visible (cluster 10)
-- **Young heart** shows a transition state with both mature
-  atrial/ventricular CM and some residual fetal-like populations
-- **Adult heart** shows predominantly mature cardiomyocyte subtypes
-  (Atrial and Ventricular CM)
-- **Stromal and immune populations** are consistent across all stages
+  proliferating and cycling cells visible (clusters 8, 13)
+- **Young heart** shows a transition state with mature atrial CM
+  (cluster 2) and activated CM with MHC class II expression (cluster 4)
+- **Adult heart** shows predominantly mature atrial cardiomyocytes
+  (cluster 2)
+- **Stromal and immune populations** (fibroblasts, endothelial,
+  macrophages, T cells) are consistent across all developmental stages
 
 ## Save Annotated Object
 
@@ -942,14 +939,14 @@ message("Saved marker genes to: results/cluster_markers.csv")
 In this module, we performed cell type annotation on the clustered data.
 We:
 
-- Identified marker genes for each cluster using
+- Identified marker genes for each of the 17 clusters using
   [`FindAllMarkers()`](https://satijalab.org/seurat/reference/FindAllMarkers.html)
 - Compared cluster markers against known heart cell type markers from
   Sim et al. 2021
 - Visualised marker expression using DotPlots and FeaturePlots
 - Assigned cell type labels based on marker gene expression and
   developmental composition
-- Created both detailed (14 types) and broad (7 types) cell type
+- Created both detailed (13 types) and broad (8 types) cell type
   annotations
 
 The annotated dataset is now ready for differential expression and
@@ -982,9 +979,9 @@ sessionInfo()
     ## [1] stats     graphics  grDevices datasets  utils     methods   base     
     ## 
     ## other attached packages:
-    ## [1] pheatmap_1.0.13    RColorBrewer_1.1-3 patchwork_1.3.2    tidyr_1.3.2       
-    ## [5] dplyr_1.1.4        ggplot2_4.0.1      Seurat_5.4.0       SeuratObject_5.3.0
-    ## [9] sp_2.2-0          
+    ##  [1] future_1.68.0      pheatmap_1.0.13    RColorBrewer_1.1-3 patchwork_1.3.2   
+    ##  [5] tidyr_1.3.2        dplyr_1.1.4        ggplot2_4.0.1      Seurat_5.4.0      
+    ##  [9] SeuratObject_5.3.0 sp_2.2-0          
     ## 
     ## loaded via a namespace (and not attached):
     ##   [1] deldir_2.0-4           pbapply_1.7-4          gridExtra_2.3         
@@ -1010,20 +1007,19 @@ sessionInfo()
     ##  [61] miniUI_0.1.2           listenv_0.10.0         plyr_1.8.9            
     ##  [64] lattice_0.22-7         tibble_3.3.1           withr_3.0.2           
     ##  [67] shiny_1.12.1           S7_0.2.1               ROCR_1.0-11           
-    ##  [70] evaluate_1.0.5         Rtsne_0.17             future_1.68.0         
-    ##  [73] fastDummies_1.7.5      desc_1.4.3             survival_3.8-3        
-    ##  [76] polyclip_1.10-7        fitdistrplus_1.2-4     pillar_1.11.1         
-    ##  [79] BiocManager_1.30.27    KernSmooth_2.23-26     renv_1.1.5            
-    ##  [82] plotly_4.11.0          generics_0.1.4         RcppHNSW_0.6.0        
-    ##  [85] scales_1.4.0           globals_0.18.0         xtable_1.8-4          
-    ##  [88] glue_1.8.0             lazyeval_0.2.2         tools_4.5.2           
-    ##  [91] data.table_1.18.0      RSpectra_0.16-2        RANN_2.6.2            
-    ##  [94] fs_1.6.6               dotCall64_1.2          cowplot_1.2.0         
-    ##  [97] grid_4.5.2             nlme_3.1-168           cli_3.6.5             
-    ## [100] spatstat.sparse_3.1-0  textshaping_1.0.4      spam_2.11-3           
-    ## [103] viridisLite_0.4.2      uwot_0.2.4             gtable_0.3.6          
-    ## [106] sass_0.4.10            digest_0.6.39          progressr_0.18.0      
-    ## [109] ggrepel_0.9.6          htmlwidgets_1.6.4      farver_2.1.2          
-    ## [112] htmltools_0.5.9        pkgdown_2.2.0          lifecycle_1.0.5       
-    ## [115] httr_1.4.7             statmod_1.5.1          mime_0.13             
-    ## [118] MASS_7.3-65
+    ##  [70] evaluate_1.0.5         Rtsne_0.17             fastDummies_1.7.5     
+    ##  [73] desc_1.4.3             survival_3.8-3         polyclip_1.10-7       
+    ##  [76] fitdistrplus_1.2-4     pillar_1.11.1          BiocManager_1.30.27   
+    ##  [79] KernSmooth_2.23-26     renv_1.1.5             plotly_4.11.0         
+    ##  [82] generics_0.1.4         RcppHNSW_0.6.0         scales_1.4.0          
+    ##  [85] globals_0.18.0         xtable_1.8-4           glue_1.8.0            
+    ##  [88] lazyeval_0.2.2         tools_4.5.2            data.table_1.18.0     
+    ##  [91] RSpectra_0.16-2        RANN_2.6.2             fs_1.6.6              
+    ##  [94] dotCall64_1.2          cowplot_1.2.0          grid_4.5.2            
+    ##  [97] nlme_3.1-168           cli_3.6.5              spatstat.sparse_3.1-0 
+    ## [100] textshaping_1.0.4      spam_2.11-3            viridisLite_0.4.2     
+    ## [103] uwot_0.2.4             gtable_0.3.6           sass_0.4.10           
+    ## [106] digest_0.6.39          progressr_0.18.0       ggrepel_0.9.6         
+    ## [109] htmlwidgets_1.6.4      farver_2.1.2           htmltools_0.5.9       
+    ## [112] pkgdown_2.2.0          lifecycle_1.0.5        httr_1.4.7            
+    ## [115] statmod_1.5.1          mime_0.13              MASS_7.3-65

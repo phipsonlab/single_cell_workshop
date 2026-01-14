@@ -72,7 +72,7 @@ cat("- Genes:", nrow(seu), "\n")
 cat("- Clusters:", length(unique(seu$seurat_clusters)), "\n")
 ```
 
-    ## - Clusters: 19
+    ## - Clusters: 17
 
 Let us first examine the cluster distribution to understand what we are
 annotating.
@@ -92,25 +92,23 @@ for (i in seq_along(cluster_sizes)) {
 }
 ```
 
-    ##   Cluster 0: 2834 cells
-    ##   Cluster 1: 1528 cells
-    ##   Cluster 2: 1151 cells
-    ##   Cluster 3: 699 cells
-    ##   Cluster 4: 555 cells
-    ##   Cluster 5: 539 cells
-    ##   Cluster 6: 472 cells
-    ##   Cluster 7: 426 cells
-    ##   Cluster 8: 218 cells
-    ##   Cluster 9: 213 cells
-    ##   Cluster 10: 205 cells
-    ##   Cluster 11: 190 cells
-    ##   Cluster 12: 182 cells
-    ##   Cluster 13: 164 cells
-    ##   Cluster 14: 155 cells
-    ##   Cluster 15: 147 cells
-    ##   Cluster 16: 130 cells
-    ##   Cluster 17: 124 cells
-    ##   Cluster 18: 68 cells
+    ##   Cluster 0: 2669 cells
+    ##   Cluster 1: 1940 cells
+    ##   Cluster 2: 1119 cells
+    ##   Cluster 3: 693 cells
+    ##   Cluster 4: 580 cells
+    ##   Cluster 5: 556 cells
+    ##   Cluster 6: 543 cells
+    ##   Cluster 7: 367 cells
+    ##   Cluster 8: 227 cells
+    ##   Cluster 9: 205 cells
+    ##   Cluster 10: 193 cells
+    ##   Cluster 11: 182 cells
+    ##   Cluster 12: 166 cells
+    ##   Cluster 13: 151 cells
+    ##   Cluster 14: 145 cells
+    ##   Cluster 15: 141 cells
+    ##   Cluster 16: 123 cells
 
 ## Define Colour Palette
 
@@ -217,7 +215,7 @@ markers <- FindAllMarkers(
 cat("Found", nrow(markers), "marker genes across all clusters\n")
 ```
 
-    ## Found 20475 marker genes across all clusters
+    ## Found 18163 marker genes across all clusters
 
 Let us examine the top markers for each cluster.
 
@@ -244,137 +242,123 @@ for (cl in levels(seu$seurat_clusters)) {
 
     ## 
     ## --- Cluster 0 ---
-    ##   LINC02008: log2FC=3.01, pct.1=38%, pct.2=8%
-    ##   GPR39: log2FC=2.75, pct.1=48%, pct.2=8%
-    ##   BANCR: log2FC=2.71, pct.1=71%, pct.2=13%
-    ##   GLP1R: log2FC=2.71, pct.1=47%, pct.2=8%
-    ##   RNF175: log2FC=2.70, pct.1=43%, pct.2=8%
+    ##   LINC02008: log2FC=2.95, pct.1=39%, pct.2=8%
+    ##   RNF175: log2FC=2.64, pct.1=44%, pct.2=8%
+    ##   GPR39: log2FC=2.64, pct.1=49%, pct.2=9%
+    ##   GLP1R: log2FC=2.57, pct.1=47%, pct.2=9%
+    ##   BANCR: log2FC=2.54, pct.1=71%, pct.2=15%
     ## 
     ## --- Cluster 1 ---
-    ##   ADH1B: log2FC=5.27, pct.1=60%, pct.2=6%
-    ##   SCARA5: log2FC=4.93, pct.1=49%, pct.2=3%
-    ##   VIT: log2FC=4.93, pct.1=44%, pct.2=3%
-    ##   C3: log2FC=4.64, pct.1=52%, pct.2=4%
-    ##   CATSPERB: log2FC=4.63, pct.1=48%, pct.2=5%
+    ##   SCARA5: log2FC=5.71, pct.1=43%, pct.2=2%
+    ##   VIT: log2FC=5.62, pct.1=39%, pct.2=2%
+    ##   ADH1B: log2FC=5.60, pct.1=52%, pct.2=5%
+    ##   ABCA9-AS1: log2FC=5.35, pct.1=67%, pct.2=5%
+    ##   ABCA9: log2FC=5.31, pct.1=92%, pct.2=17%
     ## 
     ## --- Cluster 2 ---
-    ##   LINC01880: log2FC=6.04, pct.1=32%, pct.2=1%
-    ##   APOB: log2FC=5.64, pct.1=26%, pct.2=1%
-    ##   ADRB1: log2FC=5.43, pct.1=41%, pct.2=1%
-    ##   UGT2B4: log2FC=5.32, pct.1=45%, pct.2=1%
-    ##   LINC01428: log2FC=5.17, pct.1=54%, pct.2=2%
+    ##   LINC01880: log2FC=5.91, pct.1=32%, pct.2=1%
+    ##   APOB: log2FC=5.57, pct.1=26%, pct.2=1%
+    ##   ADRB1: log2FC=5.39, pct.1=42%, pct.2=1%
+    ##   UGT2B4: log2FC=5.16, pct.1=45%, pct.2=1%
+    ##   MYOM3: log2FC=4.95, pct.1=90%, pct.2=5%
     ## 
     ## --- Cluster 3 ---
-    ##   FHL5: log2FC=6.78, pct.1=28%, pct.2=1%
-    ##   EGFLAM: log2FC=6.41, pct.1=77%, pct.2=5%
-    ##   AGAP2: log2FC=6.38, pct.1=40%, pct.2=1%
-    ##   LINC02237: log2FC=6.11, pct.1=38%, pct.2=2%
-    ##   FAM162B: log2FC=6.06, pct.1=67%, pct.2=2%
+    ##   FHL5: log2FC=6.61, pct.1=28%, pct.2=1%
+    ##   EGFLAM: log2FC=6.40, pct.1=77%, pct.2=5%
+    ##   AGAP2: log2FC=6.39, pct.1=40%, pct.2=1%
+    ##   LINC02237: log2FC=6.10, pct.1=38%, pct.2=2%
+    ##   FAM162B: log2FC=6.05, pct.1=68%, pct.2=2%
     ## 
     ## --- Cluster 4 ---
-    ##   NR5A2: log2FC=6.91, pct.1=47%, pct.2=1%
-    ##   CA4: log2FC=6.51, pct.1=39%, pct.2=1%
-    ##   NOTCH4: log2FC=6.50, pct.1=75%, pct.2=2%
-    ##   BTNL9: log2FC=6.45, pct.1=72%, pct.2=3%
-    ##   CYYR1: log2FC=6.39, pct.1=92%, pct.2=4%
+    ##   S100A1: log2FC=3.93, pct.1=32%, pct.2=4%
+    ##   ACTA1: log2FC=3.79, pct.1=80%, pct.2=16%
+    ##   HLA-DQB1: log2FC=3.52, pct.1=34%, pct.2=3%
+    ##   HLA-DRA: log2FC=3.36, pct.1=57%, pct.2=7%
+    ##   HLA-DPA1: log2FC=3.34, pct.1=45%, pct.2=6%
     ## 
     ## --- Cluster 5 ---
-    ##   MARCO: log2FC=7.65, pct.1=29%, pct.2=0%
-    ##   F13A1: log2FC=7.21, pct.1=92%, pct.2=12%
-    ##   LILRB5: log2FC=7.15, pct.1=45%, pct.2=1%
-    ##   PLEK: log2FC=7.13, pct.1=51%, pct.2=1%
-    ##   SIGLEC1: log2FC=7.05, pct.1=66%, pct.2=2%
+    ##   NR5A2: log2FC=6.95, pct.1=47%, pct.2=1%
+    ##   CA4: log2FC=6.55, pct.1=39%, pct.2=1%
+    ##   NOTCH4: log2FC=6.52, pct.1=75%, pct.2=2%
+    ##   BTNL9: log2FC=6.45, pct.1=72%, pct.2=3%
+    ##   CYYR1: log2FC=6.40, pct.1=92%, pct.2=4%
     ## 
     ## --- Cluster 6 ---
-    ##   HLA-DQB1: log2FC=3.82, pct.1=41%, pct.2=3%
-    ##   HLA-DRA: log2FC=3.64, pct.1=68%, pct.2=7%
-    ##   HLA-DPA1: log2FC=3.63, pct.1=54%, pct.2=6%
-    ##   HLA-DRB5: log2FC=3.20, pct.1=31%, pct.2=3%
-    ##   C1QA: log2FC=3.18, pct.1=51%, pct.2=6%
+    ##   MARCO: log2FC=7.68, pct.1=29%, pct.2=0%
+    ##   PLEK: log2FC=7.25, pct.1=51%, pct.2=1%
+    ##   F13A1: log2FC=7.20, pct.1=92%, pct.2=12%
+    ##   LILRB5: log2FC=7.14, pct.1=45%, pct.2=1%
+    ##   SIGLEC1: log2FC=6.97, pct.1=65%, pct.2=2%
     ## 
     ## --- Cluster 7 ---
-    ##   PBK: log2FC=6.30, pct.1=50%, pct.2=1%
-    ##   TOP2A: log2FC=6.22, pct.1=63%, pct.2=3%
-    ##   KIF18B: log2FC=6.17, pct.1=57%, pct.2=2%
-    ##   TROAP: log2FC=6.17, pct.1=27%, pct.2=0%
-    ##   BUB1: log2FC=6.10, pct.1=58%, pct.2=2%
+    ##   CSMD1: log2FC=5.31, pct.1=70%, pct.2=19%
+    ##   OPCML: log2FC=4.77, pct.1=69%, pct.2=12%
+    ##   BRINP3: log2FC=3.64, pct.1=94%, pct.2=26%
+    ##   ZMAT4: log2FC=2.82, pct.1=66%, pct.2=17%
+    ##   P2RX1: log2FC=2.59, pct.1=41%, pct.2=8%
     ## 
     ## --- Cluster 8 ---
-    ##   CSMD1: log2FC=5.67, pct.1=82%, pct.2=20%
-    ##   OPCML: log2FC=5.19, pct.1=86%, pct.2=13%
-    ##   BRINP3: log2FC=3.95, pct.1=98%, pct.2=27%
-    ##   ZMAT4: log2FC=3.05, pct.1=73%, pct.2=18%
-    ##   ANO4: log2FC=2.95, pct.1=41%, pct.2=9%
+    ##   NEK2: log2FC=7.17, pct.1=27%, pct.2=0%
+    ##   TOP2A: log2FC=6.91, pct.1=95%, pct.2=4%
+    ##   KIF18B: log2FC=6.88, pct.1=91%, pct.2=2%
+    ##   KIF20A: log2FC=6.88, pct.1=35%, pct.2=0%
+    ##   TROAP: log2FC=6.80, pct.1=47%, pct.2=1%
     ## 
     ## --- Cluster 9 ---
-    ##   NRG1: log2FC=5.95, pct.1=68%, pct.2=11%
-    ##   DSC3: log2FC=5.13, pct.1=65%, pct.2=3%
-    ##   DCHS2: log2FC=5.07, pct.1=44%, pct.2=2%
-    ##   KHDRBS2: log2FC=4.93, pct.1=55%, pct.2=6%
-    ##   NDST4: log2FC=4.89, pct.1=41%, pct.2=2%
-    ## 
-    ## --- Cluster 10 ---
-    ##   PANCR: log2FC=7.12, pct.1=50%, pct.2=1%
-    ##   KCNJ3: log2FC=6.77, pct.1=92%, pct.2=2%
-    ##   VWDE: log2FC=6.66, pct.1=64%, pct.2=1%
-    ##   KCNH7: log2FC=6.63, pct.1=89%, pct.2=9%
+    ##   PANCR: log2FC=7.04, pct.1=50%, pct.2=1%
+    ##   KCNJ3: log2FC=6.75, pct.1=91%, pct.2=2%
+    ##   KCNH7: log2FC=6.66, pct.1=89%, pct.2=9%
+    ##   VWDE: log2FC=6.65, pct.1=63%, pct.2=1%
     ##   ZNF385B: log2FC=6.51, pct.1=85%, pct.2=9%
     ## 
-    ## --- Cluster 11 ---
-    ##   SRARP: log2FC=7.04, pct.1=42%, pct.2=0%
-    ##   OTUD1: log2FC=5.37, pct.1=73%, pct.2=6%
-    ##   ATF3: log2FC=4.55, pct.1=68%, pct.2=7%
-    ##   FOSB: log2FC=4.47, pct.1=77%, pct.2=6%
-    ##   PNMT: log2FC=4.44, pct.1=42%, pct.2=4%
+    ## --- Cluster 10 ---
+    ##   SRARP: log2FC=7.02, pct.1=41%, pct.2=0%
+    ##   OTUD1: log2FC=5.39, pct.1=74%, pct.2=6%
+    ##   ATF3: log2FC=4.63, pct.1=68%, pct.2=7%
+    ##   FOSB: log2FC=4.47, pct.1=79%, pct.2=5%
+    ##   XIRP1: log2FC=4.43, pct.1=82%, pct.2=12%
     ## 
-    ## --- Cluster 12 ---
+    ## --- Cluster 11 ---
     ##   PKHD1L1: log2FC=8.67, pct.1=88%, pct.2=3%
-    ##   SMOC1: log2FC=7.20, pct.1=74%, pct.2=2%
+    ##   SMOC1: log2FC=7.21, pct.1=74%, pct.2=2%
     ##   MMRN1: log2FC=6.95, pct.1=42%, pct.2=1%
     ##   LINC02388: log2FC=6.31, pct.1=69%, pct.2=10%
     ##   PCDH15: log2FC=6.31, pct.1=80%, pct.2=13%
     ## 
-    ## --- Cluster 13 ---
-    ##   TFAP2A: log2FC=8.27, pct.1=38%, pct.2=0%
-    ##   NRXN1: log2FC=8.25, pct.1=100%, pct.2=12%
-    ##   INSC: log2FC=8.18, pct.1=75%, pct.2=1%
+    ## --- Cluster 12 ---
+    ##   NRXN1: log2FC=8.28, pct.1=100%, pct.2=12%
+    ##   TFAP2A: log2FC=8.25, pct.1=38%, pct.2=0%
+    ##   INSC: log2FC=8.22, pct.1=75%, pct.2=1%
     ##   XKR4: log2FC=7.85, pct.1=99%, pct.2=10%
-    ##   GRIK3: log2FC=7.72, pct.1=60%, pct.2=1%
+    ##   GRIK3: log2FC=7.76, pct.1=60%, pct.2=1%
+    ## 
+    ## --- Cluster 13 ---
+    ##   MYH7: log2FC=2.79, pct.1=99%, pct.2=66%
+    ##   TNNI1: log2FC=2.79, pct.1=98%, pct.2=36%
+    ##   DHFR: log2FC=2.77, pct.1=91%, pct.2=46%
+    ##   LRRC10: log2FC=2.48, pct.1=47%, pct.2=10%
+    ##   SRP14: log2FC=2.41, pct.1=89%, pct.2=34%
     ## 
     ## --- Cluster 14 ---
-    ##   TNNC1: log2FC=4.16, pct.1=100%, pct.2=50%
-    ##   S100A1: log2FC=4.08, pct.1=31%, pct.2=6%
-    ##   ACTA1: log2FC=4.01, pct.1=48%, pct.2=19%
-    ##   TNNI1: log2FC=4.00, pct.1=70%, pct.2=37%
-    ##   CRYAB: log2FC=3.87, pct.1=100%, pct.2=48%
+    ##   E2F1: log2FC=4.74, pct.1=67%, pct.2=4%
+    ##   CDC45: log2FC=4.66, pct.1=53%, pct.2=2%
+    ##   DTL: log2FC=4.62, pct.1=87%, pct.2=6%
+    ##   MCM10: log2FC=4.50, pct.1=53%, pct.2=3%
+    ##   EXO1: log2FC=4.36, pct.1=53%, pct.2=3%
     ## 
     ## --- Cluster 15 ---
-    ##   DHFR: log2FC=2.93, pct.1=92%, pct.2=46%
-    ##   KRT18: log2FC=2.93, pct.1=26%, pct.2=4%
-    ##   MYH7: log2FC=2.90, pct.1=100%, pct.2=67%
-    ##   TNNI1: log2FC=2.84, pct.1=99%, pct.2=36%
-    ##   SRP14: log2FC=2.50, pct.1=90%, pct.2=34%
+    ##   XIRP2: log2FC=4.01, pct.1=47%, pct.2=23%
+    ##   GCLM: log2FC=2.54, pct.1=28%, pct.2=11%
+    ##   GBE1: log2FC=2.51, pct.1=82%, pct.2=73%
+    ##   LMCD1: log2FC=2.47, pct.1=35%, pct.2=23%
+    ##   PCBP3: log2FC=2.44, pct.1=26%, pct.2=9%
     ## 
     ## --- Cluster 16 ---
-    ##   CYP19A1: log2FC=4.56, pct.1=37%, pct.2=2%
-    ##   CILP: log2FC=4.22, pct.1=38%, pct.2=4%
-    ##   SEZ6L: log2FC=3.83, pct.1=26%, pct.2=4%
-    ##   HEY1: log2FC=3.81, pct.1=36%, pct.2=3%
-    ##   COL4A4: log2FC=3.61, pct.1=98%, pct.2=20%
-    ## 
-    ## --- Cluster 17 ---
-    ##   SKAP1: log2FC=8.22, pct.1=80%, pct.2=3%
+    ##   SKAP1: log2FC=8.23, pct.1=81%, pct.2=3%
     ##   THEMIS: log2FC=7.85, pct.1=48%, pct.2=2%
-    ##   SCML4: log2FC=7.64, pct.1=51%, pct.2=1%
-    ##   PRF1: log2FC=7.55, pct.1=29%, pct.2=0%
-    ##   CD2: log2FC=7.39, pct.1=42%, pct.2=0%
-    ## 
-    ## --- Cluster 18 ---
-    ##   LUCAT1: log2FC=6.81, pct.1=37%, pct.2=5%
-    ##   XIRP2: log2FC=5.00, pct.1=52%, pct.2=23%
-    ##   GCLM: log2FC=3.38, pct.1=38%, pct.2=11%
-    ##   GBE1: log2FC=3.37, pct.1=91%, pct.2=73%
-    ##   LMCD1: log2FC=3.37, pct.1=37%, pct.2=23%
+    ##   SCML4: log2FC=7.65, pct.1=51%, pct.2=1%
+    ##   CD2: log2FC=7.50, pct.1=42%, pct.2=0%
+    ##   ITK: log2FC=7.34, pct.1=60%, pct.2=1%
 
 ### Visualise Top Markers with DotPlot
 

@@ -146,7 +146,7 @@ PLP1)</li>
 <pre><code><span><span class="co">## - Genes: 17726</span></span></code></pre>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"- Clusters:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">seu</span><span class="op">$</span><span class="va">seurat_clusters</span><span class="op">)</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## - Clusters: 19</span></span></code></pre>
+<pre><code><span><span class="co">## - Clusters: 17</span></span></code></pre>
 <p>Let us first examine the cluster distribution to understand what we
 are annotating.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
@@ -159,25 +159,23 @@ are annotating.</p>
 <code class="sourceCode R"><span><span class="kw">for</span> <span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_along</a></span><span class="op">(</span><span class="va">cluster_sizes</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"  Cluster %s: %d cells\n"</span>, <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">cluster_sizes</span><span class="op">)</span><span class="op">[</span><span class="va">i</span><span class="op">]</span>, <span class="va">cluster_sizes</span><span class="op">[</span><span class="va">i</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">}</span></span></code></pre></div>
-<pre><code><span><span class="co">##   Cluster 0: 2834 cells</span></span>
-<span><span class="co">##   Cluster 1: 1528 cells</span></span>
-<span><span class="co">##   Cluster 2: 1151 cells</span></span>
-<span><span class="co">##   Cluster 3: 699 cells</span></span>
-<span><span class="co">##   Cluster 4: 555 cells</span></span>
-<span><span class="co">##   Cluster 5: 539 cells</span></span>
-<span><span class="co">##   Cluster 6: 472 cells</span></span>
-<span><span class="co">##   Cluster 7: 426 cells</span></span>
-<span><span class="co">##   Cluster 8: 218 cells</span></span>
-<span><span class="co">##   Cluster 9: 213 cells</span></span>
-<span><span class="co">##   Cluster 10: 205 cells</span></span>
-<span><span class="co">##   Cluster 11: 190 cells</span></span>
-<span><span class="co">##   Cluster 12: 182 cells</span></span>
-<span><span class="co">##   Cluster 13: 164 cells</span></span>
-<span><span class="co">##   Cluster 14: 155 cells</span></span>
-<span><span class="co">##   Cluster 15: 147 cells</span></span>
-<span><span class="co">##   Cluster 16: 130 cells</span></span>
-<span><span class="co">##   Cluster 17: 124 cells</span></span>
-<span><span class="co">##   Cluster 18: 68 cells</span></span></code></pre>
+<pre><code><span><span class="co">##   Cluster 0: 2669 cells</span></span>
+<span><span class="co">##   Cluster 1: 1940 cells</span></span>
+<span><span class="co">##   Cluster 2: 1119 cells</span></span>
+<span><span class="co">##   Cluster 3: 693 cells</span></span>
+<span><span class="co">##   Cluster 4: 580 cells</span></span>
+<span><span class="co">##   Cluster 5: 556 cells</span></span>
+<span><span class="co">##   Cluster 6: 543 cells</span></span>
+<span><span class="co">##   Cluster 7: 367 cells</span></span>
+<span><span class="co">##   Cluster 8: 227 cells</span></span>
+<span><span class="co">##   Cluster 9: 205 cells</span></span>
+<span><span class="co">##   Cluster 10: 193 cells</span></span>
+<span><span class="co">##   Cluster 11: 182 cells</span></span>
+<span><span class="co">##   Cluster 12: 166 cells</span></span>
+<span><span class="co">##   Cluster 13: 151 cells</span></span>
+<span><span class="co">##   Cluster 14: 145 cells</span></span>
+<span><span class="co">##   Cluster 15: 141 cells</span></span>
+<span><span class="co">##   Cluster 16: 123 cells</span></span></code></pre>
 </div>
 <div class="section level2">
 <h2 id="define-colour-palette">Define Colour Palette<a class="anchor" aria-label="anchor" href="#define-colour-palette"></a>
@@ -273,7 +271,7 @@ marker-based annotation.</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Found"</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">markers</span><span class="op">)</span>, <span class="st">"marker genes across all clusters\n"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Found 20475 marker genes across all clusters</span></span></code></pre>
+<pre><code><span><span class="co">## Found 18163 marker genes across all clusters</span></span></code></pre>
 <p>Let us examine the top markers for each cluster.</p>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Get top 5 markers per cluster</span></span>
@@ -296,137 +294,123 @@ marker-based annotation.</p>
 <span><span class="op">}</span></span></code></pre></div>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">## --- Cluster 0 ---</span></span>
-<span><span class="co">##   LINC02008: log2FC=3.01, pct.1=38%, pct.2=8%</span></span>
-<span><span class="co">##   GPR39: log2FC=2.75, pct.1=48%, pct.2=8%</span></span>
-<span><span class="co">##   BANCR: log2FC=2.71, pct.1=71%, pct.2=13%</span></span>
-<span><span class="co">##   GLP1R: log2FC=2.71, pct.1=47%, pct.2=8%</span></span>
-<span><span class="co">##   RNF175: log2FC=2.70, pct.1=43%, pct.2=8%</span></span>
+<span><span class="co">##   LINC02008: log2FC=2.95, pct.1=39%, pct.2=8%</span></span>
+<span><span class="co">##   RNF175: log2FC=2.64, pct.1=44%, pct.2=8%</span></span>
+<span><span class="co">##   GPR39: log2FC=2.64, pct.1=49%, pct.2=9%</span></span>
+<span><span class="co">##   GLP1R: log2FC=2.57, pct.1=47%, pct.2=9%</span></span>
+<span><span class="co">##   BANCR: log2FC=2.54, pct.1=71%, pct.2=15%</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## --- Cluster 1 ---</span></span>
-<span><span class="co">##   ADH1B: log2FC=5.27, pct.1=60%, pct.2=6%</span></span>
-<span><span class="co">##   SCARA5: log2FC=4.93, pct.1=49%, pct.2=3%</span></span>
-<span><span class="co">##   VIT: log2FC=4.93, pct.1=44%, pct.2=3%</span></span>
-<span><span class="co">##   C3: log2FC=4.64, pct.1=52%, pct.2=4%</span></span>
-<span><span class="co">##   CATSPERB: log2FC=4.63, pct.1=48%, pct.2=5%</span></span>
+<span><span class="co">##   SCARA5: log2FC=5.71, pct.1=43%, pct.2=2%</span></span>
+<span><span class="co">##   VIT: log2FC=5.62, pct.1=39%, pct.2=2%</span></span>
+<span><span class="co">##   ADH1B: log2FC=5.60, pct.1=52%, pct.2=5%</span></span>
+<span><span class="co">##   ABCA9-AS1: log2FC=5.35, pct.1=67%, pct.2=5%</span></span>
+<span><span class="co">##   ABCA9: log2FC=5.31, pct.1=92%, pct.2=17%</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## --- Cluster 2 ---</span></span>
-<span><span class="co">##   LINC01880: log2FC=6.04, pct.1=32%, pct.2=1%</span></span>
-<span><span class="co">##   APOB: log2FC=5.64, pct.1=26%, pct.2=1%</span></span>
-<span><span class="co">##   ADRB1: log2FC=5.43, pct.1=41%, pct.2=1%</span></span>
-<span><span class="co">##   UGT2B4: log2FC=5.32, pct.1=45%, pct.2=1%</span></span>
-<span><span class="co">##   LINC01428: log2FC=5.17, pct.1=54%, pct.2=2%</span></span>
+<span><span class="co">##   LINC01880: log2FC=5.91, pct.1=32%, pct.2=1%</span></span>
+<span><span class="co">##   APOB: log2FC=5.57, pct.1=26%, pct.2=1%</span></span>
+<span><span class="co">##   ADRB1: log2FC=5.39, pct.1=42%, pct.2=1%</span></span>
+<span><span class="co">##   UGT2B4: log2FC=5.16, pct.1=45%, pct.2=1%</span></span>
+<span><span class="co">##   MYOM3: log2FC=4.95, pct.1=90%, pct.2=5%</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## --- Cluster 3 ---</span></span>
-<span><span class="co">##   FHL5: log2FC=6.78, pct.1=28%, pct.2=1%</span></span>
-<span><span class="co">##   EGFLAM: log2FC=6.41, pct.1=77%, pct.2=5%</span></span>
-<span><span class="co">##   AGAP2: log2FC=6.38, pct.1=40%, pct.2=1%</span></span>
-<span><span class="co">##   LINC02237: log2FC=6.11, pct.1=38%, pct.2=2%</span></span>
-<span><span class="co">##   FAM162B: log2FC=6.06, pct.1=67%, pct.2=2%</span></span>
+<span><span class="co">##   FHL5: log2FC=6.61, pct.1=28%, pct.2=1%</span></span>
+<span><span class="co">##   EGFLAM: log2FC=6.40, pct.1=77%, pct.2=5%</span></span>
+<span><span class="co">##   AGAP2: log2FC=6.39, pct.1=40%, pct.2=1%</span></span>
+<span><span class="co">##   LINC02237: log2FC=6.10, pct.1=38%, pct.2=2%</span></span>
+<span><span class="co">##   FAM162B: log2FC=6.05, pct.1=68%, pct.2=2%</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## --- Cluster 4 ---</span></span>
-<span><span class="co">##   NR5A2: log2FC=6.91, pct.1=47%, pct.2=1%</span></span>
-<span><span class="co">##   CA4: log2FC=6.51, pct.1=39%, pct.2=1%</span></span>
-<span><span class="co">##   NOTCH4: log2FC=6.50, pct.1=75%, pct.2=2%</span></span>
-<span><span class="co">##   BTNL9: log2FC=6.45, pct.1=72%, pct.2=3%</span></span>
-<span><span class="co">##   CYYR1: log2FC=6.39, pct.1=92%, pct.2=4%</span></span>
+<span><span class="co">##   S100A1: log2FC=3.93, pct.1=32%, pct.2=4%</span></span>
+<span><span class="co">##   ACTA1: log2FC=3.79, pct.1=80%, pct.2=16%</span></span>
+<span><span class="co">##   HLA-DQB1: log2FC=3.52, pct.1=34%, pct.2=3%</span></span>
+<span><span class="co">##   HLA-DRA: log2FC=3.36, pct.1=57%, pct.2=7%</span></span>
+<span><span class="co">##   HLA-DPA1: log2FC=3.34, pct.1=45%, pct.2=6%</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## --- Cluster 5 ---</span></span>
-<span><span class="co">##   MARCO: log2FC=7.65, pct.1=29%, pct.2=0%</span></span>
-<span><span class="co">##   F13A1: log2FC=7.21, pct.1=92%, pct.2=12%</span></span>
-<span><span class="co">##   LILRB5: log2FC=7.15, pct.1=45%, pct.2=1%</span></span>
-<span><span class="co">##   PLEK: log2FC=7.13, pct.1=51%, pct.2=1%</span></span>
-<span><span class="co">##   SIGLEC1: log2FC=7.05, pct.1=66%, pct.2=2%</span></span>
+<span><span class="co">##   NR5A2: log2FC=6.95, pct.1=47%, pct.2=1%</span></span>
+<span><span class="co">##   CA4: log2FC=6.55, pct.1=39%, pct.2=1%</span></span>
+<span><span class="co">##   NOTCH4: log2FC=6.52, pct.1=75%, pct.2=2%</span></span>
+<span><span class="co">##   BTNL9: log2FC=6.45, pct.1=72%, pct.2=3%</span></span>
+<span><span class="co">##   CYYR1: log2FC=6.40, pct.1=92%, pct.2=4%</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## --- Cluster 6 ---</span></span>
-<span><span class="co">##   HLA-DQB1: log2FC=3.82, pct.1=41%, pct.2=3%</span></span>
-<span><span class="co">##   HLA-DRA: log2FC=3.64, pct.1=68%, pct.2=7%</span></span>
-<span><span class="co">##   HLA-DPA1: log2FC=3.63, pct.1=54%, pct.2=6%</span></span>
-<span><span class="co">##   HLA-DRB5: log2FC=3.20, pct.1=31%, pct.2=3%</span></span>
-<span><span class="co">##   C1QA: log2FC=3.18, pct.1=51%, pct.2=6%</span></span>
+<span><span class="co">##   MARCO: log2FC=7.68, pct.1=29%, pct.2=0%</span></span>
+<span><span class="co">##   PLEK: log2FC=7.25, pct.1=51%, pct.2=1%</span></span>
+<span><span class="co">##   F13A1: log2FC=7.20, pct.1=92%, pct.2=12%</span></span>
+<span><span class="co">##   LILRB5: log2FC=7.14, pct.1=45%, pct.2=1%</span></span>
+<span><span class="co">##   SIGLEC1: log2FC=6.97, pct.1=65%, pct.2=2%</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## --- Cluster 7 ---</span></span>
-<span><span class="co">##   PBK: log2FC=6.30, pct.1=50%, pct.2=1%</span></span>
-<span><span class="co">##   TOP2A: log2FC=6.22, pct.1=63%, pct.2=3%</span></span>
-<span><span class="co">##   KIF18B: log2FC=6.17, pct.1=57%, pct.2=2%</span></span>
-<span><span class="co">##   TROAP: log2FC=6.17, pct.1=27%, pct.2=0%</span></span>
-<span><span class="co">##   BUB1: log2FC=6.10, pct.1=58%, pct.2=2%</span></span>
+<span><span class="co">##   CSMD1: log2FC=5.31, pct.1=70%, pct.2=19%</span></span>
+<span><span class="co">##   OPCML: log2FC=4.77, pct.1=69%, pct.2=12%</span></span>
+<span><span class="co">##   BRINP3: log2FC=3.64, pct.1=94%, pct.2=26%</span></span>
+<span><span class="co">##   ZMAT4: log2FC=2.82, pct.1=66%, pct.2=17%</span></span>
+<span><span class="co">##   P2RX1: log2FC=2.59, pct.1=41%, pct.2=8%</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## --- Cluster 8 ---</span></span>
-<span><span class="co">##   CSMD1: log2FC=5.67, pct.1=82%, pct.2=20%</span></span>
-<span><span class="co">##   OPCML: log2FC=5.19, pct.1=86%, pct.2=13%</span></span>
-<span><span class="co">##   BRINP3: log2FC=3.95, pct.1=98%, pct.2=27%</span></span>
-<span><span class="co">##   ZMAT4: log2FC=3.05, pct.1=73%, pct.2=18%</span></span>
-<span><span class="co">##   ANO4: log2FC=2.95, pct.1=41%, pct.2=9%</span></span>
+<span><span class="co">##   NEK2: log2FC=7.17, pct.1=27%, pct.2=0%</span></span>
+<span><span class="co">##   TOP2A: log2FC=6.91, pct.1=95%, pct.2=4%</span></span>
+<span><span class="co">##   KIF18B: log2FC=6.88, pct.1=91%, pct.2=2%</span></span>
+<span><span class="co">##   KIF20A: log2FC=6.88, pct.1=35%, pct.2=0%</span></span>
+<span><span class="co">##   TROAP: log2FC=6.80, pct.1=47%, pct.2=1%</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## --- Cluster 9 ---</span></span>
-<span><span class="co">##   NRG1: log2FC=5.95, pct.1=68%, pct.2=11%</span></span>
-<span><span class="co">##   DSC3: log2FC=5.13, pct.1=65%, pct.2=3%</span></span>
-<span><span class="co">##   DCHS2: log2FC=5.07, pct.1=44%, pct.2=2%</span></span>
-<span><span class="co">##   KHDRBS2: log2FC=4.93, pct.1=55%, pct.2=6%</span></span>
-<span><span class="co">##   NDST4: log2FC=4.89, pct.1=41%, pct.2=2%</span></span>
-<span><span class="co">## </span></span>
-<span><span class="co">## --- Cluster 10 ---</span></span>
-<span><span class="co">##   PANCR: log2FC=7.12, pct.1=50%, pct.2=1%</span></span>
-<span><span class="co">##   KCNJ3: log2FC=6.77, pct.1=92%, pct.2=2%</span></span>
-<span><span class="co">##   VWDE: log2FC=6.66, pct.1=64%, pct.2=1%</span></span>
-<span><span class="co">##   KCNH7: log2FC=6.63, pct.1=89%, pct.2=9%</span></span>
+<span><span class="co">##   PANCR: log2FC=7.04, pct.1=50%, pct.2=1%</span></span>
+<span><span class="co">##   KCNJ3: log2FC=6.75, pct.1=91%, pct.2=2%</span></span>
+<span><span class="co">##   KCNH7: log2FC=6.66, pct.1=89%, pct.2=9%</span></span>
+<span><span class="co">##   VWDE: log2FC=6.65, pct.1=63%, pct.2=1%</span></span>
 <span><span class="co">##   ZNF385B: log2FC=6.51, pct.1=85%, pct.2=9%</span></span>
 <span><span class="co">## </span></span>
-<span><span class="co">## --- Cluster 11 ---</span></span>
-<span><span class="co">##   SRARP: log2FC=7.04, pct.1=42%, pct.2=0%</span></span>
-<span><span class="co">##   OTUD1: log2FC=5.37, pct.1=73%, pct.2=6%</span></span>
-<span><span class="co">##   ATF3: log2FC=4.55, pct.1=68%, pct.2=7%</span></span>
-<span><span class="co">##   FOSB: log2FC=4.47, pct.1=77%, pct.2=6%</span></span>
-<span><span class="co">##   PNMT: log2FC=4.44, pct.1=42%, pct.2=4%</span></span>
+<span><span class="co">## --- Cluster 10 ---</span></span>
+<span><span class="co">##   SRARP: log2FC=7.02, pct.1=41%, pct.2=0%</span></span>
+<span><span class="co">##   OTUD1: log2FC=5.39, pct.1=74%, pct.2=6%</span></span>
+<span><span class="co">##   ATF3: log2FC=4.63, pct.1=68%, pct.2=7%</span></span>
+<span><span class="co">##   FOSB: log2FC=4.47, pct.1=79%, pct.2=5%</span></span>
+<span><span class="co">##   XIRP1: log2FC=4.43, pct.1=82%, pct.2=12%</span></span>
 <span><span class="co">## </span></span>
-<span><span class="co">## --- Cluster 12 ---</span></span>
+<span><span class="co">## --- Cluster 11 ---</span></span>
 <span><span class="co">##   PKHD1L1: log2FC=8.67, pct.1=88%, pct.2=3%</span></span>
-<span><span class="co">##   SMOC1: log2FC=7.20, pct.1=74%, pct.2=2%</span></span>
+<span><span class="co">##   SMOC1: log2FC=7.21, pct.1=74%, pct.2=2%</span></span>
 <span><span class="co">##   MMRN1: log2FC=6.95, pct.1=42%, pct.2=1%</span></span>
 <span><span class="co">##   LINC02388: log2FC=6.31, pct.1=69%, pct.2=10%</span></span>
 <span><span class="co">##   PCDH15: log2FC=6.31, pct.1=80%, pct.2=13%</span></span>
 <span><span class="co">## </span></span>
-<span><span class="co">## --- Cluster 13 ---</span></span>
-<span><span class="co">##   TFAP2A: log2FC=8.27, pct.1=38%, pct.2=0%</span></span>
-<span><span class="co">##   NRXN1: log2FC=8.25, pct.1=100%, pct.2=12%</span></span>
-<span><span class="co">##   INSC: log2FC=8.18, pct.1=75%, pct.2=1%</span></span>
+<span><span class="co">## --- Cluster 12 ---</span></span>
+<span><span class="co">##   NRXN1: log2FC=8.28, pct.1=100%, pct.2=12%</span></span>
+<span><span class="co">##   TFAP2A: log2FC=8.25, pct.1=38%, pct.2=0%</span></span>
+<span><span class="co">##   INSC: log2FC=8.22, pct.1=75%, pct.2=1%</span></span>
 <span><span class="co">##   XKR4: log2FC=7.85, pct.1=99%, pct.2=10%</span></span>
-<span><span class="co">##   GRIK3: log2FC=7.72, pct.1=60%, pct.2=1%</span></span>
+<span><span class="co">##   GRIK3: log2FC=7.76, pct.1=60%, pct.2=1%</span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## --- Cluster 13 ---</span></span>
+<span><span class="co">##   MYH7: log2FC=2.79, pct.1=99%, pct.2=66%</span></span>
+<span><span class="co">##   TNNI1: log2FC=2.79, pct.1=98%, pct.2=36%</span></span>
+<span><span class="co">##   DHFR: log2FC=2.77, pct.1=91%, pct.2=46%</span></span>
+<span><span class="co">##   LRRC10: log2FC=2.48, pct.1=47%, pct.2=10%</span></span>
+<span><span class="co">##   SRP14: log2FC=2.41, pct.1=89%, pct.2=34%</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## --- Cluster 14 ---</span></span>
-<span><span class="co">##   TNNC1: log2FC=4.16, pct.1=100%, pct.2=50%</span></span>
-<span><span class="co">##   S100A1: log2FC=4.08, pct.1=31%, pct.2=6%</span></span>
-<span><span class="co">##   ACTA1: log2FC=4.01, pct.1=48%, pct.2=19%</span></span>
-<span><span class="co">##   TNNI1: log2FC=4.00, pct.1=70%, pct.2=37%</span></span>
-<span><span class="co">##   CRYAB: log2FC=3.87, pct.1=100%, pct.2=48%</span></span>
+<span><span class="co">##   E2F1: log2FC=4.74, pct.1=67%, pct.2=4%</span></span>
+<span><span class="co">##   CDC45: log2FC=4.66, pct.1=53%, pct.2=2%</span></span>
+<span><span class="co">##   DTL: log2FC=4.62, pct.1=87%, pct.2=6%</span></span>
+<span><span class="co">##   MCM10: log2FC=4.50, pct.1=53%, pct.2=3%</span></span>
+<span><span class="co">##   EXO1: log2FC=4.36, pct.1=53%, pct.2=3%</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## --- Cluster 15 ---</span></span>
-<span><span class="co">##   DHFR: log2FC=2.93, pct.1=92%, pct.2=46%</span></span>
-<span><span class="co">##   KRT18: log2FC=2.93, pct.1=26%, pct.2=4%</span></span>
-<span><span class="co">##   MYH7: log2FC=2.90, pct.1=100%, pct.2=67%</span></span>
-<span><span class="co">##   TNNI1: log2FC=2.84, pct.1=99%, pct.2=36%</span></span>
-<span><span class="co">##   SRP14: log2FC=2.50, pct.1=90%, pct.2=34%</span></span>
+<span><span class="co">##   XIRP2: log2FC=4.01, pct.1=47%, pct.2=23%</span></span>
+<span><span class="co">##   GCLM: log2FC=2.54, pct.1=28%, pct.2=11%</span></span>
+<span><span class="co">##   GBE1: log2FC=2.51, pct.1=82%, pct.2=73%</span></span>
+<span><span class="co">##   LMCD1: log2FC=2.47, pct.1=35%, pct.2=23%</span></span>
+<span><span class="co">##   PCBP3: log2FC=2.44, pct.1=26%, pct.2=9%</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## --- Cluster 16 ---</span></span>
-<span><span class="co">##   CYP19A1: log2FC=4.56, pct.1=37%, pct.2=2%</span></span>
-<span><span class="co">##   CILP: log2FC=4.22, pct.1=38%, pct.2=4%</span></span>
-<span><span class="co">##   SEZ6L: log2FC=3.83, pct.1=26%, pct.2=4%</span></span>
-<span><span class="co">##   HEY1: log2FC=3.81, pct.1=36%, pct.2=3%</span></span>
-<span><span class="co">##   COL4A4: log2FC=3.61, pct.1=98%, pct.2=20%</span></span>
-<span><span class="co">## </span></span>
-<span><span class="co">## --- Cluster 17 ---</span></span>
-<span><span class="co">##   SKAP1: log2FC=8.22, pct.1=80%, pct.2=3%</span></span>
+<span><span class="co">##   SKAP1: log2FC=8.23, pct.1=81%, pct.2=3%</span></span>
 <span><span class="co">##   THEMIS: log2FC=7.85, pct.1=48%, pct.2=2%</span></span>
-<span><span class="co">##   SCML4: log2FC=7.64, pct.1=51%, pct.2=1%</span></span>
-<span><span class="co">##   PRF1: log2FC=7.55, pct.1=29%, pct.2=0%</span></span>
-<span><span class="co">##   CD2: log2FC=7.39, pct.1=42%, pct.2=0%</span></span>
-<span><span class="co">## </span></span>
-<span><span class="co">## --- Cluster 18 ---</span></span>
-<span><span class="co">##   LUCAT1: log2FC=6.81, pct.1=37%, pct.2=5%</span></span>
-<span><span class="co">##   XIRP2: log2FC=5.00, pct.1=52%, pct.2=23%</span></span>
-<span><span class="co">##   GCLM: log2FC=3.38, pct.1=38%, pct.2=11%</span></span>
-<span><span class="co">##   GBE1: log2FC=3.37, pct.1=91%, pct.2=73%</span></span>
-<span><span class="co">##   LMCD1: log2FC=3.37, pct.1=37%, pct.2=23%</span></span></code></pre>
+<span><span class="co">##   SCML4: log2FC=7.65, pct.1=51%, pct.2=1%</span></span>
+<span><span class="co">##   CD2: log2FC=7.50, pct.1=42%, pct.2=0%</span></span>
+<span><span class="co">##   ITK: log2FC=7.34, pct.1=60%, pct.2=1%</span></span></code></pre>
 <div class="section level3">
 <h3 id="visualise-top-markers-with-dotplot">Visualise Top Markers with DotPlot<a class="anchor" aria-label="anchor" href="#visualise-top-markers-with-dotplot"></a>
 </h3>

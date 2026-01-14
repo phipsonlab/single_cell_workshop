@@ -109,7 +109,7 @@ jobs:
       - name: Print package versions
         run: |
           cat("R version:", R.version.string, "\n\n")
-          pkgs <- c("Seurat", "SeuratObject", "harmony", "scDblFinder",
+          pkgs <- c("Seurat", "SeuratObject", "harmony",
                     "edgeR", "limma", "speckle", "ggplot2", "pkgdown")
           for (pkg in pkgs) {
             cat(sprintf("%-20s %s\n", pkg, as.character(packageVersion(pkg))))

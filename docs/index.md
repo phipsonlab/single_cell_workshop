@@ -1,0 +1,256 @@
+# Single-Cell RNA-seq Analysis Workshop
+
+**Workshop website:**
+<https://phipsonlab.github.io/single_cell_workshop/>
+
+## Overview
+
+Single-cell RNA sequencing (scRNA-seq) has revolutionised our ability to
+study gene expression at the resolution of individual cells, enabling
+the discovery of novel cell types and providing insights into the
+cellular composition of complex tissues. This workshop provides a
+comprehensive introduction to the computational analysis of scRNA-seq
+data using R and Bioconductor.
+
+We analyse single-nucleus RNA-sequencing (snRNA-seq) data from human
+heart tissue across three developmental stages: foetal, young, and
+adult. The dataset originates from [Sim et
+al. (2021)](https://doi.org/10.1161/CIRCULATIONAHA.120.051921) examining
+sex-specific control of human heart maturation (*Circulation*). The
+workshop materials are adapted from the [original analysis
+workflow](https://bphipson.github.io/Human_Development_snRNAseq/)
+accompanying the publication. Through this analysis, participants will
+learn the complete workflow from raw count matrices to differential
+expression analysis, gaining practical skills applicable to their own
+research.
+
+## Pre-requisites
+
+This workshop is designed for researchers and students who:
+
+- Have basic familiarity with R programming (data manipulation,
+  plotting)
+- Are interested in single-cell transcriptomics analysis
+- Want to understand best practices for scRNA-seq data processing
+
+No prior experience with single-cell analysis or Bioconductor is
+required. All concepts are introduced from first principles with
+detailed explanations.
+
+## System Requirements
+
+| Resource   | Minimum   | Recommended |
+|------------|-----------|-------------|
+| RAM        | 8 GB      | 16 GB       |
+| Disk space | 5 GB free | 10 GB free  |
+| R version  | 4.3+      | 4.4+        |
+| RStudio    | 2023.06+  | Latest      |
+
+## Time Outline
+
+### Session 1: Single-Cell RNA-seq Analysis Fundamentals (3 hours)
+
+| Activity | Duration | Description |
+|----|----|----|
+| **Module 1: Quality Control** | 45 min | Load data, calculate QC metrics, detect doublets, filter cells |
+| *Break* | 10 min |  |
+| **Module 2: Normalisation & Integration** | 50 min | SCTransform normalisation, Harmony batch correction, UMAP visualisation |
+| *Break* | 10 min |  |
+| **Module 3: Cell Type Annotation** | 20 min | Marker gene analysis, manual annotation using canonical markers |
+| **Module 4: Differential Expression** | 55 min | Pseudobulk aggregation, limma-voom DE analysis, propeller composition analysis |
+| Wrap-up & Q&A | 10 min |  |
+
+### Session 2: \[Afternoon Session Title\] (3 hours)
+
+| Activity                | Duration | Description                 |
+|-------------------------|----------|-----------------------------|
+| **Module 5: \[Topic\]** | XX min   | \[Description placeholder\] |
+| *Break*                 | 10 min   |                             |
+| **Module 6: \[Topic\]** | XX min   | \[Description placeholder\] |
+| *Break*                 | 10 min   |                             |
+| **Module 7: \[Topic\]** | XX min   | \[Description placeholder\] |
+| Wrap-up & Q&A           | 10 min   |                             |
+
+## Workshop Goals and Objectives
+
+### Learning Goals
+
+1.  Understand the principles of single-cell RNA-seq data analysis
+2.  Execute a complete analysis pipeline from raw counts to biological
+    insights
+3.  Recognise common pitfalls in single-cell analysis and how to avoid
+    them
+4.  Gain practical skills transferable to your own research data
+
+### Learning Objectives
+
+By the end of this workshop, participants will be able to:
+
+**Session 1:**
+
+- Load and explore 10X Genomics scRNA-seq data in R using Seurat
+- Calculate and interpret per-cell quality control metrics
+- Identify and remove doublets using computational methods
+- Normalise data using SCTransform and correct batch effects with
+  Harmony
+- Perform graph-based clustering and visualise results with UMAP
+- Annotate cell types using canonical marker genes
+- Understand the pseudoreplication problem in single-cell differential
+  expression
+- Perform statistically rigorous differential expression analysis using
+  pseudobulk methods
+- Analyse cell type composition changes using propeller
+
+**Session 2:**
+
+- \[Learning objective placeholder\]
+- \[Learning objective placeholder\]
+- \[Learning objective placeholder\]
+
+## Dataset
+
+The workshop uses snRNA-seq data from human heart tissue (Sim et al.,
+2021):
+
+| Group  | Samples | Age Range   | Description          |
+|--------|---------|-------------|----------------------|
+| Foetal | 3       | 19-20 weeks | Developing heart     |
+| Young  | 3       | 4-14 years  | Postnatal maturation |
+| Adult  | 3       | 35-42 years | Mature heart         |
+
+**Total**: 9 samples, ~54,000 nuclei after quality control
+
+## Methods Covered
+
+| Analysis Step            | Method                      | Package      |
+|--------------------------|-----------------------------|--------------|
+| Quality control          | Per-cell metrics, filtering | Seurat       |
+| Doublet detection        | Simulation-based            | scDblFinder  |
+| Normalisation            | SCTransform v2              | Seurat       |
+| Batch correction         | Harmony                     | harmony      |
+| Dimensionality reduction | PCA, UMAP                   | Seurat       |
+| Clustering               | Louvain algorithm           | Seurat       |
+| Cell type annotation     | Marker-based (manual)       | Seurat       |
+| Differential expression  | Pseudobulk + limma-voom     | edgeR, limma |
+| Composition analysis     | propeller                   | speckle      |
+
+## Installation
+
+### Step 1: Install Required Packages
+
+``` r
+# Install BiocManager if needed
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+# Install Bioconductor packages
+BiocManager::install(c(
+    "scDblFinder",
+    "SingleCellExperiment",
+    "edgeR",
+    "limma",
+    "org.Hs.eg.db",
+    "AnnotationDbi",
+    "speckle"
+))
+
+# Install CRAN packages
+install.packages(c(
+    "Seurat",
+    "harmony",
+    "ggplot2",
+    "patchwork",
+    "dplyr",
+    "tidyr",
+    "RColorBrewer",
+    "clustree",
+    "pheatmap",
+    "remotes"
+))
+```
+
+### Step 2: Install Workshop Package
+
+``` r
+remotes::install_github("phipsonlab/single_cell_workshop")
+```
+
+To build vignettes locally (optional, takes longer):
+
+``` r
+remotes::install_github("phipsonlab/single_cell_workshop", build_vignettes = TRUE)
+```
+
+### Step 3: Verify Installation
+
+``` r
+library(scWorkshop)
+check_installation()
+```
+
+## Usage
+
+### Access Workshop Materials
+
+``` r
+library(scWorkshop)
+
+# List available tutorials
+list.files(get_tutorial_path())
+
+# Open a specific module
+browseURL(get_tutorial_path("01_quality_control.Rmd"))
+```
+
+### Load Checkpoint Data
+
+If you fall behind during the workshop, you can load pre-computed
+objects:
+
+``` r
+# Load the QC-filtered object (after Module 1)
+seu <- load_checkpoint(1)
+
+# Load the integrated/clustered object (after Module 2)
+seu <- load_checkpoint(2)
+
+# Load the annotated object (after Module 3)
+seu <- load_checkpoint(3)
+```
+
+## Workshop Materials
+
+| Module | Topic | Vignette |
+|----|----|----|
+| 0 | Environment Setup | `vignettes/00_setup.Rmd` |
+| 1 | Quality Control | `vignettes/01_quality_control.Rmd` |
+| 2 | Normalisation & Integration | `vignettes/02_integration_clustering.Rmd` |
+| 3 | Cell Type Annotation | `vignettes/03_cell_type_annotation.Rmd` |
+| 4 | Differential Expression | `vignettes/04_differential_expression.Rmd` |
+
+## Citation
+
+If you use materials from this workshop, please cite:
+
+**Original dataset:**
+
+> Sim CB, Phipson B, Ziemann M, et al. Sex-Specific Control of Human
+> Heart Maturation by the Progesterone Receptor. *Circulation*.
+> 2021;143(10):1614-1628. <doi:10.1161/CIRCULATIONAHA.121.054954>
+
+**Original analysis workflow:**
+
+> Phipson B. Human Development snRNAseq Analysis. Available at:
+> <https://bphipson.github.io/Human_Development_snRNAseq/>
+
+## Acknowledgements
+
+This workshop was developed using data from the Porrello and Hewitt
+laboratories. We thank the original authors for making their data
+publicly available.
+
+## License
+
+This project is licensed under the MIT License - see the
+[LICENSE](https://phipsonlab.github.io/single_cell_workshop/LICENSE)
+file for details.

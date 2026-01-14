@@ -1,0 +1,44 @@
+Package: scWorkshop
+Title: Single-Cell RNA-seq Analysis Workshop
+Version: 1.0.0
+Authors@R: c(
+    person("Belinda", "Phipson", , "phipson.b@wehi.edu.au", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-1711-7454")),
+    person("Phipson Lab", role = "fnd")
+    )
+Description: A 3-hour introductory workshop for single-cell RNA-seq analysis
+    using human heart development snRNA-seq data. Covers quality control,
+    normalisation, integration, clustering, cell type annotation, and
+    differential expression analysis.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+URL: https://phipsonlab.github.io/single_cell_workshop/,
+    https://github.com/phipsonlab/single_cell_workshop
+BugReports: https://github.com/phipsonlab/single_cell_workshop/issues
+Depends:
+    R (>= 4.3.0)
+Imports:
+    Seurat (>= 5.0.0),
+    SeuratObject (>= 5.0.0),
+    harmony (>= 1.2.0),
+    scDblFinder,
+    SingleCellExperiment,
+    edgeR,
+    limma,
+    speckle,
+    org.Hs.eg.db,
+    AnnotationDbi,
+    ggplot2 (>= 3.4.0),
+    patchwork,
+    dplyr,
+    tidyr,
+    RColorBrewer,
+    clustree,
+    pheatmap
+Suggests:
+    pkgdown,
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr

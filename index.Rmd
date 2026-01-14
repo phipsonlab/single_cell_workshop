@@ -1,0 +1,115 @@
+---
+output: github_document
+---
+
+<!-- index.md is generated from index.Rmd. Please edit that file -->
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+# Single-Cell RNA-seq Analysis Workshop
+
+<!-- badges: start -->
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![R Version](https://img.shields.io/badge/R-%3E%3D4.3.0-blue.svg)](https://cran.r-project.org/)
+[![Website](https://img.shields.io/badge/Website-pkgdown-blue.svg)](https://phipsonlab.github.io/single_cell_workshop/)
+<!-- badges: end -->
+
+## Welcome
+
+This workshop provides a comprehensive introduction to single-cell RNA-seq analysis using R and Bioconductor. Over two sessions, you will learn the complete workflow from raw count matrices to differential expression analysis.
+We analyse **single-nucleus RNA-sequencing (snRNA-seq) data from human heart tissue** across three developmental stages: foetal, young, and adult. The dataset comes from [Sim et al. (2021)](https://doi.org/10.1161/CIRCULATIONAHA.120.051921) published in *Circulation*. Workshop materials are adapted from the [original analysis workflow](https://bphipson.github.io/Human_Development_snRNAseq/).
+
+---
+
+## Workshop Overview
+
+```
+Raw Data → QC & Filtering → Normalisation → Integration → Clustering → Annotation → DE Analysis
+```
+
+| Session | Duration | Topics |
+|---------|----------|--------|
+| **Session 1** | 3 hours | QC, Normalisation, Integration, Clustering, Annotation, DE |
+| **Session 2** | 3 hours | *[Afternoon topics]* |
+
+---
+
+## Session 1: Single-Cell RNA-seq Fundamentals
+
+| Module | Topic | Duration | Description |
+|--------|-------|----------|-------------|
+| [**Module 0**](articles/00_setup.html) | Setup | Pre-workshop | Installation and verification |
+| [**Module 1**](articles/01_quality_control.html) | Quality Control | 45 min | QC metrics, doublet detection, cell filtering |
+| [**Module 2**](articles/02_integration_clustering.html) | Integration & Clustering | 50 min | SCTransform, Harmony, UMAP, clustering |
+| [**Module 3**](articles/03_cell_type_annotation.html) | Cell Type Annotation | 20 min | Marker genes, manual annotation |
+| [**Module 4**](articles/04_differential_expression.html) | Differential Expression | 55 min | Pseudobulk DE, composition analysis |
+
+---
+
+## Session 2: [Afternoon Session]
+
+| Module | Topic | Duration | Description |
+|--------|-------|----------|-------------|
+| **Module 5** | *[Topic]* | XX min | *[Description]* |
+| **Module 6** | *[Topic]* | XX min | *[Description]* |
+| **Module 7** | *[Topic]* | XX min | *[Description]* |
+
+---
+
+## Before You Start
+
+**Complete the setup before the workshop:**
+1. Check system requirements (8GB RAM minimum, 16GB recommended)
+2. Follow the [installation guide](articles/00_setup.html)
+3. Download workshop data from [Zenodo](https://zenodo.org/records/18237749) (~300 MB)
+4. Verify with `scWorkshop::check_installation()`
+
+---
+
+## Dataset
+
+| Group | Samples | Age Range | Nuclei |
+|-------|---------|-----------|--------|
+| Foetal | 3 | 19-20 weeks | ~18,000 |
+| Young | 3 | 4-14 years | ~18,000 |
+| Adult | 3 | 35-42 years | ~18,000 |
+
+**Total:** 9 samples, ~54,000 nuclei
+
+---
+
+## Methods
+
+| Step | Method | Package |
+|------|--------|---------|
+| QC & Filtering | Per-cell metrics | Seurat |
+| Doublet Detection | Simulation-based | scDblFinder |
+| Normalisation | SCTransform v2 | Seurat |
+| Integration | Harmony | harmony |
+| Clustering | Louvain | Seurat |
+| Annotation | Marker-based | Seurat |
+| DE Analysis | Pseudobulk + limma-voom | edgeR, limma |
+| Composition | propeller | speckle |
+
+---
+
+## Installation
+
+```r
+# Install from GitHub
+remotes::install_github("phipsonlab/single_cell_workshop")
+```
+
+See [Module 0: Setup](articles/00_setup.html) for detailed instructions.
+
+---
+
+## Citation
+
+If you use these materials, please cite:
+
+> Sim CB, Phipson B, Ziemann M, et al. Sex-Specific Control of Human Heart Maturation by the Progesterone Receptor. *Circulation*. 2021;143(10):1614-1628.
+
+**Original analysis:** [bphipson.github.io/Human_Development_snRNAseq](https://bphipson.github.io/Human_Development_snRNAseq/)

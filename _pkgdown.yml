@@ -1,0 +1,80 @@
+url: https://phipsonlab.github.io/single_cell_workshop/
+
+template:
+  bootstrap: 5
+  bootswatch: flatly
+
+# Exclude internal files from the site
+home:
+  title: Single-Cell RNA-seq Workshop
+  description: >
+    A comprehensive introductory workshop for single-cell RNA-seq analysis
+    using human heart development snRNA-seq data.
+  strip_header: true
+  sidebar:
+    structure: [links, license, authors]
+  links:
+    - text: Original analysis workflow
+      href: https://bphipson.github.io/Human_Development_snRNAseq/
+    - text: Sim et al. (2021) Circulation
+      href: https://doi.org/10.1161/CIRCULATIONAHA.120.051921
+
+navbar:
+  structure:
+    left: [intro, articles, resources, news]
+    right: [search, github]
+  components:
+    intro:
+      text: Home
+      href: index.html
+    articles:
+      text: Workshop Modules
+      menu:
+        - text: "Session 1: scRNA-seq Fundamentals"
+        - text: "Module 0: Setup"
+          href: articles/00_setup.html
+        - text: "Module 1: Quality Control"
+          href: articles/01_quality_control.html
+        - text: "Module 2: Integration & Clustering"
+          href: articles/02_integration_clustering.html
+        - text: "Module 3: Cell Type Annotation"
+          href: articles/03_cell_type_annotation.html
+        - text: "Module 4: Differential Expression"
+          href: articles/04_differential_expression.html
+        - text: "-------"
+        - text: "Session 2: [Afternoon Topics]"
+        - text: "[Module 5: Topic]"
+        - text: "[Module 6: Topic]"
+        - text: "[Module 7: Topic]"
+    resources:
+      text: Resources
+      href: articles/resources.html
+    news:
+      text: Changelog
+      href: news/index.html
+
+articles:
+  - title: "Session 1: Single-Cell RNA-seq Analysis Fundamentals"
+    navbar: ~
+    contents:
+      - 00_setup
+      - 01_quality_control
+      - 02_integration_clustering
+      - 03_cell_type_annotation
+      - 04_differential_expression
+  - title: "Additional Resources"
+    navbar: ~
+    contents:
+      - resources
+  - title: internal
+    contents:
+      - starts_with("_")
+
+footer:
+  structure:
+    left: developed_by
+    right: built_with
+
+authors:
+  Phipson Lab:
+    href: https://github.com/phipsonlab

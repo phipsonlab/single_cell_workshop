@@ -1,0 +1,754 @@
+---
+title: "Module 3: Cell Type Annotation"
+author: "Single Cell Workshop"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: flatly
+    toc: true
+    toc_depth: 2
+    toc_float: true
+    number_sections: true
+    code_folding: show
+    df_print: paged
+vignette: >
+  %\VignetteIndexEntry{Module 3: Cell Type Annotation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    echo = TRUE,
+    warning = FALSE,
+    message = FALSE,
+    fig.align = "center",
+    fig.width = 10,
+    fig.height = 6
+)
+```
+
+## Introduction
+
+In this module, we identify cell types by analysing marker genes that distinguish
+each cluster. Cell type annotation is a critical step in single cell analysis,
+as it transforms abstract cluster numbers into biologically meaningful cell
+populations.
+
+There are two main approaches to cell type annotation:
+
+1. **Marker-based annotation** (manual): Examine differentially expressed genes
+   in each cluster and match them to known cell type markers from the literature.
+   This approach requires domain knowledge but provides full control and
+   interpretability.
+
+2. **Reference-based annotation** (automated): Use tools like Azimuth, SingleR,
+   or scArches to transfer labels from a reference dataset. This is faster but
+   may miss context-specific populations.
+
+In this workshop, we use marker-based annotation to teach the fundamental
+concepts. The human heart contains several major cell types:
+
+- **Cardiomyocytes**: The contractile muscle cells, marked by TNNT2, TTN, MYH7
+- **Fibroblasts**: Structural cells producing extracellular matrix (DCN, COL1A1)
+- **Endothelial cells**: Line blood vessels (PECAM1, VWF, CDH5)
+- **Pericytes/Smooth muscle**: Support vascular structures (ACTA2, RGS5)
+- **Immune cells**: Macrophages and lymphocytes (PTPRC, CD68, CD163)
+- **Epicardial cells**: Cover the heart surface (WT1, TBX18)
+- **Neural cells**: Neurons and Schwann cells (NRXN1, PLP1)
+
+## Load Libraries and Data
+
+```{r load-libraries}
+library(Seurat)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(patchwork)
+library(RColorBrewer)
+library(pheatmap)
+```
+
+We load the integrated and clustered Seurat object from Module 2.
+
+```{r load-data}
+# Load the clustered data
+seu <- readRDS("../data/processed/02_integrated_clustered.rds")
+
+# Verify the data
+cat("Loaded Seurat object:\n")
+cat("- Cells:", ncol(seu), "\n")
+cat("- Genes:", nrow(seu), "\n")
+cat("- Clusters:", length(unique(seu$seurat_clusters)), "\n")
+```
+
+Let us first examine the cluster distribution to understand what we are
+annotating.
+
+```{r cluster-overview}
+# Cluster sizes
+cluster_sizes <- table(seu$seurat_clusters)
+
+cat("Cluster sizes:\n")
+for (i in seq_along(cluster_sizes)) {
+    cat(sprintf("  Cluster %s: %d cells\n", names(cluster_sizes)[i], cluster_sizes[i]))
+}
+```
+
+## Define Colour Palette
+
+We maintain consistent colours throughout our analysis.
+
+```{r define-colors}
+# Group colours (developmental stage - lowercase to match data)
+group_colors <- c(
+    "fetal" = "#E64B35",
+    "young" = "#4DBBD5",
+    "adult" = "#3C5488"
+)
+
+# Generate a palette for clusters
+n_clusters <- length(unique(seu$seurat_clusters))
+cluster_colors <- colorRampPalette(brewer.pal(12, "Paired"))(n_clusters)
+names(cluster_colors) <- levels(seu$seurat_clusters)
+```
+
+## Visualise Current Clusters
+
+Before annotation, let us examine the clusters and their composition by
+developmental stage.
+
+```{r umap-clusters, fig.width=12, fig.height=5}
+# UMAP coloured by cluster and by group
+p1 <- DimPlot(seu, group.by = "seurat_clusters", label = TRUE,
+              label.size = 4, repel = TRUE, cols = cluster_colors) +
+    ggtitle("Clusters") +
+    theme(legend.position = "none")
+
+p2 <- DimPlot(seu, group.by = "group", cols = group_colors) +
+    ggtitle("Developmental Stage")
+
+p1 + p2
+```
+
+Understanding the developmental composition of each cluster provides important
+context for annotation.
+
+```{r cluster-composition, fig.width=10, fig.height=5}
+# Calculate cluster composition by group
+comp_data <- seu@meta.data %>%
+    group_by(seurat_clusters, group) %>%
+    summarise(n = n(), .groups = "drop") %>%
+    group_by(seurat_clusters) %>%
+    mutate(pct = 100 * n / sum(n))
+
+ggplot(comp_data, aes(x = seurat_clusters, y = pct, fill = group)) +
+    geom_bar(stat = "identity", position = "stack") +
+    scale_fill_manual(values = group_colors) +
+    labs(x = "Cluster", y = "Percentage", fill = "Stage",
+         title = "Developmental Stage Composition per Cluster") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(size = 10))
+```
+
+We observe that some clusters are highly enriched for specific developmental
+stages. For example, clusters 0, 6, 8, 9, 12, 15, 16, and 17 are nearly
+exclusively fetal, while cluster 2 contains predominantly young and adult cells,
+and cluster 18 is exclusively young. This developmental segregation often
+reflects biological differences in cell state, particularly among cardiomyocytes
+where fetal cells have distinct transcriptional profiles from mature cells.
+
+## Find Cluster Markers
+
+We use `FindAllMarkers()` to identify genes that distinguish each cluster from
+all other cells. This is the foundation of marker-based annotation.
+
+```{r find-markers}
+# Set default assay to SCT
+DefaultAssay(seu) <- "SCT"
+
+# Prepare for marker finding with SCT assay
+seu <- PrepSCTFindMarkers(seu)
+
+# Find markers for all clusters
+# We use only.pos = TRUE to find upregulated markers
+# min.pct = 0.25 requires the gene to be expressed in at least 25% of cells
+# logfc.threshold = 0.5 requires at least 0.5 log2 fold change
+markers <- FindAllMarkers(
+    seu,
+    only.pos = TRUE,
+    min.pct = 0.25,
+    logfc.threshold = 0.5,
+    test.use = "wilcox"
+)
+
+cat("Found", nrow(markers), "marker genes across all clusters\n")
+```
+
+Let us examine the top markers for each cluster.
+
+```{r top-markers}
+# Get top 5 markers per cluster
+top_markers <- markers %>%
+    group_by(cluster) %>%
+    slice_max(order_by = avg_log2FC, n = 5) %>%
+    select(cluster, gene, avg_log2FC, pct.1, pct.2, p_val_adj)
+
+# Display top markers for each cluster
+for (cl in levels(seu$seurat_clusters)) {
+    cl_markers <- top_markers %>% filter(cluster == cl)
+    cat("\n--- Cluster", cl, "---\n")
+    for (i in seq_len(nrow(cl_markers))) {
+        cat(sprintf("  %s: log2FC=%.2f, pct.1=%.0f%%, pct.2=%.0f%%\n",
+                    cl_markers$gene[i],
+                    cl_markers$avg_log2FC[i],
+                    cl_markers$pct.1[i] * 100,
+                    cl_markers$pct.2[i] * 100))
+    }
+}
+```
+
+### Visualise Top Markers with DotPlot
+
+The DotPlot below shows the top 5 differentially expressed genes for each
+cluster. This provides an unbiased view of what distinguishes each cluster
+before we examine the cell type markers from the original study.
+
+```{r dotplot-top-markers, fig.width=16, fig.height=8}
+# Get top 5 unique markers per cluster, ordered by cluster
+top5_genes <- top_markers %>%
+    arrange(cluster, desc(avg_log2FC)) %>%
+    pull(gene) %>%
+    unique()
+
+DotPlot(seu, features = top5_genes, group.by = "seurat_clusters") +
+    RotatedAxis() +
+    scale_colour_gradient2(low = "blue", mid = "white", high = "red",
+                           midpoint = 0) +
+    labs(title = "Top 5 Marker Genes per Cluster (from FindAllMarkers)") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size = 7),
+          axis.text.y = element_text(size = 10))
+```
+
+### Marker Heatmap
+
+A heatmap of these top markers provides a comprehensive view of the expression
+patterns across clusters.
+
+```{r marker-heatmap-top, fig.width=12, fig.height=10}
+# Get top 3 markers per cluster for heatmap
+top3_markers <- markers %>%
+    group_by(cluster) %>%
+    slice_max(order_by = avg_log2FC, n = 3) %>%
+    pull(gene) %>%
+    unique()
+
+# Downsample for visualisation (50 cells per cluster max)
+set.seed(42)
+cells_subset <- seu@meta.data %>%
+    mutate(cell_id = rownames(seu@meta.data)) %>%
+    group_by(seurat_clusters) %>%
+    slice_sample(n = 50) %>%
+    pull(cell_id)
+
+# Create heatmap
+DoHeatmap(subset(seu, cells = cells_subset),
+          features = top3_markers,
+          group.by = "seurat_clusters",
+          size = 3) +
+  scale_fill_gradient2(low = "blue", mid = "white", high = "red",
+                       midpoint = 0) +
+  theme(axis.text.y = element_text(size = 6))
+```
+
+## Cell Type Marker Analysis
+
+While the differentially expressed genes provide a starting point, we typically
+compare against known marker genes for the cell types expected in our tissue.
+The human heart contains several well-characterised cell populations.
+
+### Cell Type Marker Genes
+
+The marker genes below were identified by Sim et al. 2021 (Circulation) from
+their analysis of the full human heart development dataset. These markers
+distinguish the major cell populations across foetal, young, and adult hearts.
+
+#### Visualise with DotPlot
+
+The DotPlot is a powerful visualisation that shows both the percentage of cells
+expressing a gene (dot size) and the average expression level (colour intensity).
+
+```{r dotplot-celltype-markers, fig.width=16, fig.height=12}
+# Define markers and cell types from Sim et al. 2021
+marker_info <- data.frame(
+    gene = c(
+        # Cardiomyocytes
+        "TNNT2", "ACTN2", "TNNI3", "RYR2", "MYH6", "TTN", "MYBPC3", "PLN", "MYL2",
+        # Fibroblasts
+        "COL1A1", "COL3A1", "DCN", "PDGFRA", "POSTN", "TCF21", "VIM",
+        # Pericytes
+        "KCNJ8", "VTN", "ABCC9", "HEYL",
+        # Endothelial
+        "PECAM1", "KDR", "CDH5", "EMCN", "FLT1",
+        # Smooth Muscle
+        "TAGLN", "MYH11", "MYLK", "LMOD1",
+        # Macrophages
+        "CD68", "CD163", "CD74", "F13A1", "LGALS3",
+        # T Cells
+        "CD3D", "CD3G", "CD3E", "IL7R",
+        # Schwann/Neural
+        "PLP1", "CNP", "S100B",
+        # Epicardial
+        "UPK3B", "WT1",
+        # Proliferating
+        "MKI67", "TOP2A"
+    ),
+    celltype = c(
+        rep("Cardiomyocytes", 9),
+        rep("Fibroblasts", 7),
+        rep("Pericytes", 4),
+        rep("Endothelial", 5),
+        rep("Smooth Muscle", 4),
+        rep("Macrophages", 5),
+        rep("T Cells", 4),
+        rep("Schwann", 3),
+        rep("Epicardial", 2),
+        rep("Proliferating", 2)
+    )
+)
+
+# Define colors for each cell type
+celltype_colors <- c(
+    "Cardiomyocytes" = "#D62728",
+    "Fibroblasts" = "#1F77B4",
+    "Pericytes" = "#2CA02C",
+    "Endothelial" = "#9467BD",
+    "Smooth Muscle" = "#FF7F0E",
+    "Macrophages" = "#8C564B",
+    "T Cells" = "#E377C2",
+    "Schwann" = "#7F7F7F",
+    "Epicardial" = "#17BECF",
+    "Proliferating" = "#333333"
+)
+
+# Filter to available genes
+marker_info <- marker_info[marker_info$gene %in% rownames(seu), ]
+marker_genes <- marker_info$gene
+gene_colors <- celltype_colors[marker_info$celltype]
+marker_info$celltype_f <- factor(marker_info$celltype, levels = names(celltype_colors))
+
+# Order clusters by cell type identity for diagonal pattern
+# Preferred order based on cell type (CM, Fibroblasts, Pericytes, Endothelial, Immune, Neural, etc.)
+preferred_order <- c("0", "6", "8", "17", "7", "9", "2", "11", "15", "1", "12", "3", "5", "13", "18", "4", "14", "16", "10")
+# Filter to only clusters that exist in our data
+actual_clusters <- as.character(unique(seu$seurat_clusters))
+cluster_order <- preferred_order[preferred_order %in% actual_clusters]
+# Add any clusters not in preferred order (shouldn't happen, but safety)
+cluster_order <- c(cluster_order, setdiff(actual_clusters, cluster_order))
+seu$cluster_ordered <- factor(seu$seurat_clusters, levels = cluster_order)
+
+# Calculate cell type label positions
+celltype_positions <- marker_info %>%
+    mutate(pos = row_number()) %>%
+    group_by(celltype_f) %>%
+    summarise(start = min(pos) - 0.5, end = max(pos) + 0.5,
+              mid = mean(pos), .groups = "drop")
+
+# Create DotPlot with cell type annotations
+DotPlot(seu, features = marker_genes, group.by = "cluster_ordered") +
+    RotatedAxis() +
+    scale_colour_gradient2(low = "#2166AC", mid = "white", high = "#B2182B",
+                           midpoint = 0, name = "Average\nExpression") +
+    scale_size_continuous(name = "Percent\nExpressed", range = c(0.5, 6)) +
+    labs(x = NULL, y = "Cluster",
+         title = "Cell Type Marker Expression (Sim et al. 2021)") +
+    theme_bw() +
+    theme(
+        plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
+        axis.text.x = element_text(angle = 45, hjust = 1, size = 10,
+                                   color = gene_colors, face = "italic"),
+        axis.text.y = element_text(size = 12),
+        axis.title.y = element_text(size = 14, face = "bold"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_rect(color = "grey40", linewidth = 0.8),
+        legend.position = "right",
+        legend.title = element_text(size = 11, face = "bold"),
+        legend.text = element_text(size = 10),
+        plot.margin = margin(10, 10, 45, 10)
+    ) +
+    # Add cell type color bars
+    annotate("rect",
+             xmin = celltype_positions$start, xmax = celltype_positions$end,
+             ymin = -1.8, ymax = -1.2,
+             fill = celltype_colors[as.character(celltype_positions$celltype_f)]) +
+    # Add cell type labels inside bars
+    annotate("text",
+             x = celltype_positions$mid, y = -1.5,
+             label = celltype_positions$celltype_f,
+             size = 3.5, angle = 0, hjust = 0.5, fontface = "bold",
+             color = "white") +
+    coord_cartesian(clip = "off", ylim = c(0.5, length(cluster_order) + 0.5))
+```
+
+The DotPlot reveals a clear diagonal pattern where each cell type shows specific
+marker expression. Gene names are coloured by their cell type, matching the
+annotation bar at the bottom:
+
+- **Cardiomyocytes** (red): TNNT2, ACTN2, TNNI3, RYR2, MYH6, TTN, MYBPC3, PLN, MYL2
+- **Fibroblasts** (blue): COL1A1, COL3A1, DCN, PDGFRA, POSTN, TCF21, VIM
+- **Pericytes** (green): KCNJ8, VTN, ABCC9, HEYL
+- **Endothelial** (purple): PECAM1, KDR, CDH5, EMCN, FLT1
+- **Smooth Muscle** (orange): TAGLN, MYH11, MYLK, LMOD1
+- **Macrophages** (brown): CD68, CD163, CD74, F13A1, LGALS3
+- **T Cells** (pink): CD3D, CD3G, CD3E, IL7R
+- **Schwann** (grey): PLP1, CNP, S100B
+- **Epicardial** (teal): UPK3B, WT1
+- **Proliferating** (black): MKI67, TOP2A
+
+### Feature Plots for Key Markers
+
+FeaturePlots show the spatial distribution of marker expression on the UMAP,
+helping us understand the relationship between clusters.
+
+```{r featureplot-cm, fig.width=12, fig.height=8}
+# Cardiomyocyte markers
+FeaturePlot(seu,
+            features = c("TNNT2", "TTN", "MYH7", "MYH6"),
+            ncol = 2, order = TRUE) &
+    scale_colour_gradient(low = "lightgrey", high = "darkred") &
+    theme_minimal()
+```
+
+The cardiomyocyte markers reveal an interesting pattern: MYH6 (atrial isoform)
+is enriched in clusters 2 and 9, while MYH7 (ventricular isoform) is more
+expressed in clusters 0, 11, 15, and 17. This suggests we can distinguish atrial
+from ventricular cardiomyocytes.
+
+```{r featureplot-stromal, fig.width=12, fig.height=8}
+# Stromal cell markers
+FeaturePlot(seu,
+            features = c("DCN", "PECAM1", "KCNJ8", "ACTA2"),
+            ncol = 2, order = TRUE) &
+    scale_colour_gradient(low = "lightgrey", high = "darkblue") &
+    theme_minimal()
+```
+
+```{r featureplot-immune, fig.width=12, fig.height=8}
+# Immune and other markers
+FeaturePlot(seu,
+            features = c("PTPRC", "F13A1", "NRXN1", "MKI67"),
+            ncol = 2, order = TRUE) &
+    scale_colour_gradient(low = "lightgrey", high = "darkgreen") &
+    theme_minimal()
+```
+
+## Assign Cell Type Annotations
+
+Based on the marker analysis above, we can now assign cell type labels to each
+cluster. We consider both the marker gene expression and the developmental
+stage composition.
+
+**Note:** These annotations are based on the 10,000 cell subset used for this
+workshop. The full dataset (~54,000 cells) may reveal additional rare
+populations or finer subclusters.
+
+The table below summarises our annotations with the supporting marker evidence:
+
+| Cluster | Cell Type | Key Markers | Notes |
+|---------|-----------|-------------|-------|
+| 0 | Fetal CM | TNNT2+, TTN+, MYH7+ | Fetal ventricular cardiomyocytes (100% fetal) |
+| 1 | Fibroblasts | DCN+, COL1A1+ | Present across all developmental stages |
+| 2 | Atrial CM | TTN+, MYH6++ | Mature atrial CM (young/adult enriched) |
+| 3 | Pericytes | KCNJ8+, RGS5+, ABCC9+ | Vascular support cells |
+| 4 | Macrophages | CD163+, F13A1+, PTPRC+ | Tissue-resident macrophages |
+| 5 | Endothelial | PECAM1+, VWF+, CDH5+ | Main endothelial population |
+| 6 | Fetal CM | TNNT2+, TTN+ | Fetal ventricular cardiomyocytes (100% fetal) |
+| 7 | Activated CM | TTN+, TNNT2+, HLA-DR+ | CM with immune activation/MHC class II (90% young) |
+| 8 | Fetal CM | TNNT2+, TTN+ | Fetal ventricular cardiomyocytes (100% fetal) |
+| 9 | Fetal Atrial CM | TTN+, MYH6++ | Fetal atrial cardiomyocytes (100% fetal) |
+| 10 | Proliferating | MKI67+, TOP2A+ | Proliferating cells (fetal enriched) |
+| 11 | Ventricular CM | TNNT2++, TTN++, MYH7++ | High-expressing ventricular CM |
+| 12 | Fetal Fibroblasts | DCN+, COL1A1++ | Fetal fibroblasts (99% fetal) |
+| 13 | Endothelial | PECAM1+ | Endothelial subset |
+| 14 | Immune | PTPRC+, CD3E+ | Mixed immune/lymphocytes |
+| 15 | Ventricular CM | TTN+, MYH7+ | Ventricular CM (fetal enriched) |
+| 16 | Neurons | NRXN1++ | Neural cells (100% fetal) |
+| 17 | Fetal CM | TNNT2+, TTN++, MYH7+ | Fetal ventricular cardiomyocytes (98% fetal) |
+| 18 | Young Endothelial | PECAM1+, VWF++ | Endothelial cells (100% young) |
+
+
+```{r define-annotations}
+# Define cell type annotations for all 19 clusters
+cluster_annotations <- c(
+  "0" = "Fetal CM",
+  "1" = "Fibroblasts",
+  "2" = "Atrial CM",
+  "3" = "Pericytes",
+  "4" = "Macrophages",
+  "5" = "Endothelial",
+  "6" = "Fetal CM",
+  "7" = "Activated CM",
+  "8" = "Fetal CM",
+  "9" = "Fetal Atrial CM",
+  "10" = "Proliferating",
+  "11" = "Ventricular CM",
+  "12" = "Fetal Fibroblasts",
+  "13" = "Endothelial",
+  "14" = "Immune",
+  "15" = "Ventricular CM",
+  "16" = "Neurons",
+  "17" = "Fetal CM",
+  "18" = "Young Endothelial"
+)
+
+cell_type_df <- data.frame(
+  cell_type = cluster_annotations[as.character(seu$seurat_clusters)],
+  row.names = colnames(seu)
+)
+seu <- AddMetaData(seu, metadata = cell_type_df)
+
+# Broad categories for summary analyses
+broad_annotations <- c(
+  "0" = "Cardiomyocytes",
+  "1" = "Fibroblasts",
+  "2" = "Cardiomyocytes",
+  "3" = "Pericytes",
+  "4" = "Immune",
+  "5" = "Endothelial",
+  "6" = "Cardiomyocytes",
+  "7" = "Cardiomyocytes",
+  "8" = "Cardiomyocytes",
+  "9" = "Cardiomyocytes",
+  "10" = "Proliferating",
+  "11" = "Cardiomyocytes",
+  "12" = "Fibroblasts",
+  "13" = "Endothelial",
+  "14" = "Immune",
+  "15" = "Cardiomyocytes",
+  "16" = "Neural",
+  "17" = "Cardiomyocytes",
+  "18" = "Endothelial"
+)
+
+cell_type_broad_df <- data.frame(
+  cell_type_broad = broad_annotations[as.character(seu$seurat_clusters)],
+  row.names = colnames(seu)
+)
+seu <- AddMetaData(seu, metadata = cell_type_broad_df)
+```
+
+## Visualise Annotated Cell Types
+
+With cell type annotations assigned, we now examine the results to verify our
+annotations make biological sense and to understand the cellular composition
+of the heart across developmental stages.
+
+### Annotated UMAP
+
+The UMAP visualisation with cell type labels provides the key output of our
+annotation workflow. We show both detailed annotations (distinguishing fetal
+from adult cardiomyocytes, atrial from ventricular) and broad categories.
+
+```{r umap-annotated, fig.width=14, fig.height=6}
+# Define colours for cell types (14 unique detailed types)
+celltype_colors <- c(
+    "Fetal CM" = "#E64B35",
+    "Fibroblasts" = "#00A087",
+    "Atrial CM" = "#3C5488",
+    "Ventricular CM" = "#4DBBD5",
+    "Activated CM" = "#F4A582",
+    "Pericytes" = "#F39B7F",
+    "Endothelial" = "#8491B4",
+    "Macrophages" = "#91D1C2",
+    "Fetal Atrial CM" = "#B09C85",
+    "Fetal Fibroblasts" = "#00CED1",
+    "Neurons" = "#CD534C",
+    "Immune" = "#868686",
+    "Proliferating" = "#9370DB",
+    "Young Endothelial" = "#7570B3"
+)
+
+# Broad categories
+broad_colors <- c(
+    "Cardiomyocytes" = "#E64B35",
+    "Fibroblasts" = "#00A087",
+    "Endothelial" = "#8491B4",
+    "Pericytes" = "#F39B7F",
+    "Immune" = "#91D1C2",
+    "Neural" = "#CD534C",
+    "Proliferating" = "#9370DB"
+)
+
+p1 <- DimPlot(seu, group.by = "cell_type", label = TRUE,
+              label.size = 3, repel = TRUE) +
+    scale_color_manual(values = celltype_colors) +
+    ggtitle("Detailed Cell Types") +
+    theme(legend.position = "none")
+
+p2 <- DimPlot(seu, group.by = "cell_type_broad", label = TRUE,
+              label.size = 4, repel = TRUE) +
+    scale_color_manual(values = broad_colors) +
+    ggtitle("Broad Cell Types")
+
+p1 + p2
+```
+
+The annotated UMAP reveals a well-organised cellular landscape:
+
+- **Cardiomyocytes** form the dominant population, with fetal cells (red tones)
+  clustering separately from mature atrial and ventricular populations
+- **Stromal cells** (fibroblasts, pericytes, endothelial) occupy distinct
+  regions of the UMAP space
+- **Immune and neural cells** form smaller but clearly defined clusters
+
+### Cluster Size Distribution
+
+Before examining developmental patterns, we assess how many cells belong to
+each cluster. This helps interpret whether observed patterns reflect genuine
+biology or sampling effects.
+
+```{r cluster-sizes, fig.width=12, fig.height=5}
+# Cluster sizes with cell type labels
+cluster_size_data <- seu@meta.data %>%
+    group_by(seurat_clusters, cell_type) %>%
+    summarise(n = n(), .groups = "drop")
+
+ggplot(cluster_size_data, aes(x = seurat_clusters, y = n, fill = cell_type)) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = celltype_colors) +
+  labs(x = "Cluster", y = "Number of Cells", fill = "Cell Type",
+       title = "Cell Count per Cluster") +
+  theme_minimal() +
+  theme(legend.position = "right",
+        legend.text = element_text(size = 8))
+```
+
+Cluster 0 (Fetal CM) is the largest population with ~2,400 cells, consistent
+with fetal samples contributing the most cells. Clusters 16 (Neurons) and 18
+(Young Endothelial) are among the smallest, representing specialised populations.
+
+### Developmental Composition per Cluster
+
+A critical question in developmental studies is: which cell populations are
+stage-specific versus shared across development? This stacked bar chart shows
+the fetal/young/adult breakdown within each cluster.
+
+```{r dev-composition-per-cluster, fig.width=12, fig.height=6}
+# Calculate developmental composition per cluster
+cluster_dev_comp <- seu@meta.data %>%
+    group_by(seurat_clusters, group) %>%
+    summarise(n = n(), .groups = "drop") %>%
+    group_by(seurat_clusters) %>%
+    mutate(pct = 100 * n / sum(n))
+
+ggplot(cluster_dev_comp, aes(x = seurat_clusters, y = pct, fill = group)) +
+  geom_bar(stat = "identity", position = "stack") +
+  scale_fill_manual(values = group_colors) +
+  labs(x = "Cluster", y = "Percentage", fill = "Stage",
+       title = "Developmental Stage Composition per Cluster") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(size = 10))
+```
+
+This figure reveals striking developmental patterns:
+
+- **Fetal-specific clusters** (0, 6, 8, 9, 12, 16, 17): These cardiomyocyte,
+  fibroblast, and neural populations are almost exclusively fetal, reflecting
+  the distinct transcriptional state of immature heart cells
+- **Mature CM clusters** (2, 11, 15): Atrial and ventricular CM clusters contain
+  cells from all stages, with cluster 2 enriched for young and adult cells
+- **Activated CM** (7): Cardiomyocytes with MHC class II expression, predominantly
+  from young samples, potentially reflecting immune activation
+- **Young-enriched endothelial** (18): Endothelial cells exclusively from young
+  samples
+- **Shared populations** (1, 3, 4, 5, 13, 14): Fibroblasts, pericytes, immune,
+  and endothelial cells are present across all developmental stages
+- **Proliferating cells** (10): Nearly exclusively fetal, consistent with the
+  high proliferative capacity of fetal cardiac cells
+
+### Cell Type Composition by Developmental Stage
+
+We can also view this relationship from the opposite perspective: what is the
+cellular composition within each developmental stage?
+
+```{r celltype-by-stage, fig.width=10, fig.height=6}
+# Calculate composition
+stage_comp <- seu@meta.data %>%
+    group_by(group, cell_type_broad) %>%
+    summarise(n = n(), .groups = "drop") %>%
+    group_by(group) %>%
+    mutate(pct = 100 * n / sum(n))
+
+ggplot(stage_comp, aes(x = group, y = pct, fill = cell_type_broad)) +
+    geom_bar(stat = "identity", position = "stack") +
+    scale_fill_manual(values = broad_colors) +
+    labs(x = "Developmental Stage", y = "Percentage", fill = "Cell Type",
+         title = "Cell Type Composition by Developmental Stage") +
+    theme_minimal()
+```
+
+This complementary view shows:
+
+- **Cardiomyocytes** dominate all stages but show distinct subtypes (fetal vs mature)
+- **Proliferating cells** are predominantly fetal, consistent with the known
+  proliferative capacity of fetal cardiomyocytes
+- **Stromal populations** (fibroblasts, endothelial, pericytes) are relatively
+  stable across development
+
+### Split UMAP by Developmental Stage
+
+Finally, we split the UMAP by developmental stage to directly visualise which
+cell types are present at each time point. This view clearly shows how the
+cellular landscape changes from fetal to adult heart.
+
+```{r split-umap, fig.width=14, fig.height=5}
+DimPlot(seu, group.by = "cell_type", split.by = "group",
+        label = FALSE, cols = celltype_colors) +
+  ggtitle("Cell Types by Developmental Stage") +
+  theme(legend.position = "right",
+        legend.text = element_text(size = 8))
+```
+
+The split view highlights several key observations:
+
+- **Fetal heart** is dominated by Fetal CM populations, with proliferating
+  cells visible (cluster 10)
+- **Young heart** shows a transition state with both mature atrial/ventricular
+  CM and some residual fetal-like populations
+- **Adult heart** shows predominantly mature cardiomyocyte subtypes (Atrial
+  and Ventricular CM)
+- **Stromal and immune populations** are consistent across all stages
+
+## Save Annotated Object
+
+```{r save-checkpoint}
+# Save the annotated Seurat object
+saveRDS(seu, "../data/processed/03_annotated.rds")
+
+# Also save the markers table
+write.csv(markers, "../results/cluster_markers.csv", row.names = FALSE)
+
+message("Saved annotated object to: data/processed/03_annotated.rds")
+message("Saved marker genes to: results/cluster_markers.csv")
+```
+
+## Summary
+
+In this module, we performed cell type annotation on the clustered data. We:
+
+- Identified marker genes for each cluster using `FindAllMarkers()`
+- Compared cluster markers against known heart cell type markers from Sim et al. 2021
+- Visualised marker expression using DotPlots and FeaturePlots
+- Assigned cell type labels based on marker gene expression and developmental
+  composition
+- Created both detailed (14 types) and broad (7 types) cell type annotations
+
+The annotated dataset is now ready for differential expression and composition
+analysis in Module 4.
+
+## Session Information
+
+```{r session-info}
+sessionInfo()
+```

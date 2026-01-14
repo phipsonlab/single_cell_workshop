@@ -1,0 +1,1396 @@
+# Module 1: Quality Control
+
+## Introduction
+
+Quality control (QC) is a critical first step in any single cell
+RNA-sequencing (scRNA-seq) analysis. The goal of QC is to identify and
+remove low-quality cells that could confound downstream analysis. Poor
+quality cells can arise from several sources: empty droplets that
+contain only ambient RNA, dying cells that have compromised membranes,
+or doublets where two cells are captured in a single droplet.
+
+In this module, we work with single nuclei RNA-sequencing (snRNA-seq)
+data from human heart tissue. The data comes from a study examining
+human heart development across three stages: foetal, young, and adult
+(Sim et al., 2021, *Circulation*). Understanding how the heart changes
+at the cellular level across development provides insights into cardiac
+maturation and potential therapeutic targets.
+
+### What is Single Cell RNA-Sequencing?
+
+Traditional “bulk” RNA-sequencing measures the average gene expression
+across millions of cells. While powerful, this approach masks the
+heterogeneity that exists within tissues. Single cell RNA-sequencing
+overcomes this limitation by measuring gene expression in individual
+cells, allowing us to:
+
+- Identify distinct cell types within a tissue
+- Discover rare cell populations
+- Study cell-to-cell variability
+- Track cellular states during development or disease
+
+The most widely used platform for scRNA-seq is the 10X Genomics Chromium
+system, which captures cells in oil droplets along with barcoded beads.
+Each bead carries oligonucleotides with three key components:
+
+1.  **Cell barcode**: Identifies which cell the RNA came from
+2.  **Unique Molecular Identifier (UMI)**: Identifies individual RNA
+    molecules, removing PCR amplification bias
+3.  **Poly-dT tail**: Captures polyadenylated mRNA
+
+### Learning Objectives
+
+By the end of this module, you will be able to:
+
+1.  Load and explore scRNA-seq count data in R
+2.  Understand the structure of a Seurat object
+3.  Calculate and interpret per-cell quality control metrics
+4.  Identify and remove doublets using computational methods
+5.  Apply filtering thresholds to remove low-quality cells
+6.  Visualise sample-level relationships using pseudobulk aggregation
+
+### Setup: Loading Required Libraries
+
+The first step is to load the R packages we will use throughout this
+module. Each package provides specific functionality:
+
+- **Seurat**: The primary framework for single cell analysis, providing
+  functions for data manipulation, normalisation, clustering, and
+  visualisation
+- **scDblFinder**: Computational detection of doublets
+- **SingleCellExperiment**: A standardised data structure for single
+  cell data, required by scDblFinder
+- **ggplot2**: Creating publication-quality plots using the grammar of
+  graphics
+- **patchwork**: Combining multiple plots into composite figures
+- **dplyr**: Data manipulation using intuitive verbs (filter, select,
+  mutate, etc.)
+- **edgeR**: Tools for RNA-seq analysis, used here for pseudobulk
+  visualisation
+- **org.Hs.eg.db**: Database of human gene annotations
+
+``` r
+library(Seurat)
+library(scDblFinder)
+library(SingleCellExperiment)
+library(ggplot2)
+library(patchwork)
+library(dplyr)
+library(edgeR)
+library(org.Hs.eg.db)
+library(AnnotationDbi)
+```
+
+### Colour Palette
+
+We define a consistent colour scheme for all visualisations. The
+developmental groups follow a biological progression from warm (foetal)
+to cool (adult) tones:
+
+``` r
+# Developmental group colours
+group_colors <- c(
+    "Fetal" = "#E64B35",
+    "Young" = "#4DBBD5",
+    "Adult" = "#3C5488"
+)
+
+# Sample colours - shades within each group
+sample_colors <- c(
+    "f1" = "#E64B35", "f2" = "#F39B7F", "f3" = "#FFCAB0",
+    "y1" = "#4DBBD5", "y2" = "#91D1C2", "y3" = "#C5E8E0",
+    "a1" = "#3C5488", "a2" = "#8491B4", "a3" = "#B4BCD4"
+)
+```
+
+## Loading the Data
+
+### Understanding the Data Files
+
+Our workshop data consists of two files:
+
+1.  **heart-counts.Rds**: A sparse matrix containing UMI counts for each
+    gene in each cell. The rows represent genes (~34,000) and the
+    columns represent cells (~54,000). The matrix is stored in a
+    “sparse” format because most entries are zero (a gene is typically
+    detected in only a subset of cells), and sparse matrices use much
+    less memory than regular matrices.
+
+2.  **cellinfo_updated.Rds**: A data frame containing metadata for each
+    cell, including which sample it came from, the developmental group
+    (foetal, young, or adult), and the sex of the donor.
+
+Let us load these files and examine their structure:
+
+``` r
+# Set the path to the data directory
+# We use a relative path from the tutorials folder
+data_dir <- "../data"
+
+# Load the count matrix
+# readRDS() reads an R object that was saved with saveRDS()
+counts <- readRDS(file.path(data_dir, "heart-counts.Rds"))
+
+# Load the cell metadata
+cellinfo <- readRDS(file.path(data_dir, "cellinfo_updated.Rds"))
+```
+
+### Exploring the Count Matrix
+
+The count matrix is the core data structure in scRNA-seq analysis. Each
+entry represents the number of UMI counts for a particular gene in a
+particular cell. Let us examine its dimensions and structure:
+
+``` r
+# Check dimensions and structure of the count matrix
+cat("Count matrix:\n")
+```
+
+    ## Count matrix:
+
+``` r
+cat("- Class:", class(counts), "\n")
+```
+
+    ## - Class: dgCMatrix
+
+``` r
+cat("- Genes:", format(nrow(counts), big.mark = ","), "\n")
+```
+
+    ## - Genes: 33,939
+
+``` r
+cat("- Cells:", format(ncol(counts), big.mark = ","), "\n")
+```
+
+    ## - Cells: 54,140
+
+The cell barcodes follow the format `BARCODE_SAMPLE`, where the suffix
+(e.g., `_f1`) indicates which sample the cell came from. This naming
+convention helps us track cells back to their sample of origin.
+
+### Exploring the Cell Metadata
+
+The cell metadata contains information about each cell that we will use
+throughout our analysis:
+
+``` r
+# Check the structure of the metadata
+dim(cellinfo)
+```
+
+    ## [1] 54140     7
+
+``` r
+head(cellinfo)
+```
+
+    ##                CellID Sample Sex          Celltype Group     Orig_Celltype
+    ## 1 AAACCCAAGGACAACC_f1     f1   m        Fibroblast fetal       Fibroblast1
+    ## 2 AAACCCAAGGTCCGAA_f1     f1   m  Epicardial cells fetal          Pericyte
+    ## 3 AAACCCAAGTTTCGAC_f1     f1   m Endothelial cells fetal Endothelial cells
+    ## 4 AAACCCACAAATGAGT_f1     f1   m  Epicardial cells fetal          Pericyte
+    ## 5 AAACCCATCATTGCGA_f1     f1   m    Cardiomyocytes fetal   Cardiomyocytes1
+    ## 6 AAACCCATCGTTCCTG_f1     f1   m      Immune cells fetal        Mast cells
+    ##   RefinedCellType
+    ## 1         fibro-0
+    ## 2          epic-1
+    ## 3          endo-4
+    ## 4          epic-1
+    ## 5        cardio-0
+    ## 6        immune-5
+
+The metadata contains several columns:
+
+- **CellID**: Unique identifier for each cell (matches column names in
+  the count matrix)
+- **Sample**: Sample identifier (f1-f3 for foetal, y1-y3 for young,
+  a1-a3 for adult)
+- **Sex**: Donor sex (m = male, f = female)
+- **Group**: Developmental stage (foetal, young, or adult)
+
+Let us examine the sample composition of our dataset:
+
+``` r
+# Cells per sample and group
+table(cellinfo$Sample, cellinfo$Group)
+```
+
+    ##     
+    ##      adult fetal young
+    ##   a1  4360     0     0
+    ##   a2  3375     0     0
+    ##   a3  1681     0     0
+    ##   f1     0  8296     0
+    ##   f2     0 10948     0
+    ##   f3     0  8516     0
+    ##   y1     0     0  4422
+    ##   y2     0     0  5558
+    ##   y3     0     0  6984
+
+We have 9 samples: 3 foetal (f1, f2, f3), 3 young (y1, y2, y3), and 3
+adult (a1, a2, a3). Having biological replicates (multiple samples per
+group) is essential for statistical analysis, as it allows us to
+distinguish biological variation from technical noise.
+
+### Creating a Seurat Object
+
+*Seurat* is the most widely used R package for single cell analysis. The
+Seurat object is a container that holds the count matrix, cell metadata,
+and all results from downstream analyses (normalisation, clustering,
+etc.) in a single object. This makes it easy to keep track of all data
+and results.
+
+Here, we create a Seurat object from our count matrix:
+
+``` r
+# Create the Seurat object
+# min.cells = 3: Keep genes detected in at least 3 cells (removes very rare genes)
+# min.features = 200: Keep cells with at least 200 genes detected (removes likely empty droplets)
+seu <- CreateSeuratObject(
+    counts = counts,
+    project = "heart_workshop",
+    min.cells = 3,
+    min.features = 200
+)
+
+# Report what was filtered
+cat("Initial filtering:\n")
+```
+
+    ## Initial filtering:
+
+``` r
+cat("- Genes:", nrow(counts), "->", nrow(seu), "\n")
+```
+
+    ## - Genes: 33939 -> 29323
+
+``` r
+cat("- Cells:", ncol(counts), "->", ncol(seu), "\n")
+```
+
+    ## - Cells: 54140 -> 54135
+
+The `min.cells` and `min.features` parameters perform initial filtering:
+
+- `min.cells = 3`: Removes genes detected in fewer than 3 cells. These
+  very rare genes add noise without contributing meaningful biological
+  information.
+- `min.features = 200`: Removes cells with fewer than 200 genes
+  detected. Cells with very few genes are likely empty droplets
+  containing only ambient RNA.
+
+### Adding Sample Metadata
+
+Next, we add the sample metadata to our Seurat object. This information
+will be used for grouping cells in visualisations and statistical
+analyses.
+
+``` r
+# The cell order in the Seurat object may differ from the metadata
+# We need to match them by cell ID
+cellinfo_matched <- cellinfo[match(colnames(seu), cellinfo$CellID), ]
+
+# Verify the matching worked correctly
+stopifnot(all(colnames(seu) == cellinfo_matched$CellID))
+
+# Add metadata columns to the Seurat object
+seu$sample <- cellinfo_matched$Sample
+seu$group <- cellinfo_matched$Group
+seu$sex <- cellinfo_matched$Sex
+
+# Clean up large objects to free memory
+rm(counts, cellinfo, cellinfo_matched)
+gc()  # Garbage collection to release memory
+```
+
+    ##             used   (Mb) gc trigger   (Mb) limit (Mb)   max used   (Mb)
+    ## Ncells  11849262  632.9   19518905 1042.5         NA   16826747  898.7
+    ## Vcells 289254417 2206.9 1018723408 7772.3      24576 1272637557 9709.5
+
+### Examining the Seurat Object
+
+Let us examine the structure of our Seurat object:
+
+``` r
+# Print a summary of the object
+seu
+```
+
+    ## An object of class Seurat 
+    ## 29323 features across 54135 samples within 1 assay 
+    ## Active assay: RNA (29323 features, 0 variable features)
+    ##  1 layer present: counts
+
+``` r
+# View the first few rows of metadata
+head(seu@meta.data)
+```
+
+    ##                         orig.ident nCount_RNA nFeature_RNA sample group sex
+    ## AAACCCAAGGACAACC_f1 heart_workshop       9503         3588     f1 fetal   m
+    ## AAACCCAAGGTCCGAA_f1 heart_workshop      19729         5861     f1 fetal   m
+    ## AAACCCAAGTTTCGAC_f1 heart_workshop       7748         2973     f1 fetal   m
+    ## AAACCCACAAATGAGT_f1 heart_workshop       8640         3167     f1 fetal   m
+    ## AAACCCATCATTGCGA_f1 heart_workshop      11820         4017     f1 fetal   m
+    ## AAACCCATCGTTCCTG_f1 heart_workshop       5826         2134     f1 fetal   m
+
+The Seurat object automatically creates two metadata columns:
+
+- **nCount_RNA**: Total UMI counts per cell (also called “library size”)
+- **nFeature_RNA**: Number of genes detected per cell (also called “gene
+  count”)
+
+We added three more columns: `sample`, `group`, and `sex`.
+
+## Gene Annotation
+
+### Why Annotate Genes?
+
+Before calculating quality control metrics, we need to identify specific
+classes of genes. In particular, we are interested in:
+
+1.  **Mitochondrial genes**: High mitochondrial gene expression often
+    indicates cell stress or death. When a cell’s membrane is
+    compromised, cytoplasmic RNA leaks out while mitochondrial RNA
+    (protected within the mitochondria) is retained, leading to an
+    elevated mitochondrial fraction.
+
+2.  **Ribosomal genes**: These are highly expressed in most cells but
+    are generally not informative for distinguishing cell types. While
+    not typically used for filtering, tracking ribosomal content can
+    provide insights into cellular activity.
+
+We use the *org.Hs.eg.db* package, which contains comprehensive
+annotation information for human genes.
+
+``` r
+# Get the list of gene names from our Seurat object
+gene_symbols <- rownames(seu)
+
+# Query the annotation database
+# We request the gene symbol, Entrez ID, full name, and chromosome
+ann <- AnnotationDbi::select(
+    org.Hs.eg.db,
+    keys = gene_symbols,
+    columns = c("SYMBOL", "ENTREZID", "GENENAME", "CHR"),
+    keytype = "SYMBOL"
+)
+
+# Some genes may have multiple entries; keep only the first match
+ann <- ann[!duplicated(ann$SYMBOL), ]
+
+# Match annotations to the gene order in our Seurat object
+ann <- ann[match(gene_symbols, ann$SYMBOL), ]
+
+# Report annotation success rate
+cat("Gene annotation:\n")
+```
+
+    ## Gene annotation:
+
+``` r
+cat("- Total genes:", length(gene_symbols), "\n")
+```
+
+    ## - Total genes: 29323
+
+``` r
+cat("- Annotated:", sum(!is.na(ann$GENENAME)), "\n")
+```
+
+    ## - Annotated: 20123
+
+``` r
+cat("- Success rate:", round(sum(!is.na(ann$GENENAME)) / length(gene_symbols) * 100, 1), "%\n")
+```
+
+    ## - Success rate: 68.6 %
+
+### Identifying Mitochondrial Genes
+
+Mitochondrial genes in human data can be identified by their gene names,
+which begin with “MT-”. Let us find these genes:
+
+``` r
+# Find genes that start with "MT-"
+mito_genes <- grep("^MT-", gene_symbols, value = TRUE)
+mito_genes
+```
+
+    ##  [1] "MT-ND1"  "MT-ND2"  "MT-CO1"  "MT-CO2"  "MT-ATP8" "MT-ATP6" "MT-CO3" 
+    ##  [8] "MT-ND3"  "MT-ND4L" "MT-ND4"  "MT-ND5"  "MT-ND6"  "MT-CYB"
+
+The human mitochondrial genome encodes 13 protein-coding genes, 22
+tRNAs, and 2 rRNAs. The protein-coding genes are primarily involved in
+oxidative phosphorylation.
+
+### Identifying Ribosomal Genes
+
+Ribosomal protein genes follow a naming convention: RPS (ribosomal
+protein small subunit) and RPL (ribosomal protein large subunit):
+
+``` r
+# Find genes that start with "RPS" or "RPL"
+ribo_genes <- grep("^RP[SL]", gene_symbols, value = TRUE)
+length(ribo_genes)
+```
+
+    ## [1] 103
+
+``` r
+head(ribo_genes, 20)
+```
+
+    ##  [1] "RPL22"   "RPL11"   "RPS6KA1" "RPS8"    "RPL5"    "RPS27"   "RPS6KC1"
+    ##  [8] "RPS7"    "RPS27A"  "RPL31"   "RPL37A"  "RPL32"   "RPL15"   "RPSA"   
+    ## [15] "RPL14"   "RPL29"   "RPL24"   "RPL22L1" "RPL39L"  "RPL35A"
+
+## Calculating Quality Control Metrics
+
+### Per-Cell QC Metrics
+
+Now we calculate the key QC metrics for each cell. Seurat provides the
+[`PercentageFeatureSet()`](https://satijalab.org/seurat/reference/PercentageFeatureSet.html)
+function to calculate the percentage of counts from a specified set of
+genes.
+
+``` r
+# Calculate the percentage of counts from mitochondrial genes
+# pattern = "^MT-" matches gene names starting with "MT-"
+seu[["percent.mt"]] <- PercentageFeatureSet(seu, pattern = "^MT-")
+
+# Calculate the percentage of counts from ribosomal genes
+seu[["percent.ribo"]] <- PercentageFeatureSet(seu, pattern = "^RP[SL]")
+
+# View summary statistics for all QC metrics
+summary(seu@meta.data[, c("nCount_RNA", "nFeature_RNA", "percent.mt", "percent.ribo")])
+```
+
+    ##    nCount_RNA      nFeature_RNA     percent.mt       percent.ribo    
+    ##  Min.   :   500   Min.   :  212   Min.   : 0.0000   Min.   : 0.0000  
+    ##  1st Qu.:  5932   1st Qu.: 2650   1st Qu.: 0.1032   1st Qu.: 0.3511  
+    ##  Median :  9365   Median : 3358   Median : 0.2522   Median : 0.5275  
+    ##  Mean   : 10686   Mean   : 3293   Mean   : 1.5203   Mean   : 0.8745  
+    ##  3rd Qu.: 13370   3rd Qu.: 3997   3rd Qu.: 1.1316   3rd Qu.: 0.8531  
+    ##  Max.   :251820   Max.   :15259   Max.   :83.0145   Max.   :19.3012
+
+Let us understand what these metrics tell us:
+
+- **nCount_RNA** (library size): The total number of UMI counts in a
+  cell. Very low values suggest empty droplets; very high values may
+  indicate doublets.
+- **nFeature_RNA** (gene count): The number of genes detected.
+  Correlates with library size but provides additional information about
+  transcriptome complexity.
+- **percent.mt**: Percentage of counts from mitochondrial genes. High
+  values (typically \>10-20%) suggest dying cells.
+- **percent.ribo**: Percentage of counts from ribosomal genes. Varies by
+  cell type; highly proliferative cells often have higher ribosomal
+  content.
+
+### Visualising QC Metrics by Sample
+
+Visualising QC metrics helps us understand the quality of each sample
+and identify any systematic issues. Violin plots show the distribution
+of values, with the width indicating the density of cells at each value.
+
+``` r
+# Create violin plots for each QC metric, grouped by sample
+VlnPlot(
+    seu,
+    features = c("nCount_RNA", "nFeature_RNA", "percent.mt", "percent.ribo"),
+    group.by = "sample",
+    pt.size = 0,  # Don't show individual points (too many cells)
+    ncol = 2
+) &
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+![](01_quality_control_files/figure-html/qc-violin-sample-1.png)
+
+**Interpreting the violin plots:**
+
+- The shape of each “violin” shows the distribution of values for that
+  sample
+- Wider regions indicate more cells with that value
+- We look for samples that deviate substantially from others, which
+  might indicate technical issues
+- For snRNA-seq (nuclei), we typically expect lower mitochondrial
+  content than scRNA-seq (whole cells) since mitochondria are in the
+  cytoplasm
+
+### Visualising QC Metrics by Developmental Group
+
+Here, we examine whether there are systematic differences between
+developmental stages:
+
+``` r
+VlnPlot(
+    seu,
+    features = c("nCount_RNA", "nFeature_RNA", "percent.mt", "percent.ribo"),
+    group.by = "group",
+    pt.size = 0,
+    ncol = 2
+) &
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+![](01_quality_control_files/figure-html/qc-violin-group-1.png)
+
+Biological differences between developmental stages may manifest as
+differences in QC metrics. For example, foetal cells might have
+different metabolic activity than adult cells, potentially affecting
+mitochondrial content.
+
+### Relationships Between QC Metrics
+
+Scatter plots reveal relationships between QC metrics and help identify
+outlier cells. We expect a positive correlation between library size and
+gene count: cells with more total counts should detect more genes.
+
+``` r
+# Scatter plot: Library size vs Gene count
+p1 <- FeatureScatter(
+    seu,
+    feature1 = "nCount_RNA",
+    feature2 = "nFeature_RNA",
+    group.by = "group",
+    pt.size = 0.1
+) +
+    geom_smooth(method = "lm", se = FALSE, colour = "red", linewidth = 0.5) +
+    theme(legend.position = "bottom") +
+    labs(title = "Library Size vs Genes Detected")
+
+# Scatter plot: Library size vs Mitochondrial percentage
+p2 <- FeatureScatter(
+    seu,
+    feature1 = "nCount_RNA",
+    feature2 = "percent.mt",
+    group.by = "group",
+    pt.size = 0.1
+) +
+    theme(legend.position = "bottom") +
+    labs(title = "Library Size vs Mitochondrial %")
+
+p1 + p2
+```
+
+![](01_quality_control_files/figure-html/qc-scatter-1.png)
+
+**Interpreting the scatter plots:**
+
+- **Left panel**: The strong positive correlation between nCount_RNA and
+  nFeature_RNA is expected. Cells deviating from this trend (high counts
+  but few genes) might be doublets or have other quality issues.
+- **Right panel**: We look for cells with both low library size and high
+  mitochondrial content (upper-left region), which are strong candidates
+  for removal.
+
+## Doublet Detection
+
+### What are Doublets?
+
+Doublets occur when two cells are captured in the same droplet during
+the 10X Genomics workflow. This happens because cell loading follows a
+Poisson distribution, and occasionally two cells enter the same droplet
+by chance. The expected doublet rate increases with the number of cells
+loaded.
+
+Doublets are problematic because they:
+
+- Appear as artificial “intermediate” cell states
+- Can confuse clustering algorithms
+- May be mistaken for rare transitional cell populations
+- Inflate the apparent number of cells
+
+There are two types of doublets:
+
+1.  **Homotypic doublets**: Two cells of the same type captured
+    together. These are difficult to detect computationally because they
+    look like normal cells with higher library size.
+2.  **Heterotypic doublets**: Two cells of different types captured
+    together. These are easier to detect because they express markers
+    from both cell types.
+
+### The scDblFinder Algorithm
+
+*scDblFinder* is a computational method that identifies likely doublets
+by:
+
+1.  Creating artificial doublets by combining randomly selected pairs of
+    cells
+2.  Training a classifier to distinguish artificial doublets from real
+    cells
+3.  Applying the classifier to identify real cells that resemble
+    artificial doublets
+
+We run scDblFinder separately for each sample because doublet rates can
+vary between samples, and combining cells from different samples could
+create artificial heterogeneity.
+
+``` r
+# Convert Seurat object to SingleCellExperiment format (required by scDblFinder)
+sce <- as.SingleCellExperiment(seu)
+
+# Run scDblFinder
+# samples = "sample" tells it to process each sample separately
+# Setting a seed ensures reproducibility
+set.seed(42)
+sce <- scDblFinder(sce, samples = "sample")
+```
+
+    ##   |                                                                              |                                                                      |   0%
+
+    ##   |                                                                              |========                                                              |  11%
+
+    ##   |                                                                              |================                                                      |  22%
+
+    ##   |                                                                              |=======================                                               |  33%
+
+    ##   |                                                                              |===============================                                       |  44%
+
+    ##   |                                                                              |=======================================                               |  56%
+
+    ##   |                                                                              |===============================================                       |  67%
+
+    ##   |                                                                              |======================================================                |  78%
+
+    ##   |                                                                              |==============================================================        |  89%
+
+    ##   |                                                                              |======================================================================| 100%
+
+``` r
+# Transfer the results back to our Seurat object
+seu$scDblFinder.score <- sce$scDblFinder.score
+seu$scDblFinder.class <- sce$scDblFinder.class
+
+# Clean up
+rm(sce)
+gc()
+```
+
+    ##             used   (Mb) gc trigger   (Mb) limit (Mb)   max used   (Mb)
+    ## Ncells  12232740  653.3   19518905 1042.5         NA   19518905 1042.5
+    ## Vcells 291182174 2221.6  814978727 6217.8      24576 1272637557 9709.5
+
+### Examining Doublet Detection Results
+
+Let us examine how many doublets were detected:
+
+``` r
+# Overall doublet summary
+table(seu$scDblFinder.class)
+```
+
+    ## 
+    ## singlet doublet 
+    ##   49686    4449
+
+``` r
+# Doublet rate per sample
+seu@meta.data %>%
+  group_by(sample) %>%
+  summarise(
+    total_cells = n(),
+    doublets = sum(scDblFinder.class == "doublet"),
+    doublet_rate_pct = round(doublets / total_cells * 100, 2),
+    .groups = "drop"
+  )
+```
+
+    ## # A tibble: 9 × 4
+    ##   sample total_cells doublets doublet_rate_pct
+    ##   <chr>        <int>    <int>            <dbl>
+    ## 1 a1            4360      216             4.95
+    ## 2 a2            3374      169             5.01
+    ## 3 a3            1681       71             4.22
+    ## 4 f1            8294      723             8.72
+    ## 5 f2           10947     1312            12.0 
+    ## 6 f3            8515      774             9.09
+    ## 7 y1            4422      258             5.83
+    ## 8 y2            5558      355             6.39
+    ## 9 y3            6984      571             8.18
+
+The expected doublet rate depends on the number of cells loaded. As a
+rule of thumb, loading ~10,000 cells results in approximately 8%
+doublets. Our observed rates should be in a similar range.
+
+### Visualising Doublet Scores
+
+The doublet score indicates how likely a cell is to be a doublet (higher
+= more likely). Let us visualise the distribution:
+
+``` r
+VlnPlot(
+    seu,
+    features = "scDblFinder.score",
+    group.by = "sample",
+    pt.size = 0
+) +
+    geom_hline(yintercept = 0.5, linetype = "dashed", colour = "red") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    labs(
+        title = "Doublet Scores by Sample",
+        subtitle = "Higher scores indicate likely doublets"
+    )
+```
+
+![](01_quality_control_files/figure-html/doublet-violin-1.png)
+
+Cells classified as doublets typically have scores above 0.5, though the
+exact threshold is determined by scDblFinder’s internal classifier.
+
+## Applying Quality Control Filters
+
+### Defining Filtering Thresholds
+
+Based on our QC visualisations and established guidelines for snRNA-seq
+data, we define the following filtering thresholds:
+
+``` r
+# Define filtering thresholds
+min_genes <- 500       # Minimum genes detected per cell
+min_counts <- 2500     # Minimum UMI counts per cell
+max_counts <- 40000    # Maximum UMI counts per cell
+max_mt <- 20           # Maximum mitochondrial percentage
+```
+
+**Rationale for each threshold:**
+
+- **min_genes = 500**: Cells with fewer genes are likely empty droplets
+  or debris. The 500-gene threshold is commonly used for snRNA-seq.
+- **min_counts = 2500**: Ensures sufficient sequencing depth for
+  reliable downstream analysis.
+- **max_counts = 40000**: Extremely high counts may indicate doublets
+  that escaped detection or technical artefacts.
+- **max_mt = 20%**: High mitochondrial content indicates cell stress or
+  death. The 20% threshold is appropriate for snRNA-seq; for scRNA-seq,
+  10% might be more suitable.
+- **singlets only**: Removes computationally identified doublets.
+
+### Visualising Thresholds
+
+Before applying filters, it is helpful to visualise where the thresholds
+fall relative to the data distribution:
+
+``` r
+# Create histograms with threshold lines
+p1 <- ggplot(seu@meta.data, aes(x = nFeature_RNA)) +
+    geom_histogram(bins = 50, fill = "steelblue", colour = "white", alpha = 0.8) +
+    geom_vline(xintercept = min_genes, colour = "#E64B35", linetype = "dashed", linewidth = 1) +
+    annotate("text", x = min_genes, y = Inf, label = paste("min =", min_genes),
+             vjust = 1.5, hjust = -0.1, colour = "#E64B35", fontface = "bold") +
+    labs(title = "Genes Detected per Cell", x = "nFeature_RNA", y = "Number of Cells") +
+    theme_minimal()
+
+p2 <- ggplot(seu@meta.data, aes(x = nCount_RNA)) +
+    geom_histogram(bins = 50, fill = "steelblue", colour = "white", alpha = 0.8) +
+    geom_vline(xintercept = c(min_counts, max_counts), colour = "#E64B35", linetype = "dashed", linewidth = 1) +
+    annotate("text", x = min_counts, y = Inf, label = paste("min =", format(min_counts, big.mark = ",")),
+             vjust = 1.5, hjust = 1.1, colour = "#E64B35", fontface = "bold") +
+    annotate("text", x = max_counts, y = Inf, label = paste("max =", format(max_counts, big.mark = ",")),
+             vjust = 1.5, hjust = -0.1, colour = "#E64B35", fontface = "bold") +
+    labs(title = "UMI Counts per Cell", x = "nCount_RNA", y = "Number of Cells") +
+    theme_minimal()
+
+p3 <- ggplot(seu@meta.data, aes(x = percent.mt)) +
+    geom_histogram(bins = 50, fill = "steelblue", colour = "white", alpha = 0.8) +
+    geom_vline(xintercept = max_mt, colour = "#E64B35", linetype = "dashed", linewidth = 1) +
+    annotate("text", x = max_mt, y = Inf, label = paste("max =", max_mt, "%"),
+             vjust = 1.5, hjust = -0.1, colour = "#E64B35", fontface = "bold") +
+    labs(title = "Mitochondrial Percentage", x = "percent.mt", y = "Number of Cells") +
+    theme_minimal()
+
+p1 + p2 + p3
+```
+
+![](01_quality_control_files/figure-html/visualise-thresholds-1.png)
+
+The red dashed lines show our filtering thresholds. Cells to the left of
+a “min” threshold or to the right of a “max” threshold will be removed.
+
+### Applying Filters
+
+Now we apply all filtering criteria simultaneously:
+
+``` r
+# Record the number of cells before filtering
+cells_before <- ncol(seu)
+
+# Apply all filters using Seurat's subset function
+seu_filtered <- subset(
+    seu,
+    subset = nFeature_RNA >= min_genes &
+             nCount_RNA >= min_counts &
+             nCount_RNA <= max_counts &
+             percent.mt <= max_mt &
+             scDblFinder.class == "singlet"
+)
+
+# Record the number of cells after filtering
+cells_after <- ncol(seu_filtered)
+
+# Report filtering results
+cat("Filtering results:\n")
+```
+
+    ## Filtering results:
+
+``` r
+cat("- Cells before:", cells_before, "\n")
+```
+
+    ## - Cells before: 54135
+
+``` r
+cat("- Cells after:", cells_after, "\n")
+```
+
+    ## - Cells after: 43119
+
+``` r
+cat("- Cells removed:", cells_before - cells_after, "\n")
+```
+
+    ## - Cells removed: 11016
+
+``` r
+cat("- Retention:", round(cells_after / cells_before * 100, 1), "%\n")
+```
+
+    ## - Retention: 79.7 %
+
+### Examining Filtering Effects by Sample
+
+It is important to verify that filtering does not disproportionately
+affect certain samples, which could indicate sample-specific quality
+issues:
+
+``` r
+# Calculate cells per sample before and after filtering
+before_counts <- table(seu$sample)
+after_counts <- table(seu_filtered$sample)
+
+# Create a summary table
+filter_summary <- data.frame(
+    sample = names(before_counts),
+    before = as.numeric(before_counts),
+    after = as.numeric(after_counts[names(before_counts)]),
+    stringsAsFactors = FALSE
+)
+filter_summary$removed <- filter_summary$before - filter_summary$after
+filter_summary$retention_pct <- round(filter_summary$after / filter_summary$before * 100, 1)
+
+# Add group information
+filter_summary$group <- c(
+  rep("adult", 3),   # a1, a2, a3
+  rep("foetal", 3),  # f1, f2, f3
+  rep("young", 3)    # y1, y2, y3
+)[match(filter_summary$sample, c("a1", "a2", "a3", "f1", "f2", "f3", "y1", "y2", "y3"))]
+
+filter_summary
+```
+
+    ##   sample before after removed retention_pct  group
+    ## 1     a1   4360  3806     554          87.3  adult
+    ## 2     a2   3374  2449     925          72.6  adult
+    ## 3     a3   1681  1166     515          69.4  adult
+    ## 4     f1   8294  7237    1057          87.3 foetal
+    ## 5     f2  10947  9085    1862          83.0 foetal
+    ## 6     f3   8515  6775    1740          79.6 foetal
+    ## 7     y1   4422  4051     371          91.6  young
+    ## 8     y2   5558  4371    1187          78.6  young
+    ## 9     y3   6984  4179    2805          59.8  young
+
+``` r
+# Visualise filtering effect
+filter_long <- filter_summary %>%
+    tidyr::pivot_longer(
+        cols = c(before, after),
+        names_to = "stage",
+        values_to = "cells"
+    ) %>%
+    mutate(stage = factor(stage, levels = c("before", "after")))
+
+ggplot(filter_long, aes(x = sample, y = cells, fill = stage)) +
+    geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.7) +
+    scale_fill_manual(
+        values = c("before" = "grey70", "after" = "#3C5488"),
+        labels = c("Before QC", "After QC")
+    ) +
+    geom_text(
+        data = filter_long %>% filter(stage == "after"),
+        aes(label = paste0(filter_summary$retention_pct[match(sample, filter_summary$sample)], "%")),
+        position = position_dodge(width = 0.8),
+        vjust = -0.5, size = 3, colour = "#3C5488", fontface = "bold"
+    ) +
+    labs(
+        title = "Cell Counts Before and After Quality Control",
+        subtitle = "Percentages show retention rate for each sample",
+        x = "Sample",
+        y = "Number of Cells",
+        fill = ""
+    ) +
+    theme_minimal() +
+    theme(
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "bottom"
+    )
+```
+
+![](01_quality_control_files/figure-html/filter-barplot-1.png)
+
+If some samples have much lower retention rates than others, this might
+indicate sample-specific quality issues that warrant investigation.
+
+### Post-Filtering QC Visualisation
+
+Finally, we verify that our filtered dataset shows improved QC
+characteristics:
+
+``` r
+VlnPlot(
+    seu_filtered,
+    features = c("nCount_RNA", "nFeature_RNA", "percent.mt", "percent.ribo"),
+    group.by = "sample",
+    pt.size = 0,
+    ncol = 2
+) &
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+![](01_quality_control_files/figure-html/post-filter-qc-1.png)
+
+The filtered data should show:
+
+- No cells with very low gene counts (bottom of nFeature_RNA)
+- No cells with very low or very high library sizes (tails of
+  nCount_RNA)
+- No cells with very high mitochondrial content (top of percent.mt)
+
+## Gene Filtering
+
+In addition to cell-level filtering, we remove gene classes that are
+uninformative or potentially confounding for downstream differential
+expression analysis. This filtering is performed once here, ensuring all
+subsequent modules work with a consistent, clean gene set.
+
+### Rationale for Gene Removal
+
+We remove four categories of genes, each for specific reasons:
+
+**1. Nuclear-encoded mitochondrial genes** (~200 genes)
+
+These are genes in the nuclear genome that encode proteins functioning
+within mitochondria (e.g., mitochondrial ribosomal proteins like MRPL20,
+MRPS15). Their expression correlates with cellular metabolic state and
+can confound biological comparisons. Note that the MT-prefixed genes
+(encoded by the mitochondrial genome itself) were already excluded
+during data preprocessing.
+
+**2. Ribosomal protein genes** (~190 genes)
+
+Ribosomal proteins (RPS and RPL gene families) are highly and
+ubiquitously expressed across all cell types. They dominate variance
+calculations without providing useful biological insight for
+distinguishing developmental or disease-related transcriptional changes.
+
+**3. Genes without Entrez IDs** (~9,000 genes)
+
+Genes lacking Entrez identifiers are often pseudogenes, non-coding
+transcripts, or poorly characterised sequences. Removing them simplifies
+downstream functional annotation and pathway analysis, where Entrez IDs
+are commonly required.
+
+**4. Sex chromosome genes** (~800 genes)
+
+With unbalanced sex distribution across developmental groups in this
+dataset (fetal: 2M/1F, young: 2M/1F, adult: 1M/2F), X and Y chromosome
+genes may show spurious differential expression driven by sample
+composition rather than true developmental biology. Removing them
+prevents confounding.
+
+### Identify Genes for Removal
+
+``` r
+# Get gene annotation for filtered object
+gene_symbols_filt <- rownames(seu_filtered)
+ann_filt <- ann[match(gene_symbols_filt, ann$SYMBOL), ]
+
+# 1. Mitochondrial genes: both MT-prefixed and nuclear-encoded
+mt_prefix_idx <- grep("^MT-", gene_symbols_filt)
+mt_nuclear_idx <- grep("mitochondrial", ann_filt$GENENAME, ignore.case = TRUE)
+mito_idx <- unique(c(mt_prefix_idx, mt_nuclear_idx))
+cat("Mitochondrial genes (MT- prefix):", length(mt_prefix_idx), "\n")
+```
+
+    ## Mitochondrial genes (MT- prefix): 13
+
+``` r
+cat("Mitochondrial genes (nuclear-encoded):", length(mt_nuclear_idx), "\n")
+```
+
+    ## Mitochondrial genes (nuclear-encoded): 211
+
+``` r
+# 2. Ribosomal genes: both RP[SL] prefixed and by gene name
+rp_prefix_idx <- grep("^RP[SL][0-9]", gene_symbols_filt)
+rp_genename_idx <- grep("ribosomal", ann_filt$GENENAME, ignore.case = TRUE)
+ribo_idx <- unique(c(rp_prefix_idx, rp_genename_idx))
+cat("Ribosomal genes (RP[SL] prefix):", length(rp_prefix_idx), "\n")
+```
+
+    ## Ribosomal genes (RP[SL] prefix): 99
+
+``` r
+cat("Ribosomal genes (by gene name):", length(rp_genename_idx), "\n")
+```
+
+    ## Ribosomal genes (by gene name): 191
+
+``` r
+# 3. Genes without Entrez IDs
+no_entrez_idx <- which(is.na(ann_filt$ENTREZID))
+cat("Genes without Entrez ID:", length(no_entrez_idx), "\n")
+```
+
+    ## Genes without Entrez ID: 9200
+
+``` r
+# 4. Sex chromosome genes
+x_genes <- which(ann_filt$CHR == "X")
+y_genes <- which(ann_filt$CHR == "Y")
+sex_chr_idx <- c(x_genes, y_genes)
+cat("X chromosome genes:", length(x_genes), "\n")
+```
+
+    ## X chromosome genes: 752
+
+``` r
+cat("Y chromosome genes:", length(y_genes), "\n")
+```
+
+    ## Y chromosome genes: 36
+
+### Apply Gene Filtering
+
+``` r
+# Combine all genes to remove (some may overlap between categories)
+genes_remove_idx <- unique(c(mito_idx, ribo_idx, no_entrez_idx, sex_chr_idx))
+genes_remove <- gene_symbols_filt[genes_remove_idx]
+
+cat("\nGene filtering summary:\n")
+```
+
+    ## 
+    ## Gene filtering summary:
+
+``` r
+cat("- Genes before filtering:", length(gene_symbols_filt), "\n")
+```
+
+    ## - Genes before filtering: 29323
+
+``` r
+cat("- Genes to remove:", length(genes_remove), "\n")
+```
+
+    ## - Genes to remove: 10322
+
+``` r
+# Subset Seurat object to keep only desired genes
+genes_keep <- setdiff(gene_symbols_filt, genes_remove)
+seu_filtered <- subset(seu_filtered, features = genes_keep)
+
+cat("- Genes after filtering:", nrow(seu_filtered), "\n")
+```
+
+    ## - Genes after filtering: 19001
+
+``` r
+cat("- Retention rate:", round(nrow(seu_filtered) / length(gene_symbols_filt) * 100, 1), "%\n")
+```
+
+    ## - Retention rate: 64.8 %
+
+This filtering removes approximately one-third of genes, retaining
+~19,000 well-annotated, autosomal genes suitable for robust differential
+expression analysis.
+
+## Sample-Level Overview with Pseudobulk
+
+### Why Pseudobulk?
+
+Before proceeding to downstream analyses, it is informative to examine
+sample-level relationships. By aggregating (summing) counts across all
+cells within each sample, we create “pseudobulk” expression profiles.
+This allows us to:
+
+- Verify that biological groups cluster together
+- Identify potential batch effects
+- Confirm that biological signal dominates technical noise
+
+This approach uses techniques from traditional bulk RNA-seq analysis,
+which are well-established and robust.
+
+``` r
+# Aggregate counts by sample
+# This sums all counts for each gene across all cells in each sample
+pseudobulk <- AggregateExpression(
+    seu_filtered,
+    group.by = "sample",
+    assays = "RNA",
+    return.seu = FALSE
+)$RNA
+
+dim(pseudobulk)
+```
+
+    ## [1] 19001     9
+
+### Creating a DGEList and Filtering
+
+We use *edgeR*’s DGEList object to store the pseudobulk data and perform
+filtering:
+
+``` r
+# Create DGEList object
+dge <- DGEList(counts = pseudobulk)
+
+# Add sample information
+sample_info <- seu_filtered@meta.data %>%
+    dplyr::select(sample, group, sex) %>%
+    distinct()
+sample_info <- sample_info[match(colnames(dge), sample_info$sample), ]
+
+dge$samples$group <- sample_info$group
+dge$samples$sex <- sample_info$sex
+
+# Filter lowly expressed genes
+# This removes genes that don't have sufficient counts for reliable analysis
+keep <- filterByExpr(dge, group = dge$samples$group)
+dge <- dge[keep, , keep.lib.sizes = FALSE]
+
+# Calculate normalisation factors
+# This accounts for differences in library composition between samples
+dge <- calcNormFactors(dge)
+
+dim(dge)
+```
+
+    ## [1] 16592     9
+
+### Multidimensional Scaling (MDS) Plot
+
+Multidimensional scaling (MDS) is a dimensionality reduction technique
+that visualises the similarity between samples. Samples that are more
+similar in their overall gene expression profiles appear closer together
+in the plot.
+
+``` r
+# Calculate MDS coordinates
+mds <- plotMDS(dge, plot = FALSE)
+
+# Create a data frame for plotting
+# Convert group to title case for consistent labelling
+mds_data <- data.frame(
+    sample = colnames(dge),
+    Dim1 = mds$x,
+    Dim2 = mds$y,
+    group = tools::toTitleCase(as.character(dge$samples$group)),
+    sex = dge$samples$sex
+)
+
+# Plot coloured by developmental group
+p1 <- ggplot(mds_data, aes(x = Dim1, y = Dim2, colour = group, label = sample)) +
+    geom_point(size = 4) +
+    geom_text(vjust = -1, hjust = 0.5, size = 3, show.legend = FALSE) +
+    scale_colour_manual(values = group_colors) +
+    labs(
+        title = "MDS Plot: Developmental Groups",
+        x = "Leading logFC dim 1",
+        y = "Leading logFC dim 2",
+        colour = "Group"
+    ) +
+    theme_minimal() +
+    theme(legend.position = "bottom")
+
+# Plot coloured by sex
+p2 <- ggplot(mds_data, aes(x = Dim1, y = Dim2, colour = sex, label = sample)) +
+    geom_point(size = 4) +
+    geom_text(vjust = -1, hjust = 0.5, size = 3, show.legend = FALSE) +
+    scale_colour_manual(values = c("m" = "#3C5488", "f" = "#E64B35")) +
+    labs(
+        title = "MDS Plot: Sex",
+        x = "Leading logFC dim 1",
+        y = "Leading logFC dim 2",
+        colour = "Sex"
+    ) +
+    theme_minimal() +
+    theme(legend.position = "bottom")
+
+p1 + p2
+```
+
+![](01_quality_control_files/figure-html/mds-plot-1.png)
+
+**Interpreting the MDS plots:**
+
+The left panel shows samples coloured by developmental group. We observe
+that:
+
+- Foetal samples (f1, f2, f3) cluster together and are clearly separated
+  from postnatal samples
+- Young and adult samples show some overlap, which may reflect
+  biological similarity
+- The clear separation of foetal samples indicates strong biological
+  signal
+
+The right panel shows the same data coloured by sex, allowing us to
+assess whether sex contributes to variation in overall expression
+patterns.
+
+These results are reassuring: the primary axis of variation corresponds
+to biological differences (developmental stage) rather than technical
+artefacts.
+
+## Saving the Filtered Data
+
+### Create Output Directory and Save
+
+We save the filtered Seurat object so it can be loaded in subsequent
+modules:
+
+``` r
+# Create output directory if it doesn't exist
+output_dir <- "../data/processed"
+if (!dir.exists(output_dir)) {
+    dir.create(output_dir, recursive = TRUE)
+}
+
+# Save the filtered Seurat object
+output_file <- file.path(output_dir, "01_qc_filtered.rds")
+saveRDS(seu_filtered, output_file)
+
+message("Saved: ", output_file)
+```
+
+## Summary
+
+In this module, we performed quality control on single nuclei RNA-seq
+data from human heart tissue. We:
+
+- Loaded count matrices and cell metadata for 9 samples across 3
+  developmental stages (Fetal, Young, Adult)
+- Created a Seurat object and annotated genes using org.Hs.eg.db
+- Calculated QC metrics: library size, genes detected, mitochondrial
+  content, and ribosomal content
+- Detected doublets using scDblFinder
+- Applied cell filtering thresholds to remove low-quality cells and
+  doublets
+- Applied gene filtering to remove mitochondrial, ribosomal, sex
+  chromosome, and unannotated genes
+- Performed pseudobulk aggregation and MDS visualisation
+- Saved the filtered object for downstream analysis
+
+The filtered dataset is now ready for normalisation and integration in
+Module 2.
+
+## Session Information
+
+For reproducibility, we record the R session information, including
+package versions:
+
+``` r
+sessionInfo()
+```
+
+    ## R version 4.5.2 (2025-10-31)
+    ## Platform: aarch64-apple-darwin20
+    ## Running under: macOS Tahoe 26.2
+    ## 
+    ## Matrix products: default
+    ## BLAS:   /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib 
+    ## LAPACK: /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/lib/libRlapack.dylib;  LAPACK version 3.12.1
+    ## 
+    ## locale:
+    ## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+    ## 
+    ## time zone: Australia/Melbourne
+    ## tzcode source: internal
+    ## 
+    ## attached base packages:
+    ## [1] stats4    stats     graphics  grDevices utils     datasets  methods  
+    ## [8] base     
+    ## 
+    ## other attached packages:
+    ##  [1] org.Hs.eg.db_3.21.0         AnnotationDbi_1.70.0       
+    ##  [3] edgeR_4.6.2                 limma_3.64.0               
+    ##  [5] dplyr_1.1.4                 patchwork_1.3.0            
+    ##  [7] ggplot2_3.5.2               scDblFinder_1.22.0         
+    ##  [9] SingleCellExperiment_1.30.1 SummarizedExperiment_1.38.1
+    ## [11] Biobase_2.68.0              GenomicRanges_1.60.0       
+    ## [13] GenomeInfoDb_1.44.0         IRanges_2.42.0             
+    ## [15] S4Vectors_0.46.0            BiocGenerics_0.54.0        
+    ## [17] generics_0.1.4              MatrixGenerics_1.20.0      
+    ## [19] matrixStats_1.5.0           Seurat_5.3.0               
+    ## [21] SeuratObject_5.1.0          sp_2.2-0                   
+    ## 
+    ## loaded via a namespace (and not attached):
+    ##   [1] RcppAnnoy_0.0.22         splines_4.5.2            later_1.4.2             
+    ##   [4] BiocIO_1.18.0            bitops_1.0-9             tibble_3.2.1            
+    ##   [7] polyclip_1.10-7          XML_3.99-0.20            fastDummies_1.7.5       
+    ##  [10] lifecycle_1.0.4          globals_0.18.0           lattice_0.22-7          
+    ##  [13] MASS_7.3-65              magrittr_2.0.3           plotly_4.10.4           
+    ##  [16] sass_0.4.10              rmarkdown_2.29           jquerylib_0.1.4         
+    ##  [19] yaml_2.3.10              metapod_1.16.0           httpuv_1.6.16           
+    ##  [22] sctransform_0.4.2        spam_2.11-1              spatstat.sparse_3.1-0   
+    ##  [25] reticulate_1.42.0        DBI_1.2.3                cowplot_1.1.3           
+    ##  [28] pbapply_1.7-2            RColorBrewer_1.1-3       abind_1.4-8             
+    ##  [31] Rtsne_0.17               purrr_1.0.4              RCurl_1.98-1.17         
+    ##  [34] GenomeInfoDbData_1.2.14  ggrepel_0.9.6            irlba_2.3.5.1           
+    ##  [37] listenv_0.9.1            spatstat.utils_3.1-4     goftest_1.2-3           
+    ##  [40] RSpectra_0.16-2          dqrng_0.4.1              spatstat.random_3.4-1   
+    ##  [43] fitdistrplus_1.2-2       parallelly_1.44.0        pkgdown_2.2.0           
+    ##  [46] codetools_0.2-20         DelayedArray_0.34.1      scuttle_1.18.0          
+    ##  [49] tidyselect_1.2.1         UCSC.utils_1.4.0         farver_2.1.2            
+    ##  [52] viridis_0.6.5            ScaledMatrix_1.16.0      spatstat.explore_3.4-3  
+    ##  [55] GenomicAlignments_1.44.0 jsonlite_2.0.0           BiocNeighbors_2.2.0     
+    ##  [58] progressr_0.15.1         ggridges_0.5.6           survival_3.8-3          
+    ##  [61] scater_1.35.0            systemfonts_1.2.3        tools_4.5.2             
+    ##  [64] ragg_1.4.0               ica_1.0-3                Rcpp_1.0.14             
+    ##  [67] glue_1.8.0               gridExtra_2.3            SparseArray_1.8.0       
+    ##  [70] mgcv_1.9-3               xfun_0.52                withr_3.0.2             
+    ##  [73] fastmap_1.2.0            bluster_1.18.0           digest_0.6.37           
+    ##  [76] rsvd_1.0.5               R6_2.6.1                 mime_0.13               
+    ##  [79] textshaping_1.0.1        colorspace_2.1-1         scattermore_1.2         
+    ##  [82] tensor_1.5               RSQLite_2.3.11           spatstat.data_3.1-6     
+    ##  [85] utf8_1.2.5               tidyr_1.3.1              data.table_1.17.2       
+    ##  [88] rtracklayer_1.68.0       httr_1.4.7               htmlwidgets_1.6.4       
+    ##  [91] S4Arrays_1.8.0           uwot_0.2.3               pkgconfig_2.0.3         
+    ##  [94] gtable_0.3.6             blob_1.2.4               lmtest_0.9-40           
+    ##  [97] XVector_0.48.0           htmltools_0.5.8.1        dotCall64_1.2           
+    ## [100] scales_1.4.0             png_0.1-8                spatstat.univar_3.1-3   
+    ## [103] scran_1.36.0             knitr_1.50               reshape2_1.4.4          
+    ## [106] rjson_0.2.23             nlme_3.1-168             curl_7.0.0              
+    ## [109] cachem_1.1.0             zoo_1.8-14               stringr_1.5.1           
+    ## [112] KernSmooth_2.23-26       vipor_0.4.7              parallel_4.5.2          
+    ## [115] miniUI_0.1.2             ggrastr_1.0.2            restfulr_0.0.16         
+    ## [118] desc_1.4.3               pillar_1.10.2            grid_4.5.2              
+    ## [121] vctrs_0.6.5              RANN_2.6.2               promises_1.3.2          
+    ## [124] BiocSingular_1.24.0      beachmat_2.24.0          xtable_1.8-4            
+    ## [127] cluster_2.1.8.1          beeswarm_0.4.0           evaluate_1.0.3          
+    ## [130] locfit_1.5-9.12          cli_3.6.5                compiler_4.5.2          
+    ## [133] Rsamtools_2.24.1         rlang_1.1.6              crayon_1.5.3            
+    ## [136] future.apply_1.11.3      labeling_0.4.3           plyr_1.8.9              
+    ## [139] fs_1.6.6                 ggbeeswarm_0.7.2         stringi_1.8.7           
+    ## [142] viridisLite_0.4.2        deldir_2.0-4             BiocParallel_1.42.0     
+    ## [145] Biostrings_2.76.0        lazyeval_0.2.2           spatstat.geom_3.4-1     
+    ## [148] Matrix_1.7-4             RcppHNSW_0.6.0           bit64_4.6.0-1           
+    ## [151] future_1.49.0            KEGGREST_1.48.1          statmod_1.5.0           
+    ## [154] shiny_1.10.0             ROCR_1.0-11              memoise_2.0.1           
+    ## [157] igraph_2.1.4             bslib_0.9.0              bit_4.6.0               
+    ## [160] xgboost_3.1.3.1

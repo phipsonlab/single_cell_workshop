@@ -723,6 +723,9 @@ The split view highlights several key observations:
 ## Save Annotated Object
 
 ```{r save-checkpoint}
+# Create results directory if it doesn't exist
+dir.create("../results", recursive = TRUE, showWarnings = FALSE)
+
 # Save the annotated Seurat object
 saveRDS(seu, "../data/processed/03_annotated.rds")
 

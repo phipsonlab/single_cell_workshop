@@ -41,7 +41,7 @@ Raw Data → QC & Filtering → Normalisation → Integration → Clustering →
 | Module | Topic | Duration | Description |
 |--------|-------|----------|-------------|
 | [**Module 0**](articles/00_setup.html) | Setup | Pre-workshop | Installation and verification |
-| [**Module 1**](articles/01_quality_control.html) | Quality Control | 45 min | QC metrics, doublet detection, cell filtering |
+| [**Module 1**](articles/01_quality_control.html) | Quality Control | 45 min | QC metrics, cell filtering |
 | [**Module 2**](articles/02_integration_clustering.html) | Integration & Clustering | 50 min | SCTransform, Harmony, UMAP, clustering |
 | [**Module 3**](articles/03_cell_type_annotation.html) | Cell Type Annotation | 20 min | Marker genes, manual annotation |
 | [**Module 4**](articles/04_differential_expression.html) | Differential Expression | 55 min | Pseudobulk DE, composition analysis |
@@ -85,7 +85,6 @@ Raw Data → QC & Filtering → Normalisation → Integration → Clustering →
 | Step | Method | Package |
 |------|--------|---------|
 | QC & Filtering | Per-cell metrics | Seurat |
-| Doublet Detection | Simulation-based | scDblFinder |
 | Normalisation | SCTransform v2 | Seurat |
 | Integration | Harmony | harmony |
 | Clustering | Louvain | Seurat |

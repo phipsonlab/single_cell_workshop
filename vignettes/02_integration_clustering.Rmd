@@ -650,16 +650,19 @@ this heart development dataset, we observe that:
 
 - Resolution 0.1-0.2 groups cells into broad categories but may merge distinct
   populations
-- Resolution 0.4-0.6 shows stable cluster structure (similar cluster numbers)
-- Higher resolutions begin to split what appear to be continuous populations
+- Resolution 0.3-0.4 produces a stable cluster structure
+- Higher resolutions progressively split clusters further
 
-We select resolution 0.5 for this analysis, which produces 19 clusters with good
-separation of major cell types. This choice is specific to this dataset—other
-datasets may require different resolutions:
+We select resolution 0.4 for this analysis, which produces 17 clusters with good
+separation of major cell types. Notably, several clusters are strongly enriched
+for fetal cells (>95%), reflecting the distinct transcriptional programmes active
+during early heart development. The remaining clusters contain cells from multiple
+developmental stages, representing shared cell types like fibroblasts, endothelial
+cells, and immune cells that are present throughout development:
 
 ```{r select-resolution}
 # Set the active identity to our chosen resolution
-selected_res <- 0.5
+selected_res <- 0.4
 Idents(seu) <- paste0("SCT_snn_res.", selected_res)
 
 # Store in a standard column

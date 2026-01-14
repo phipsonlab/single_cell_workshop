@@ -88,8 +88,6 @@ different versions may produce slightly different results.
 
 | Package | Version | Purpose |
 |---------|---------|---------|
-| scDblFinder | 1.24.0 | Doublet detection |
-| SingleCellExperiment | 1.32.0 | Data structures |
 | edgeR | 4.8.2 | Differential expression |
 | limma | 3.66.0 | Linear models for DE |
 | speckle | 1.10.0 | Cell type composition analysis |
@@ -148,8 +146,6 @@ cran_packages <- list(
 )
 
 bioc_packages <- c(
-    "SingleCellExperiment",
-    "scDblFinder",
     "edgeR",
     "limma",
     "org.Hs.eg.db",
@@ -235,8 +231,6 @@ The following Bioconductor packages provide essential functionality for our sing
 
 | Package | Purpose |
 |---------|---------|
-| `SingleCellExperiment` | Data structure for single cell data, required by many tools |
-| `scDblFinder` | Computational detection of doublets (two cells captured together) |
 | `edgeR` | Differential expression analysis using negative binomial models |
 | `limma` | Linear models for differential expression, works with edgeR |
 | `org.Hs.eg.db` | Human gene annotation database |
@@ -245,8 +239,6 @@ The following Bioconductor packages provide essential functionality for our sing
 
 ```{r install-bioc}
 BiocManager::install(c(
-    "SingleCellExperiment",
-    "scDblFinder",
     "edgeR",
     "limma",
     "org.Hs.eg.db",
@@ -298,8 +290,6 @@ Once all packages are installed, it is essential to verify that they load correc
 packages <- c(
     "Seurat",
     "harmony",
-    "scDblFinder",
-    "SingleCellExperiment",
     "edgeR",
     "limma",
     "speckle",
@@ -352,8 +342,6 @@ expected_versions <- list(
     dplyr = "1.1.4",
     tidyr = "1.3.2",
     # Bioconductor packages
-    scDblFinder = "1.24.0",
-    SingleCellExperiment = "1.32.0",
     edgeR = "4.8.2",
     limma = "3.66.0",
     speckle = "1.10.0"

@@ -413,12 +413,13 @@ if (nrow(sig_celltypes) > 0) {
 changes in cell type composition during heart development (FDR < 0.05):
 
 - **Cardiomyocytes** show the most dramatic change, decreasing from ~73% in
-  fetal hearts to ~40% in young and ~22% in adult hearts (FDR < 0.001)
-- **Immune cells** increase substantially, from ~2.5% in fetal to ~10% in young
-  and ~19% in adult hearts (FDR < 0.001)
-- **Fibroblasts** increase from ~13% in fetal to ~28% in young and ~32% in
-  adult hearts (FDR < 0.05)
-- **Endothelial cells** also increase during development (FDR < 0.05)
+  fetal hearts to ~40% in young and ~22% in adult hearts (FDR = 0.002)
+- **Immune cells** increase substantially, from ~3% in fetal to ~10% in young
+  and ~18% in adult hearts (FDR = 0.002)
+- **Fibroblasts** increase from ~12% in fetal to ~28% in young and ~32% in
+  adult hearts (FDR = 0.035)
+- **Endothelial cells** increase from ~5% in fetal to ~10% in young and ~14%
+  in adult hearts (FDR = 0.041)
 
 These findings align closely with those reported by Sim et al. (2021), who
 found significant expansion of cardiac fibroblasts and immune cells, accompanied
@@ -995,8 +996,8 @@ ggplot(de_summary_long, aes(x = contrast, y = n_genes, fill = direction)) +
    postnatal transition, with relative transcriptional stability thereafter.
 
 2. **Cell type-specific responses**: Cardiomyocytes show the largest number
-   of DE genes (~2,200), followed by fibroblasts (~1,200-1,500), endothelial
-   cells (~500-600), and immune cells (~190). This ranking is consistent with
+   of DE genes (~2,200-2,300), followed by fibroblasts (~1,200-1,500), endothelial
+   cells (~570-700), and immune cells (~320-420). This ranking is consistent with
    the original study findings, where cardiomyocytes showed the most
    transcriptional remodelling during development.
 
@@ -1214,10 +1215,14 @@ are consistent with those reported by Sim et al. (2021):
 
 - The human heart undergoes significant changes in cellular composition during
   development (FDR < 0.05 for four major cell types)
-- Cardiomyocyte proportions decrease dramatically from ~73% (fetal) to ~22%
+- Cardiomyocyte proportions decrease dramatically from ~73% (fetal) to ~40%
+  (young) to ~22% (adult)
+- Immune cell proportions increase from ~3% (fetal) to ~10% (young) to ~18%
   (adult)
-- Immune cell proportions increase from ~2.5% (fetal) to ~19% (adult)
-- Fibroblast and endothelial cell proportions also increase during maturation
+- Fibroblast proportions increase from ~12% (fetal) to ~28% (young) to ~32%
+  (adult)
+- Endothelial cell proportions increase from ~5% (fetal) to ~10% (young) to
+  ~14% (adult)
 - These compositional changes reflect fundamental biological processes in
   cardiac development, consistent with the original study findings
 
@@ -1226,13 +1231,13 @@ are consistent with those reported by Sim et al. (2021):
 - The pseudobulk approach correctly treats samples (not cells) as the unit
   of biological replication, avoiding the pseudoreplication problem
 - Cardiomyocytes show the largest number of differentially expressed genes
-  (~2,200 genes for both Young vs Fetal and Adult vs Fetal comparisons),
+  (~2,200-2,300 genes for both Young vs Fetal and Adult vs Fetal comparisons),
   consistent with major functional maturation involving metabolic reprogramming
   and cell cycle exit reported in the original study
 - Fibroblasts show substantial transcriptional changes (~1,200-1,500 DE genes),
   reflecting their expanding role in extracellular matrix production
-- Endothelial and immune cells show more modest changes (~200-600 DE genes),
-  though still biologically meaningful
+- Endothelial cells show ~570-700 DE genes and immune cells ~320-420 DE genes,
+  representing more modest but still biologically meaningful changes
 - Interestingly, the Adult vs Young comparison yields very few DE genes across
   all cell types, suggesting that most developmental transcriptional changes
   occur during the fetal-to-postnatal transition rather than during later

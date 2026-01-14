@@ -67,6 +67,7 @@ library(tidyr)
 library(patchwork)
 library(RColorBrewer)
 library(pheatmap)
+library(future)
 ```
 
 We load the integrated and clustered Seurat object from Module 2.
@@ -152,9 +153,10 @@ ggplot(comp_data, aes(x = seurat_clusters, y = pct, fill = group)) +
 ```
 
 We observe that some clusters are highly enriched for specific developmental
-stages. For example, clusters 0, 6, 8, 9, 12, 15, 16, and 17 are nearly
-exclusively fetal, while cluster 2 contains predominantly young and adult cells,
-and cluster 18 is exclusively young. This developmental segregation often
+stages. For example, clusters 0, 7, 9, 10, 13, and 14 are nearly exclusively
+fetal (>95%), while cluster 2 contains predominantly young and adult cells.
+Cluster 8 (proliferating cells) is 96% fetal, consistent with the high
+proliferative capacity of fetal cardiac cells. This developmental segregation
 reflects biological differences in cell state, particularly among cardiomyocytes
 where fetal cells have distinct transcriptional profiles from mature cells.
 
@@ -164,6 +166,13 @@ We use `FindAllMarkers()` to identify genes that distinguish each cluster from
 all other cells. This is the foundation of marker-based annotation.
 
 ```{r find-markers}
+# Set memory limits for large datasets
+options(future.globals.maxSize = 8000 * 1024^2)
+
+# Use sequential processing to avoid memory issues
+library(future)
+plan("sequential")
+
 # Set default assay to SCT
 DefaultAssay(seu) <- "SCT"
 
@@ -338,8 +347,8 @@ gene_colors <- celltype_colors[marker_info$celltype]
 marker_info$celltype_f <- factor(marker_info$celltype, levels = names(celltype_colors))
 
 # Order clusters by cell type identity for diagonal pattern
-# Preferred order based on cell type (CM, Fibroblasts, Pericytes, Endothelial, Immune, Neural, etc.)
-preferred_order <- c("0", "6", "8", "17", "7", "9", "2", "11", "15", "1", "12", "3", "5", "13", "18", "4", "14", "16", "10")
+# Preferred order: CMs first (fetal, mature, atrial), then stromal, immune, neural
+preferred_order <- c("0", "7", "10", "14", "9", "2", "4", "8", "13", "1", "3", "15", "5", "11", "6", "16", "12")
 # Filter to only clusters that exist in our data
 actual_clusters <- as.character(unique(seu$seurat_clusters))
 cluster_order <- preferred_order[preferred_order %in% actual_clusters]
@@ -421,8 +430,9 @@ FeaturePlot(seu,
 ```
 
 The cardiomyocyte markers reveal an interesting pattern: MYH6 (atrial isoform)
-is enriched in clusters 2 and 9, while MYH7 (ventricular isoform) is more
-expressed in clusters 0, 11, 15, and 17. This suggests we can distinguish atrial
+is enriched in clusters 2 (mature atrial CM) and 9 (fetal atrial CM), while
+MYH7 (ventricular isoform) is more expressed in clusters 0, 7, 10, and 14
+(fetal ventricular CM populations). This suggests we can distinguish atrial
 from ventricular cardiomyocytes.
 
 ```{r featureplot-stromal, fig.width=12, fig.height=8}
@@ -458,48 +468,44 @@ The table below summarises our annotations with the supporting marker evidence:
 | Cluster | Cell Type | Key Markers | Notes |
 |---------|-----------|-------------|-------|
 | 0 | Fetal CM | TNNT2+, TTN+, MYH7+ | Fetal ventricular cardiomyocytes (100% fetal) |
-| 1 | Fibroblasts | DCN+, COL1A1+ | Present across all developmental stages |
-| 2 | Atrial CM | TTN+, MYH6++ | Mature atrial CM (young/adult enriched) |
-| 3 | Pericytes | KCNJ8+, RGS5+, ABCC9+ | Vascular support cells |
-| 4 | Macrophages | CD163+, F13A1+, PTPRC+ | Tissue-resident macrophages |
-| 5 | Endothelial | PECAM1+, VWF+, CDH5+ | Main endothelial population |
-| 6 | Fetal CM | TNNT2+, TTN+ | Fetal ventricular cardiomyocytes (100% fetal) |
-| 7 | Activated CM | TTN+, TNNT2+, HLA-DR+ | CM with immune activation/MHC class II (90% young) |
-| 8 | Fetal CM | TNNT2+, TTN+ | Fetal ventricular cardiomyocytes (100% fetal) |
-| 9 | Fetal Atrial CM | TTN+, MYH6++ | Fetal atrial cardiomyocytes (100% fetal) |
-| 10 | Proliferating | MKI67+, TOP2A+ | Proliferating cells (fetal enriched) |
-| 11 | Ventricular CM | TNNT2++, TTN++, MYH7++ | High-expressing ventricular CM |
-| 12 | Fetal Fibroblasts | DCN+, COL1A1++ | Fetal fibroblasts (99% fetal) |
-| 13 | Endothelial | PECAM1+ | Endothelial subset |
-| 14 | Immune | PTPRC+, CD3E+ | Mixed immune/lymphocytes |
-| 15 | Ventricular CM | TTN+, MYH7+ | Ventricular CM (fetal enriched) |
-| 16 | Neurons | NRXN1++ | Neural cells (100% fetal) |
-| 17 | Fetal CM | TNNT2+, TTN++, MYH7+ | Fetal ventricular cardiomyocytes (98% fetal) |
-| 18 | Young Endothelial | PECAM1+, VWF++ | Endothelial cells (100% young) |
+| 1 | Fibroblasts | DCN+, COL1A1+, SCARA5+ | Present across all developmental stages |
+| 2 | Atrial CM | TTN+, MYH6++, ADRB1+ | Mature atrial CM (62% young, 37% adult) |
+| 3 | Epicardial | KCNJ8+, EGFLAM+, UPK3B+ | Epicardial/pericyte population |
+| 4 | Activated CM | HLA-DRA+, HLA-DQB1+, TNNT2+ | CM with MHC class II expression (75% young) |
+| 5 | Endothelial | PECAM1+, NOTCH4+, CA4+ | Main endothelial population |
+| 6 | Macrophages | F13A1+, MARCO+, CD68+ | Tissue-resident macrophages |
+| 7 | Fetal CM | TNNT2+, TTN+, CSMD1+ | Fetal cardiomyocytes (100% fetal) |
+| 8 | Proliferating | TOP2A+, MKI67+, KIF18B+ | Proliferating cells (96% fetal) |
+| 9 | Fetal Atrial CM | TTN+, MYH6+, KCNJ3+ | Fetal atrial cardiomyocytes (100% fetal) |
+| 10 | Fetal CM (stress) | TNNT2+, ATF3+, FOSB+ | Stress-response CM (100% fetal) |
+| 11 | Endothelial | PECAM1+, PKHD1L1+, SMOC1+ | Vascular endothelial subset |
+| 12 | Neurons | NRXN1++, XKR4+, TFAP2A+ | Neural cells |
+| 13 | Cycling CM | E2F1+, CDC45+, DTL+ | S-phase cycling CM (99% fetal) |
+| 14 | Fetal Ventricular CM | MYH7++, TNNI1+, DHFR+ | Fetal ventricular CM (98% fetal) |
+| 15 | Mixed/Transitional | XIRP2+, GCLM+ | Mixed epicardial/CM (50% fetal) |
+| 16 | T cells | CD2+, SKAP1+, THEMIS+ | T lymphocytes |
 
 
 ```{r define-annotations}
-# Define cell type annotations for all 19 clusters
+# Define cell type annotations for all 17 clusters
 cluster_annotations <- c(
   "0" = "Fetal CM",
   "1" = "Fibroblasts",
   "2" = "Atrial CM",
-  "3" = "Pericytes",
-  "4" = "Macrophages",
+  "3" = "Epicardial",
+  "4" = "Activated CM",
   "5" = "Endothelial",
-  "6" = "Fetal CM",
-  "7" = "Activated CM",
-  "8" = "Fetal CM",
+  "6" = "Macrophages",
+  "7" = "Fetal CM",
+  "8" = "Proliferating",
   "9" = "Fetal Atrial CM",
-  "10" = "Proliferating",
-  "11" = "Ventricular CM",
-  "12" = "Fetal Fibroblasts",
-  "13" = "Endothelial",
-  "14" = "Immune",
-  "15" = "Ventricular CM",
-  "16" = "Neurons",
-  "17" = "Fetal CM",
-  "18" = "Young Endothelial"
+  "10" = "Fetal CM (stress)",
+  "11" = "Endothelial",
+  "12" = "Neurons",
+  "13" = "Cycling CM",
+  "14" = "Fetal Ventricular CM",
+  "15" = "Mixed/Transitional",
+  "16" = "T cells"
 )
 
 cell_type_df <- data.frame(
@@ -513,22 +519,20 @@ broad_annotations <- c(
   "0" = "Cardiomyocytes",
   "1" = "Fibroblasts",
   "2" = "Cardiomyocytes",
-  "3" = "Pericytes",
-  "4" = "Immune",
+  "3" = "Epicardial",
+  "4" = "Cardiomyocytes",
   "5" = "Endothelial",
-  "6" = "Cardiomyocytes",
+  "6" = "Immune",
   "7" = "Cardiomyocytes",
-  "8" = "Cardiomyocytes",
+  "8" = "Proliferating",
   "9" = "Cardiomyocytes",
-  "10" = "Proliferating",
-  "11" = "Cardiomyocytes",
-  "12" = "Fibroblasts",
-  "13" = "Endothelial",
-  "14" = "Immune",
-  "15" = "Cardiomyocytes",
-  "16" = "Neural",
-  "17" = "Cardiomyocytes",
-  "18" = "Endothelial"
+  "10" = "Cardiomyocytes",
+  "11" = "Endothelial",
+  "12" = "Neural",
+  "13" = "Cardiomyocytes",
+  "14" = "Cardiomyocytes",
+  "15" = "Mixed",
+  "16" = "Immune"
 )
 
 cell_type_broad_df <- data.frame(
@@ -551,22 +555,23 @@ annotation workflow. We show both detailed annotations (distinguishing fetal
 from adult cardiomyocytes, atrial from ventricular) and broad categories.
 
 ```{r umap-annotated, fig.width=14, fig.height=6}
-# Define colours for cell types (14 unique detailed types)
+# Define colours for cell types (13 unique detailed types for 17 clusters)
 celltype_colors <- c(
     "Fetal CM" = "#E64B35",
     "Fibroblasts" = "#00A087",
     "Atrial CM" = "#3C5488",
-    "Ventricular CM" = "#4DBBD5",
     "Activated CM" = "#F4A582",
-    "Pericytes" = "#F39B7F",
+    "Epicardial" = "#F39B7F",
     "Endothelial" = "#8491B4",
     "Macrophages" = "#91D1C2",
     "Fetal Atrial CM" = "#B09C85",
-    "Fetal Fibroblasts" = "#00CED1",
+    "Fetal CM (stress)" = "#FF6B6B",
+    "Fetal Ventricular CM" = "#4DBBD5",
     "Neurons" = "#CD534C",
-    "Immune" = "#868686",
-    "Proliferating" = "#9370DB",
-    "Young Endothelial" = "#7570B3"
+    "Cycling CM" = "#9370DB",
+    "Proliferating" = "#DDA0DD",
+    "Mixed/Transitional" = "#868686",
+    "T cells" = "#7570B3"
 )
 
 # Broad categories
@@ -574,10 +579,11 @@ broad_colors <- c(
     "Cardiomyocytes" = "#E64B35",
     "Fibroblasts" = "#00A087",
     "Endothelial" = "#8491B4",
-    "Pericytes" = "#F39B7F",
+    "Epicardial" = "#F39B7F",
     "Immune" = "#91D1C2",
     "Neural" = "#CD534C",
-    "Proliferating" = "#9370DB"
+    "Proliferating" = "#9370DB",
+    "Mixed" = "#868686"
 )
 
 p1 <- DimPlot(seu, group.by = "cell_type", label = TRUE,
@@ -624,9 +630,10 @@ ggplot(cluster_size_data, aes(x = seurat_clusters, y = n, fill = cell_type)) +
         legend.text = element_text(size = 8))
 ```
 
-Cluster 0 (Fetal CM) is the largest population with ~2,400 cells, consistent
-with fetal samples contributing the most cells. Clusters 16 (Neurons) and 18
-(Young Endothelial) are among the smallest, representing specialised populations.
+Cluster 0 (Fetal CM) is the largest population with ~2,700 cells, consistent
+with fetal samples contributing the most cells. Clusters 12 (Neurons), 15
+(Mixed/Transitional), and 16 (T cells) are among the smallest, representing
+specialised or transitional populations.
 
 ### Developmental Composition per Cluster
 
@@ -653,19 +660,20 @@ ggplot(cluster_dev_comp, aes(x = seurat_clusters, y = pct, fill = group)) +
 
 This figure reveals striking developmental patterns:
 
-- **Fetal-specific clusters** (0, 6, 8, 9, 12, 16, 17): These cardiomyocyte,
-  fibroblast, and neural populations are almost exclusively fetal, reflecting
-  the distinct transcriptional state of immature heart cells
-- **Mature CM clusters** (2, 11, 15): Atrial and ventricular CM clusters contain
-  cells from all stages, with cluster 2 enriched for young and adult cells
-- **Activated CM** (7): Cardiomyocytes with MHC class II expression, predominantly
-  from young samples, potentially reflecting immune activation
-- **Young-enriched endothelial** (18): Endothelial cells exclusively from young
-  samples
-- **Shared populations** (1, 3, 4, 5, 13, 14): Fibroblasts, pericytes, immune,
-  and endothelial cells are present across all developmental stages
-- **Proliferating cells** (10): Nearly exclusively fetal, consistent with the
-  high proliferative capacity of fetal cardiac cells
+- **Fetal-specific clusters** (0, 7, 9, 10, 13, 14): These cardiomyocyte
+  populations are almost exclusively fetal (>95%), reflecting the distinct
+  transcriptional state of immature heart cells
+- **Mature CM cluster** (2): Atrial cardiomyocytes predominantly from young
+  (62%) and adult (37%) hearts
+- **Activated CM** (4): Cardiomyocytes with MHC class II expression, predominantly
+  from young samples (75%), potentially reflecting immune activation
+- **Proliferating cells** (8): Nearly exclusively fetal (96%), consistent with
+  the high proliferative capacity of fetal cardiac cells
+- **Shared populations** (1, 3, 5, 6, 11, 12, 16): Fibroblasts, epicardial,
+  endothelial, immune, and neural cells are present across all developmental
+  stages
+- **Mixed/Transitional** (15): A heterogeneous population containing both
+  epicardial and cardiomyocyte signatures
 
 ### Cell Type Composition by Developmental Stage
 
@@ -713,12 +721,12 @@ DimPlot(seu, group.by = "cell_type", split.by = "group",
 The split view highlights several key observations:
 
 - **Fetal heart** is dominated by Fetal CM populations, with proliferating
-  cells visible (cluster 10)
-- **Young heart** shows a transition state with both mature atrial/ventricular
-  CM and some residual fetal-like populations
-- **Adult heart** shows predominantly mature cardiomyocyte subtypes (Atrial
-  and Ventricular CM)
-- **Stromal and immune populations** are consistent across all stages
+  and cycling cells visible (clusters 8, 13)
+- **Young heart** shows a transition state with mature atrial CM (cluster 2)
+  and activated CM with MHC class II expression (cluster 4)
+- **Adult heart** shows predominantly mature atrial cardiomyocytes (cluster 2)
+- **Stromal and immune populations** (fibroblasts, endothelial, macrophages,
+  T cells) are consistent across all developmental stages
 
 ## Save Annotated Object
 
@@ -740,12 +748,12 @@ message("Saved marker genes to: results/cluster_markers.csv")
 
 In this module, we performed cell type annotation on the clustered data. We:
 
-- Identified marker genes for each cluster using `FindAllMarkers()`
+- Identified marker genes for each of the 17 clusters using `FindAllMarkers()`
 - Compared cluster markers against known heart cell type markers from Sim et al. 2021
 - Visualised marker expression using DotPlots and FeaturePlots
 - Assigned cell type labels based on marker gene expression and developmental
   composition
-- Created both detailed (14 types) and broad (7 types) cell type annotations
+- Created both detailed (13 types) and broad (8 types) cell type annotations
 
 The annotated dataset is now ready for differential expression and composition
 analysis in Module 4.

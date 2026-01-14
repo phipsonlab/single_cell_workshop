@@ -30,7 +30,7 @@ knitr::opts_chunk$set(
 
 ## Introduction
 
-Quality control (QC) is a critical first step in any single cell RNA-sequencing (scRNA-seq) analysis. The goal of QC is to identify and remove low-quality cells that could confound downstream analysis. Poor quality cells can arise from several sources: empty droplets that contain only ambient RNA, dying cells that have compromised membranes, or doublets where two cells are captured in a single droplet.
+Quality control (QC) is a critical first step in any single cell RNA-sequencing (scRNA-seq) analysis. The goal of QC is to identify and remove low-quality cells that could confound downstream analysis. Poor quality cells can arise from several sources: empty droplets that contain only ambient RNA, or dying cells that have compromised membranes.
 
 In this module, we work with single nuclei RNA-sequencing (snRNA-seq) data from human heart tissue. The data comes from a study examining human heart development across three stages: foetal, young, and adult (Sim et al., 2021, *Circulation*). Understanding how the heart changes at the cellular level across development provides insights into cardiac maturation and potential therapeutic targets.
 
@@ -56,17 +56,14 @@ By the end of this module, you will be able to:
 1. Load and explore scRNA-seq count data in R
 2. Understand the structure of a Seurat object
 3. Calculate and interpret per-cell quality control metrics
-4. Identify and remove doublets using computational methods
-5. Apply filtering thresholds to remove low-quality cells
-6. Visualise sample-level relationships using pseudobulk aggregation
+4. Apply filtering thresholds to remove low-quality cells
+5. Visualise sample-level relationships using pseudobulk aggregation
 
 ### Setup: Loading Required Libraries
 
 The first step is to load the R packages we will use throughout this module. Each package provides specific functionality:
 
 - **Seurat**: The primary framework for single cell analysis, providing functions for data manipulation, normalisation, clustering, and visualisation
-- **scDblFinder**: Computational detection of doublets
-- **SingleCellExperiment**: A standardised data structure for single cell data, required by scDblFinder
 - **ggplot2**: Creating publication-quality plots using the grammar of graphics
 - **patchwork**: Combining multiple plots into composite figures
 - **dplyr**: Data manipulation using intuitive verbs (filter, select, mutate, etc.)
@@ -75,8 +72,6 @@ The first step is to load the R packages we will use throughout this module. Eac
 
 ```{r load-libraries}
 library(Seurat)
-library(scDblFinder)
-library(SingleCellExperiment)
 library(ggplot2)
 library(patchwork)
 library(dplyr)
@@ -320,7 +315,7 @@ summary(seu@meta.data[, c("nCount_RNA", "nFeature_RNA", "percent.mt", "percent.r
 
 Let us understand what these metrics tell us:
 
-- **nCount_RNA** (library size): The total number of UMI counts in a cell. Very low values suggest empty droplets; very high values may indicate doublets.
+- **nCount_RNA** (library size): The total number of UMI counts in a cell. Very low values suggest empty droplets; very high values may indicate technical artefacts.
 - **nFeature_RNA** (gene count): The number of genes detected. Correlates with library size but provides additional information about transcriptome complexity.
 - **percent.mt**: Percentage of counts from mitochondrial genes. High values (typically >10-20%) suggest dying cells.
 - **percent.ribo**: Percentage of counts from ribosomal genes. Varies by cell type; highly proliferative cells often have higher ribosomal content.
@@ -398,97 +393,8 @@ p1 + p2
 
 **Interpreting the scatter plots:**
 
-- **Left panel**: The strong positive correlation between nCount_RNA and nFeature_RNA is expected. Cells deviating from this trend (high counts but few genes) might be doublets or have other quality issues.
+- **Left panel**: The strong positive correlation between nCount_RNA and nFeature_RNA is expected. Cells deviating from this trend (high counts but few genes) may have quality issues.
 - **Right panel**: We look for cells with both low library size and high mitochondrial content (upper-left region), which are strong candidates for removal.
-
-## Doublet Detection
-
-### What are Doublets?
-
-Doublets occur when two cells are captured in the same droplet during the 10X Genomics workflow. This happens because cell loading follows a Poisson distribution, and occasionally two cells enter the same droplet by chance. The expected doublet rate increases with the number of cells loaded.
-
-Doublets are problematic because they:
-
-- Appear as artificial "intermediate" cell states
-- Can confuse clustering algorithms
-- May be mistaken for rare transitional cell populations
-- Inflate the apparent number of cells
-
-There are two types of doublets:
-
-1. **Homotypic doublets**: Two cells of the same type captured together. These are difficult to detect computationally because they look like normal cells with higher library size.
-2. **Heterotypic doublets**: Two cells of different types captured together. These are easier to detect because they express markers from both cell types.
-
-### The scDblFinder Algorithm
-
-*scDblFinder* is a computational method that identifies likely doublets by:
-
-1. Creating artificial doublets by combining randomly selected pairs of cells
-2. Training a classifier to distinguish artificial doublets from real cells
-3. Applying the classifier to identify real cells that resemble artificial doublets
-
-We run scDblFinder separately for each sample because doublet rates can vary between samples, and combining cells from different samples could create artificial heterogeneity.
-
-```{r run-scdblfinder}
-# Convert Seurat object to SingleCellExperiment format (required by scDblFinder)
-sce <- as.SingleCellExperiment(seu)
-
-# Run scDblFinder
-# samples = "sample" tells it to process each sample separately
-# Setting a seed ensures reproducibility
-set.seed(42)
-sce <- scDblFinder(sce, samples = "sample")
-
-# Transfer the results back to our Seurat object
-seu$scDblFinder.score <- sce$scDblFinder.score
-seu$scDblFinder.class <- sce$scDblFinder.class
-
-# Clean up
-rm(sce)
-gc()
-```
-
-### Examining Doublet Detection Results
-
-Let us examine how many doublets were detected:
-
-```{r doublet-summary}
-# Overall doublet summary
-table(seu$scDblFinder.class)
-
-# Doublet rate per sample
-seu@meta.data %>%
-  group_by(sample) %>%
-  summarise(
-    total_cells = n(),
-    doublets = sum(scDblFinder.class == "doublet"),
-    doublet_rate_pct = round(doublets / total_cells * 100, 2),
-    .groups = "drop"
-  )
-```
-
-The expected doublet rate depends on the number of cells loaded. As a rule of thumb, loading ~10,000 cells results in approximately 8% doublets. Our observed rates should be in a similar range.
-
-### Visualising Doublet Scores
-
-The doublet score indicates how likely a cell is to be a doublet (higher = more likely). Let us visualise the distribution:
-
-```{r doublet-violin, fig.width=10, fig.height=5}
-VlnPlot(
-    seu,
-    features = "scDblFinder.score",
-    group.by = "sample",
-    pt.size = 0
-) +
-    geom_hline(yintercept = 0.5, linetype = "dashed", colour = "red") +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    labs(
-        title = "Doublet Scores by Sample",
-        subtitle = "Higher scores indicate likely doublets"
-    )
-```
-
-Cells classified as doublets typically have scores above 0.5, though the exact threshold is determined by scDblFinder's internal classifier.
 
 ## Applying Quality Control Filters
 
@@ -507,9 +413,8 @@ max_mt <- 20           # Maximum mitochondrial percentage
 
 - **min_genes = 500**: Cells with fewer genes are likely empty droplets or debris. The 500-gene threshold is commonly used for snRNA-seq.
 - **min_counts = 2500**: Ensures sufficient sequencing depth for reliable downstream analysis.
-- **max_counts = 40000**: Extremely high counts may indicate doublets that escaped detection or technical artefacts.
+- **max_counts = 40000**: Extremely high counts may indicate technical artefacts.
 - **max_mt = 20%**: High mitochondrial content indicates cell stress or death. The 20% threshold is appropriate for snRNA-seq; for scRNA-seq, 10% might be more suitable.
-- **singlets only**: Removes computationally identified doublets.
 
 ### Visualising Thresholds
 
@@ -562,8 +467,7 @@ seu_filtered <- subset(
     subset = nFeature_RNA >= min_genes &
              nCount_RNA >= min_counts &
              nCount_RNA <= max_counts &
-             percent.mt <= max_mt &
-             scDblFinder.class == "singlet"
+             percent.mt <= max_mt
 )
 
 # Record the number of cells after filtering
@@ -909,8 +813,7 @@ human heart tissue. We:
 - Created a Seurat object and annotated genes using org.Hs.eg.db
 - Calculated QC metrics: library size, genes detected, mitochondrial content,
   and ribosomal content
-- Detected doublets using scDblFinder
-- Applied cell filtering thresholds to remove low-quality cells and doublets
+- Applied cell filtering thresholds to remove low-quality cells
 - Applied gene filtering to remove mitochondrial, ribosomal, sex chromosome,
   and unannotated genes
 - Performed pseudobulk aggregation and MDS visualisation

@@ -11,7 +11,7 @@ home:
     using human heart development snRNA-seq data.
   strip_header: true
   sidebar:
-    structure: [links, license, authors]
+    structure: [links, license]
   links:
     - text: Original analysis workflow
       href: https://bphipson.github.io/Human_Development_snRNAseq/

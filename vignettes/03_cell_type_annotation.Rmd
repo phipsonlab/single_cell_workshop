@@ -11,7 +11,7 @@ output:
     number_sections: true
     code_folding: show
     df_print: paged
-vignette: |
+vignette: >
   %\VignetteIndexEntry{Module 3: Cell Type Annotation}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}

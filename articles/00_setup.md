@@ -3,704 +3,272 @@
 ## Introduction
 
 Welcome to the Single Cell RNA-Sequencing Workshop. This document guides
-you through setting up your R environment before the workshop begins.
-Single cell RNA-sequencing (scRNA-seq) has revolutionised our ability to
-study gene expression at the resolution of individual cells, enabling
-the discovery of novel cell types and providing insights into the
-cellular composition of complex tissues.
+you through setting up your R environment **before the workshop
+begins**.
 
-In this workshop, we will analyse single nuclei RNA-sequencing
-(snRNA-seq) data from human heart tissue across three developmental
-stages: foetal, young, and adult. The dataset originates from a study
-examining sex-specific control of human heart maturation (Sim et al.,
-2021, *Circulation*).
+**Please complete this setup at least one day before the workshop.**
+Package installation takes approximately 10-15 minutes, and data
+download takes approximately 5 minutes depending on your internet
+connection.
 
-### Why is Setup Important?
+### What We Will Set Up
 
-Single cell analysis requires several specialised R packages that work
-together. Installing these packages correctly before the workshop
-ensures that:
+1.  **R packages** using `renv` for reproducibility
+2.  **Workshop data** downloaded from Zenodo (~420 MB)
 
-1.  You can follow along with the live coding without delays
-2.  Package dependencies are resolved correctly
-3.  Any installation issues can be addressed before the session
+### System Requirements
 
-**Please complete this setup at least one day before the workshop.** The
-installation process typically takes 15-30 minutes, depending on your
-internet connection and system configuration.
+| Resource   | Minimum   | Recommended |
+|------------|-----------|-------------|
+| RAM        | 8 GB      | 16 GB       |
+| Disk space | 5 GB free | 10 GB free  |
+| R version  | 4.3+      | 4.5+        |
+| RStudio    | 2023.06+  | Latest      |
 
-## System Requirements
-
-Before proceeding, it is important to verify that your system meets the
-minimum requirements for running single cell analyses. Single cell
-datasets can be large, and insufficient resources may cause R to crash
-or analyses to run very slowly.
-
-| Resource   | Minimum   | Recommended | Notes                                           |
-|------------|-----------|-------------|-------------------------------------------------|
-| RAM        | 8 GB      | 16 GB       | More RAM allows analysis of larger datasets     |
-| Disk space | 5 GB free | 10 GB free  | Needed for packages and intermediate files      |
-| R version  | 4.3+      | 4.4+        | Earlier versions may lack required features     |
-| RStudio    | 2023.06+  | Latest      | Provides the integrated development environment |
-
-### Checking Your R Version
-
-To check which version of R you have installed, open RStudio and run the
-following command in the console:
+Check your R version:
 
 ``` r
 R.version.string
 ```
 
-If your R version is older than 4.3, we recommend updating R before
-installing the workshop packages. You can download the latest version
-from [CRAN](https://cran.r-project.org/).
+    ## [1] "R version 4.5.2 (2025-10-31)"
 
-## Required Package Versions
+If your R version is older than 4.3, please update from
+[CRAN](https://cran.r-project.org/) before proceeding.
 
-For reproducibility, this workshop uses specific package versions. The
-code outputs in the tutorial notebooks were generated with these exact
-versions, so using different versions may produce slightly different
-results.
+## Step 1: Clone or Download the Repository
 
-**R Environment:**
+First, obtain the workshop materials:
 
-- R version: **4.5.2**
-- Bioconductor: **3.22**
+**Option A: Clone with Git (Recommended)**
 
-**CRAN Packages:**
-
-| Package      | Version | Purpose                           |
-|--------------|---------|-----------------------------------|
-| Seurat       | 5.4.0   | Core single cell analysis toolkit |
-| SeuratObject | 5.3.0   | Data structures for Seurat        |
-| harmony      | 1.2.4   | Batch effect correction           |
-| ggplot2      | 4.0.1   | Data visualisation                |
-| patchwork    | 1.3.2   | Combining plots                   |
-| dplyr        | 1.1.4   | Data manipulation                 |
-| tidyr        | 1.3.2   | Data tidying                      |
-| RColorBrewer | 1.1.3   | Colour palettes                   |
-| clustree     | 0.5.1   | Cluster resolution visualisation  |
-| pheatmap     | 1.0.13  | Heatmaps                          |
-
-**Bioconductor Packages:**
-
-| Package       | Version | Purpose                        |
-|---------------|---------|--------------------------------|
-| edgeR         | 4.8.2   | Differential expression        |
-| limma         | 3.66.0  | Linear models for DE           |
-| speckle       | 1.10.0  | Cell type composition analysis |
-| org.Hs.eg.db  | 3.22.0  | Human gene annotations         |
-| AnnotationDbi | 1.72.0  | Annotation database interface  |
-
-## Understanding R Package Sources
-
-R packages come from three main sources, each serving different
-purposes:
-
-1.  **CRAN (Comprehensive R Archive Network)**: The official repository
-    for general-purpose R packages. Packages here undergo basic quality
-    checks and are easy to install using
-    [`install.packages()`](https://rdrr.io/r/utils/install.packages.html).
-
-2.  **Bioconductor**: A specialised repository for bioinformatics
-    packages. Bioconductor packages follow stricter development
-    guidelines and are designed to work together for genomic data
-    analysis. We install these using
-    [`BiocManager::install()`](https://bioconductor.github.io/BiocManager/reference/install.html).
-
-3.  **GitHub**: A code hosting platform where developers share packages
-    that may be in active development or not yet submitted to
-    CRAN/Bioconductor. We install these using
-    `remotes::install_github()`.
-
-We install packages in a specific order (CRAN → Bioconductor → GitHub)
-to ensure that dependencies are resolved correctly.
-
-## Automatic Package Installation (Recommended)
-
-The following code chunk automatically detects which packages are
-missing from your system and installs them. This is the easiest way to
-set up your environment - simply run this chunk and wait for it to
-complete.
-
-``` r
-# =============================================================================
-# Automatic Package Installation with Version Pinning
-# This chunk installs packages with specific versions for reproducibility
-# =============================================================================
-
-# --------------------------------------------------------------------------
-# Step 1: Install remotes and BiocManager
-# --------------------------------------------------------------------------
-if (!requireNamespace("remotes", quietly = TRUE)) {
-    install.packages("remotes")
-}
-if (!requireNamespace("BiocManager", quietly = TRUE)) {
-    install.packages("BiocManager")
-}
-
-# Set Bioconductor version to 3.22
-BiocManager::install(version = "3.22", ask = FALSE, update = FALSE)
-
-# --------------------------------------------------------------------------
-# Step 2: Define required packages with versions
-# --------------------------------------------------------------------------
-cran_packages <- list(
-    Seurat = "5.4.0",
-    SeuratObject = "5.3.0",
-    harmony = "1.2.4",
-    ggplot2 = "4.0.1",
-    patchwork = "1.3.2",
-    dplyr = "1.1.4",
-    tidyr = "1.3.2",
-    RColorBrewer = "1.1.3",
-    clustree = "0.5.1",
-    pheatmap = "1.0.13"
-)
-
-bioc_packages <- c(
-    "edgeR",
-    "limma",
-    "org.Hs.eg.db",
-    "AnnotationDbi",
-    "speckle"
-)
-
-# --------------------------------------------------------------------------
-# Step 3: Install Bioconductor packages
-# --------------------------------------------------------------------------
-message("\n=== Installing Bioconductor packages ===\n")
-for (pkg in bioc_packages) {
-    if (!requireNamespace(pkg, quietly = TRUE)) {
-        message("Installing ", pkg, "...")
-        BiocManager::install(pkg, ask = FALSE, update = FALSE)
-    } else {
-        message(pkg, " already installed")
-    }
-}
-
-# --------------------------------------------------------------------------
-# Step 4: Install CRAN packages with specific versions
-# --------------------------------------------------------------------------
-message("\n=== Installing CRAN packages with pinned versions ===\n")
-for (pkg in names(cran_packages)) {
-    version <- cran_packages[[pkg]]
-    current <- tryCatch(
-        as.character(packageVersion(pkg)),
-        error = function(e) ""
-    )
-    if (current != version) {
-        message("Installing ", pkg, " version ", version, "...")
-        remotes::install_version(pkg, version = version,
-                                 repos = "https://cloud.r-project.org",
-                                 upgrade = "never", quiet = TRUE)
-    } else {
-        message(pkg, " ", version, " already installed")
-    }
-}
-
-# --------------------------------------------------------------------------
-# Final verification
-# --------------------------------------------------------------------------
-message("\n", paste(rep("=", 50), collapse = ""))
-all_packages <- c(names(cran_packages), bioc_packages)
-final_check <- sapply(all_packages, requireNamespace, quietly = TRUE)
-missing_final <- names(final_check)[!final_check]
-
-if (length(missing_final) == 0) {
-    message("SUCCESS! All packages are installed.")
-    message("Your environment is ready for the workshop!")
-} else {
-    message("WARNING: The following packages could not be installed:")
-    for (pkg in missing_final) {
-        message("  - ", pkg)
-    }
-    message("\nPlease see the Troubleshooting section below.")
-}
-message(paste(rep("=", 50), collapse = ""))
+``` bash
+git clone https://github.com/phipsonlab/single_cell_workshop.git
+cd single_cell_workshop
 ```
 
-If you prefer to install packages manually, or if the automatic
-installation fails for some packages, follow the step-by-step
-instructions below.
+**Option B: Download ZIP**
 
-------------------------------------------------------------------------
+1.  Visit <https://github.com/phipsonlab/single_cell_workshop>
+2.  Click the green “Code” button
+3.  Select “Download ZIP”
+4.  Extract the ZIP file
 
-## Manual Package Installation
+Then open `single_cell_workshop.Rproj` in RStudio.
 
-### Step 1: Install BiocManager
+## Step 2: Install Packages with renv
 
-*BiocManager* is a package that manages installation of Bioconductor
-packages. It ensures that you get compatible versions of all
-Bioconductor packages. If you do not already have BiocManager installed,
-run the following code:
+This workshop uses **renv** for reproducible package management. All
+package versions are locked in `renv.lock`, ensuring everyone has
+identical environments.
+
+When you open the project in RStudio, renv should automatically
+bootstrap itself. If prompted to install renv, select “Yes”.
+
+Then run:
 
 ``` r
-# Check if BiocManager is installed; if not, install it
-if (!require("BiocManager", quietly = TRUE))
-    install.packages("BiocManager")
+# Install all packages with exact versions from renv.lock
+# This may take 10-15 minutes on first run
+renv::restore()
 ```
 
-The [`require()`](https://rdrr.io/r/base/library.html) function attempts
-to load a package and returns `TRUE` if successful, `FALSE` otherwise.
-The `quietly = TRUE` argument suppresses messages if the package is not
-found.
+When prompted “Do you want to proceed?”, type `y` and press Enter.
 
-### Step 2: Install Bioconductor Packages
+### What renv Does
 
-The following Bioconductor packages provide essential functionality for
-our single cell analysis:
+- Installs packages to a project-specific library (not your global R
+  library)
+- Uses exact package versions from `renv.lock`
+- Ensures reproducibility across different machines
 
-| Package         | Purpose                                                         |
-|-----------------|-----------------------------------------------------------------|
-| `edgeR`         | Differential expression analysis using negative binomial models |
-| `limma`         | Linear models for differential expression, works with edgeR     |
-| `org.Hs.eg.db`  | Human gene annotation database                                  |
-| `AnnotationDbi` | Interface to annotation databases                               |
-| `speckle`       | Statistical methods for cell type composition analysis          |
+### Key Packages Installed
 
-``` r
-BiocManager::install(c(
-    "edgeR",
-    "limma",
-    "org.Hs.eg.db",
-    "AnnotationDbi",
-    "speckle"
-))
-```
+| Package   | Version | Purpose                     |
+|-----------|---------|-----------------------------|
+| Seurat    | 5.4.0   | Core single cell analysis   |
+| harmony   | 1.2.4   | Batch correction            |
+| glmGamPoi | 1.22.0  | Fast SCTransform (critical) |
+| edgeR     | 4.8.2   | Differential expression     |
+| limma     | 3.66.0  | Linear models               |
+| speckle   | 1.10.0  | Composition analysis        |
 
-When prompted “Update all/some/none? \[a/s/n\]:”, you can type `a` to
-update all packages, or `n` if you prefer not to update existing
-packages.
+## Step 3: Verify Package Installation
 
-### Step 3: Install CRAN Packages
-
-The following CRAN packages form the core of our analysis toolkit:
-
-| Package        | Purpose                                                                          |
-|----------------|----------------------------------------------------------------------------------|
-| `Seurat`       | Comprehensive toolkit for single cell analysis (clustering, visualisation, etc.) |
-| `harmony`      | Batch effect correction and data integration                                     |
-| `ggplot2`      | Grammar of graphics for creating publication-quality plots                       |
-| `patchwork`    | Combining multiple ggplot2 plots into one figure                                 |
-| `dplyr`        | Data manipulation (filtering, summarising, etc.)                                 |
-| `tidyr`        | Data tidying (reshaping data frames)                                             |
-| `RColorBrewer` | Colour palettes for visualisation                                                |
-| `clustree`     | Visualising how clusters change across different resolutions                     |
-| `pheatmap`     | Creating heatmaps with clustering                                                |
-| `remotes`      | Installing packages from GitHub (useful for development versions)                |
+After
+[`renv::restore()`](https://rstudio.github.io/renv/reference/restore.html)
+completes, verify that all critical packages are installed:
 
 ``` r
-install.packages(c(
-    "Seurat",
-    "harmony",
-    "ggplot2",
-    "patchwork",
-    "dplyr",
-    "tidyr",
-    "RColorBrewer",
-    "clustree",
-    "pheatmap",
-    "remotes"
-))
-```
+packages <- c("Seurat", "harmony", "glmGamPoi", "edgeR", "limma", "speckle")
 
-## Verify Installation
-
-Once all packages are installed, it is essential to verify that they
-load correctly. A package may fail to install silently, or there may be
-version conflicts that prevent loading. The following code attempts to
-load each required package and reports any failures:
-
-``` r
-# List of required packages
-packages <- c(
-    "Seurat",
-    "harmony",
-    "edgeR",
-    "limma",
-    "speckle",
-    "org.Hs.eg.db",
-    "ggplot2",
-    "patchwork",
-    "dplyr",
-    "tidyr",
-    "pheatmap",
-    "clustree"
-)
-
-# Check which packages can be loaded
-check_results <- sapply(packages, function(pkg) {
-    requireNamespace(pkg, quietly = TRUE)
-})
+check <- sapply(packages, requireNamespace, quietly = TRUE)
 ```
 
     ## Warning: replacing previous import 'S4Arrays::makeNindexFromArrayViewport' by
     ## 'DelayedArray::makeNindexFromArrayViewport' when loading 'SummarizedExperiment'
 
-    ## 
-
 ``` r
-# Report results
-missing <- names(check_results)[!check_results]
+missing <- names(check)[!check]
 
-if (length(missing) > 0) {
-    message("=== WARNING ===")
-    message("The following packages failed to install or load:")
-    for (pkg in missing) {
-        message("  - ", pkg)
-    }
-    message("\nPlease try reinstalling these packages before the workshop.")
+if (length(missing) == 0) {
+    message("All critical packages installed successfully!")
 } else {
-    message("=== SUCCESS ===")
-    message("All required packages are installed and can be loaded.")
-    message("Your environment is ready for the workshop!")
+    message("WARNING: Missing packages: ", paste(missing, collapse = ", "))
+    message("Try running renv::restore() again.")
 }
 ```
 
-    ## === SUCCESS ===
+    ## All critical packages installed successfully!
 
-    ## All required packages are installed and can be loaded.
+## Step 4: Download Workshop Data
 
-    ## Your environment is ready for the workshop!
-
-### Check Package Versions
-
-Different versions of packages may behave differently. Here, we verify
-that your installed package versions match the expected versions used in
-the workshop materials. The workshop was developed and tested with these
-specific versions:
+The workshop data files are hosted on Zenodo. Run the following code to
+download them:
 
 ``` r
-# Expected versions for reproducibility
-expected_versions <- list(
-    # CRAN packages
-    Seurat = "5.4.0",
-    SeuratObject = "5.3.0",
-    harmony = "1.2.4",
-    ggplot2 = "4.0.1",
-    patchwork = "1.3.2",
-    dplyr = "1.1.4",
-    tidyr = "1.3.2",
-    # Bioconductor packages
-    edgeR = "4.8.2",
-    limma = "3.66.0",
-    speckle = "1.10.0"
-)
-
-cat("Package Version Check\n")
-```
-
-    ## Package Version Check
-
-``` r
-cat(paste(rep("=", 55), collapse = ""), "\n")
-```
-
-    ## =======================================================
-
-``` r
-cat(sprintf("%-20s %-12s %-12s %s\n", "Package", "Expected", "Installed", "Status"))
-```
-
-    ## Package              Expected     Installed    Status
-
-``` r
-cat(paste(rep("-", 55), collapse = ""), "\n")
-```
-
-    ## -------------------------------------------------------
-
-``` r
-all_match <- TRUE
-for (pkg in names(expected_versions)) {
-    expected <- expected_versions[[pkg]]
-    if (requireNamespace(pkg, quietly = TRUE)) {
-        actual <- as.character(packageVersion(pkg))
-        status <- if (actual == expected) "OK" else "MISMATCH"
-        if (actual != expected) all_match <- FALSE
-    } else {
-        actual <- "NOT INSTALLED"
-        status <- "MISSING"
-        all_match <- FALSE
-    }
-    cat(sprintf("%-20s %-12s %-12s %s\n", pkg, expected, actual, status))
-}
-```
-
-    ## Seurat               5.4.0        5.4.0        OK
-    ## SeuratObject         5.3.0        5.3.0        OK
-    ## harmony              1.2.4        1.2.4        OK
-    ## ggplot2              4.0.1        4.0.1        OK
-    ## patchwork            1.3.2        1.3.2        OK
-    ## dplyr                1.1.4        1.1.4        OK
-    ## tidyr                1.3.2        1.3.2        OK
-    ## edgeR                4.8.2        4.8.2        OK
-    ## limma                3.66.0       3.66.0       OK
-    ## speckle              1.10.0       1.10.0       OK
-
-``` r
-cat(paste(rep("=", 55), collapse = ""), "\n")
-```
-
-    ## =======================================================
-
-``` r
-if (all_match) {
-    cat("\nAll package versions match! Your environment is correctly configured.\n")
-} else {
-    cat("\nWARNING: Some package versions differ from expected.\n")
-    cat("The workshop may still work, but outputs might differ slightly.\n")
-    cat("Consider re-running the automatic installation to get exact versions.\n")
-}
-```
-
-    ## 
-    ## All package versions match! Your environment is correctly configured.
-
-## Download Workshop Data
-
-The workshop uses single-nucleus RNA-seq data from human heart tissue.
-The data files are hosted on Zenodo and must be downloaded before
-running the workshop modules.
-
-### About the Dataset
-
-The dataset contains ~43,000 nuclei (after quality control filtering)
-from 9 human heart samples across three developmental stages:
-
-| Group  | Samples | Age Range             |
-|--------|---------|-----------------------|
-| Foetal | 3       | 19-20 weeks gestation |
-| Young  | 3       | 4-14 years            |
-| Adult  | 3       | 35-42 years           |
-
-Data source: Sim et al. (2021) “Sex-Specific Control of Human Heart
-Maturation by the Progesterone Receptor”, *Circulation*. DOI:
-[10.1161/CIRCULATIONAHA.120.051921](https://doi.org/10.1161/CIRCULATIONAHA.120.051921)
-
-### Download the Data
-
-Run the following code to download the workshop data files from Zenodo.
-This will create a `data/` folder in your working directory containing
-the required files. **Note:** The total download size is approximately
-200-300 MB. Download time depends on your internet connection.
-
-``` r
-# Download workshop data from Zenodo
-# This will create a data/ folder with the required files
-
-# Zenodo record ID
-zenodo_record <- "18237749"
-base_url <- paste0("https://zenodo.org/records/", zenodo_record, "/files/")
-
-# Files to download
+# Zenodo record for workshop data
+zenodo_url <- "https://zenodo.org/records/18237749/files/"
 files <- c("heart-counts.Rds", "cellinfo_updated.Rds")
 
-# Create data directory
-if (!dir.exists("data")) {
-    dir.create("data")
-    message("Created data/ directory")
-}
+# Create data directory if needed
+if (!dir.exists("data")) dir.create("data")
 
 # Download each file
 for (f in files) {
-    dest_file <- file.path("data", f)
-    if (file.exists(dest_file)) {
-        message(f, " already exists, skipping...")
+    dest <- file.path("data", f)
+    if (file.exists(dest)) {
+        message(f, " already exists, skipping")
         next
     }
     message("Downloading ", f, "...")
     download.file(
-        url = paste0(base_url, f, "?download=1"),
-        destfile = dest_file,
+        url = paste0(zenodo_url, f, "?download=1"),
+        destfile = dest,
         mode = "wb"
     )
-    message("  Done!")
 }
-
-message("\nDownload complete! Data saved to data/ folder.")
+message("Download complete!")
 ```
 
-## Test Data Loading
+**Note:** Total download size is approximately 420 MB.
 
-As a final verification step, we check that the workshop data files are
-accessible and can be loaded correctly. The workshop uses two data
-files:
+## Step 5: Final Verification
 
-1.  **heart-counts.Rds**: A sparse matrix containing gene expression
-    counts (genes × cells)
-2.  **cellinfo_updated.Rds**: A data frame containing metadata for each
-    cell (sample, group, etc.)
+Run this final check to ensure everything is ready:
 
 ``` r
-# Set path to data directory (relative to tutorials folder)
-data_dir <- "../data"
-
-# Check that data files exist
-counts_file <- file.path(data_dir, "heart-counts.Rds")
-cellinfo_file <- file.path(data_dir, "cellinfo_updated.Rds")
-
-cat("Checking for workshop data files...\n")
+cat("=== Workshop Setup Verification ===\n\n")
 ```
 
-    ## Checking for workshop data files...
+    ## === Workshop Setup Verification ===
 
 ``` r
-cat(paste(rep("-", 40), collapse = ""), "\n")
+# Check R version
+cat("R Version:", R.version.string, "\n\n")
 ```
 
-    ## ----------------------------------------
+    ## R Version: R version 4.5.2 (2025-10-31)
 
 ``` r
-if (file.exists(counts_file)) {
-    cat("  heart-counts.Rds    : FOUND\n")
+# Check critical packages
+cat("Package Status:\n")
+```
 
-    # Load and report dimensions
-    counts <- readRDS(counts_file)
-    cat(sprintf("    - Dimensions: %d genes x %d cells\n", nrow(counts), ncol(counts)))
-    rm(counts)  # Free memory immediately
+    ## Package Status:
 
-} else {
-    cat("  heart-counts.Rds    : NOT FOUND\n")
+``` r
+packages <- c("Seurat", "harmony", "glmGamPoi", "edgeR", "limma", "speckle")
+for (pkg in packages) {
+    status <- if (requireNamespace(pkg, quietly = TRUE)) "OK" else "MISSING"
+    cat(sprintf("  %-12s %s\n", pkg, status))
 }
 ```
 
-    ##   heart-counts.Rds    : FOUND
-    ##     - Dimensions: 33939 genes x 54140 cells
+    ##   Seurat       OK
+    ##   harmony      OK
+    ##   glmGamPoi    OK
+    ##   edgeR        OK
+    ##   limma        OK
+    ##   speckle      OK
 
 ``` r
-if (file.exists(cellinfo_file)) {
-    cat("  cellinfo_updated.Rds: FOUND\n")
-} else {
-    cat("  cellinfo_updated.Rds: NOT FOUND\n")
-}
-```
-
-    ##   cellinfo_updated.Rds: FOUND
-
-``` r
-if (file.exists(counts_file) && file.exists(cellinfo_file)) {
-    cat("\n=== Data files are ready! ===\n")
-} else {
-    cat("\n=== WARNING: Some data files are missing ===\n")
-    cat("Please check the data directory path.\n")
-}
+# Check data files
+cat("\nData Files:\n")
 ```
 
     ## 
-    ## === Data files are ready! ===
-
-## Troubleshooting Common Issues
-
-If you encounter problems during installation, this section provides
-solutions to the most common issues.
-
-### Issue 1: “Package ‘X’ is not available for R version Y.Z”
-
-**Cause**: Your R version is too old for the package.
-
-**Solution**: Update R to version 4.3 or later from
-[CRAN](https://cran.r-project.org/), then restart RStudio and retry the
-installation.
-
-### Issue 2: “There is no package called ‘X’”
-
-**Cause**: The package failed to install, possibly due to missing
-dependencies or network issues.
-
-**Solution**: Try installing the specific package again:
+    ## Data Files:
 
 ``` r
-# For CRAN packages:
-install.packages("package_name")
-
-# For Bioconductor packages:
-BiocManager::install("package_name")
-
-# For GitHub packages:
-remotes::install_github("username/package_name")
+data_dir <- if (dir.exists("data")) "data" else "../data"
+for (f in c("heart-counts.Rds", "cellinfo_updated.Rds")) {
+    path <- file.path(data_dir, f)
+    status <- if (file.exists(path)) "FOUND" else "NOT FOUND"
+    cat(sprintf("  %-25s %s\n", f, status))
+}
 ```
 
-### Issue 3: Compilation Errors on macOS
+    ##   heart-counts.Rds          FOUND
+    ##   cellinfo_updated.Rds      FOUND
 
-**Cause**: Missing Xcode Command Line Tools, which provide compilers
-needed to build some packages.
+``` r
+cat("\n================================\n")
+```
 
-**Solution**: Open Terminal (not R) and run:
+    ## 
+    ## ================================
+
+## Troubleshooting
+
+### renv::restore() fails
+
+If
+[`renv::restore()`](https://rstudio.github.io/renv/reference/restore.html)
+encounters errors:
+
+1.  **Restart R** (Session \> Restart R)
+2.  Run
+    [`renv::restore()`](https://rstudio.github.io/renv/reference/restore.html)
+    again
+3.  If specific packages fail, try installing them manually then run
+    [`renv::restore()`](https://rstudio.github.io/renv/reference/restore.html)
+
+### Memory errors
+
+If you encounter “cannot allocate vector” errors:
+
+1.  Close other applications
+2.  Restart R
+3.  Try again
+
+### macOS compilation errors
+
+Install Xcode Command Line Tools:
 
 ``` bash
 xcode-select --install
 ```
 
-Follow the prompts to install, then restart RStudio and retry package
-installation.
+### Package conflicts
 
-### Issue 4: Memory Errors (“cannot allocate vector of size…”)
-
-**Cause**: Insufficient RAM available.
-
-**Solution**: 1. Close other applications to free memory 2. Restart R
-(Session → Restart R in RStudio) 3. Try installing packages one at a
-time rather than all at once
-
-### Issue 5: Permission Errors on Windows
-
-**Cause**: R does not have permission to write to the package library.
-
-**Solution**: Run RStudio as Administrator (right-click RStudio icon →
-“Run as administrator”).
-
-### Issue 6: Package Loading Conflicts
-
-**Cause**: Multiple versions of a package are installed, or packages
-have conflicting dependencies.
-
-**Solution**: Remove and reinstall the problematic package:
+If you have existing packages causing conflicts:
 
 ``` r
-# Remove the package
-remove.packages("package_name")
-
-# Restart R, then reinstall
-install.packages("package_name")
+# Use a clean renv library
+renv::rebuild()
 ```
 
 ## Getting Help
 
-If you encounter issues that you cannot resolve using this
-troubleshooting guide, please:
+If you cannot resolve setup issues:
 
-1.  **Note the exact error message** - Copy the complete error text
-2.  **Record your R version** - Run `R.version.string`
-3.  **List installed package versions** - Run
-    [`sessionInfo()`](https://rdrr.io/r/utils/sessionInfo.html)
-4.  **Contact the workshop organisers** before the session
-
-Having setup issues resolved before the workshop begins ensures that
-everyone can participate fully in the hands-on exercises.
-
-## What to Expect in the Workshop
-
-Once your environment is set up, you will be ready for the workshop,
-which covers:
-
-1.  **Module 1: Quality Control** - Loading data, calculating QC
-    metrics, filtering low-quality cells
-2.  **Module 2: Integration & Clustering** - Normalisation, batch
-    correction, dimensionality reduction, and clustering
-3.  **Module 3: Cell Type Annotation** - Identifying cell types using
-    marker genes
-4.  **Module 4: Differential Expression** - Finding genes and cell types
-    that differ between conditions
-
-We look forward to seeing you at the workshop!
+1.  Note the exact error message
+2.  Run [`sessionInfo()`](https://rdrr.io/r/utils/sessionInfo.html) and
+    save the output
+3.  Contact the workshop organisers before the session
 
 ## Session Information
-
-The output below records your R environment configuration, which is
-useful for reproducibility and troubleshooting:
 
 ``` r
 sessionInfo()
@@ -727,84 +295,75 @@ sessionInfo()
     ## [1] stats     graphics  grDevices datasets  utils     methods   base     
     ## 
     ## loaded via a namespace (and not attached):
-    ##   [1] RcppAnnoy_0.0.23            splines_4.5.2              
-    ##   [3] later_1.4.5                 tibble_3.3.1               
-    ##   [5] polyclip_1.10-7             fastDummies_1.7.5          
-    ##   [7] lifecycle_1.0.5             edgeR_4.8.2                
-    ##   [9] globals_0.18.0              lattice_0.22-7             
-    ##  [11] MASS_7.3-65                 magrittr_2.0.4             
-    ##  [13] limma_3.66.0                plotly_4.11.0              
-    ##  [15] sass_0.4.10                 rmarkdown_2.30             
-    ##  [17] jquerylib_0.1.4             yaml_2.3.12                
-    ##  [19] httpuv_1.6.16               otel_0.2.0                 
-    ##  [21] Seurat_5.4.0                sctransform_0.4.3          
-    ##  [23] spam_2.11-3                 sp_2.2-0                   
-    ##  [25] spatstat.sparse_3.1-0       reticulate_1.44.1          
-    ##  [27] cowplot_1.2.0               pbapply_1.7-4              
-    ##  [29] DBI_1.2.3                   RColorBrewer_1.1-3         
-    ##  [31] abind_1.4-8                 Rtsne_0.17                 
-    ##  [33] GenomicRanges_1.62.1        purrr_1.2.1                
-    ##  [35] ggraph_2.2.2                BiocGenerics_0.56.0        
-    ##  [37] tweenr_2.0.3                IRanges_2.44.0             
-    ##  [39] S4Vectors_0.48.0            ggrepel_0.9.6              
-    ##  [41] speckle_1.10.0              irlba_2.3.5.1              
-    ##  [43] listenv_0.10.0              spatstat.utils_3.2-1       
-    ##  [45] pheatmap_1.0.13             goftest_1.2-3              
-    ##  [47] RSpectra_0.16-2             spatstat.random_3.4-3      
-    ##  [49] fitdistrplus_1.2-4          parallelly_1.46.1          
-    ##  [51] pkgdown_2.2.0               codetools_0.2-20           
-    ##  [53] DelayedArray_0.36.0         ggforce_0.5.0              
-    ##  [55] tidyselect_1.2.1            farver_2.1.2               
-    ##  [57] viridis_0.6.5               matrixStats_1.5.0          
-    ##  [59] stats4_4.5.2                spatstat.explore_3.6-0     
-    ##  [61] Seqinfo_1.0.0               jsonlite_2.0.0             
-    ##  [63] tidygraph_1.3.1             progressr_0.18.0           
-    ##  [65] ggridges_0.5.7              survival_3.8-3             
-    ##  [67] systemfonts_1.3.1           tools_4.5.2                
-    ##  [69] ragg_1.5.0                  ica_1.0-3                  
-    ##  [71] Rcpp_1.1.1                  glue_1.8.0                 
-    ##  [73] gridExtra_2.3               SparseArray_1.10.8         
-    ##  [75] xfun_0.55                   MatrixGenerics_1.22.0      
-    ##  [77] dplyr_1.1.4                 withr_3.0.2                
-    ##  [79] BiocManager_1.30.27         fastmap_1.2.0              
-    ##  [81] clustree_0.5.1              digest_0.6.39              
-    ##  [83] R6_2.6.1                    mime_0.13                  
-    ##  [85] textshaping_1.0.4           scattermore_1.2            
-    ##  [87] tensor_1.5.1                spatstat.data_3.1-9        
-    ##  [89] RSQLite_2.4.5               tidyr_1.3.2                
-    ##  [91] generics_0.1.4              renv_1.1.5                 
-    ##  [93] data.table_1.18.0           graphlayouts_1.2.2         
-    ##  [95] httr_1.4.7                  htmlwidgets_1.6.4          
-    ##  [97] S4Arrays_1.10.1             uwot_0.2.4                 
-    ##  [99] pkgconfig_2.0.3             gtable_0.3.6               
-    ## [101] blob_1.2.4                  lmtest_0.9-40              
-    ## [103] S7_0.2.1                    SingleCellExperiment_1.32.0
-    ## [105] XVector_0.50.0              htmltools_0.5.9            
-    ## [107] dotCall64_1.2               SeuratObject_5.3.0         
-    ## [109] scales_1.4.0                Biobase_2.70.0             
-    ## [111] png_0.1-8                   harmony_1.2.4              
-    ## [113] spatstat.univar_3.1-5       knitr_1.51                 
-    ## [115] reshape2_1.4.5              nlme_3.1-168               
-    ## [117] org.Hs.eg.db_3.22.0         cachem_1.1.0               
-    ## [119] zoo_1.8-15                  stringr_1.6.0              
-    ## [121] KernSmooth_2.23-26          parallel_4.5.2             
-    ## [123] miniUI_0.1.2                AnnotationDbi_1.72.0       
-    ## [125] desc_1.4.3                  pillar_1.11.1              
-    ## [127] grid_4.5.2                  vctrs_0.6.5                
-    ## [129] RANN_2.6.2                  promises_1.5.0             
-    ## [131] xtable_1.8-4                cluster_2.1.8.1            
-    ## [133] evaluate_1.0.5              cli_3.6.5                  
-    ## [135] locfit_1.5-9.12             compiler_4.5.2             
-    ## [137] rlang_1.1.7                 crayon_1.5.3               
-    ## [139] future.apply_1.20.1         plyr_1.8.9                 
-    ## [141] fs_1.6.6                    stringi_1.8.7              
-    ## [143] viridisLite_0.4.2           deldir_2.0-4               
-    ## [145] Biostrings_2.78.0           lazyeval_0.2.2             
-    ## [147] spatstat.geom_3.6-1         Matrix_1.7-4               
-    ## [149] RcppHNSW_0.6.0              patchwork_1.3.2            
-    ## [151] bit64_4.6.0-1               future_1.68.0              
-    ## [153] ggplot2_4.0.1               KEGGREST_1.50.0            
-    ## [155] statmod_1.5.1               shiny_1.12.1               
-    ## [157] SummarizedExperiment_1.40.0 ROCR_1.0-11                
-    ## [159] igraph_2.2.1                memoise_2.0.1              
-    ## [161] bslib_0.9.0                 bit_4.6.0
+    ##   [1] RColorBrewer_1.1-3          jsonlite_2.0.0             
+    ##   [3] magrittr_2.0.4              spatstat.utils_3.2-1       
+    ##   [5] farver_2.1.2                rmarkdown_2.30             
+    ##   [7] fs_1.6.6                    ragg_1.5.0                 
+    ##   [9] vctrs_0.6.5                 ROCR_1.0-11                
+    ##  [11] spatstat.explore_3.6-0      S4Arrays_1.10.1            
+    ##  [13] htmltools_0.5.9             SparseArray_1.10.8         
+    ##  [15] sass_0.4.10                 sctransform_0.4.3          
+    ##  [17] parallelly_1.46.1           KernSmooth_2.23-26         
+    ##  [19] bslib_0.9.0                 htmlwidgets_1.6.4          
+    ##  [21] desc_1.4.3                  ica_1.0-3                  
+    ##  [23] plyr_1.8.9                  speckle_1.10.0             
+    ##  [25] plotly_4.11.0               zoo_1.8-15                 
+    ##  [27] cachem_1.1.0                igraph_2.2.1               
+    ##  [29] mime_0.13                   lifecycle_1.0.5            
+    ##  [31] pkgconfig_2.0.3             Matrix_1.7-4               
+    ##  [33] R6_2.6.1                    fastmap_1.2.0              
+    ##  [35] MatrixGenerics_1.22.0       fitdistrplus_1.2-4         
+    ##  [37] future_1.68.0               shiny_1.12.1               
+    ##  [39] digest_0.6.39               patchwork_1.3.2            
+    ##  [41] S4Vectors_0.48.0            Seurat_5.4.0               
+    ##  [43] tensor_1.5.1                RSpectra_0.16-2            
+    ##  [45] irlba_2.3.5.1               GenomicRanges_1.62.1       
+    ##  [47] textshaping_1.0.4           beachmat_2.26.0            
+    ##  [49] progressr_0.18.0            spatstat.sparse_3.1-0      
+    ##  [51] httr_1.4.7                  polyclip_1.10-7            
+    ##  [53] abind_1.4-8                 compiler_4.5.2             
+    ##  [55] S7_0.2.1                    fastDummies_1.7.5          
+    ##  [57] MASS_7.3-65                 DelayedArray_0.36.0        
+    ##  [59] tools_4.5.2                 lmtest_0.9-40              
+    ##  [61] otel_0.2.0                  httpuv_1.6.16              
+    ##  [63] future.apply_1.20.1         goftest_1.2-3              
+    ##  [65] glmGamPoi_1.22.0            glue_1.8.0                 
+    ##  [67] nlme_3.1-168                promises_1.5.0             
+    ##  [69] grid_4.5.2                  Rtsne_0.17                 
+    ##  [71] cluster_2.1.8.1             reshape2_1.4.5             
+    ##  [73] generics_0.1.4              gtable_0.3.6               
+    ##  [75] spatstat.data_3.1-9         tidyr_1.3.2                
+    ##  [77] data.table_1.18.0           XVector_0.50.0             
+    ##  [79] sp_2.2-0                    BiocGenerics_0.56.0        
+    ##  [81] spatstat.geom_3.6-1         RcppAnnoy_0.0.23           
+    ##  [83] ggrepel_0.9.6               RANN_2.6.2                 
+    ##  [85] pillar_1.11.1               stringr_1.6.0              
+    ##  [87] limma_3.66.0                spam_2.11-3                
+    ##  [89] RcppHNSW_0.6.0              later_1.4.5                
+    ##  [91] splines_4.5.2               dplyr_1.1.4                
+    ##  [93] lattice_0.22-7              renv_1.1.5                 
+    ##  [95] survival_3.8-3              deldir_2.0-4               
+    ##  [97] tidyselect_1.2.1            SingleCellExperiment_1.32.0
+    ##  [99] locfit_1.5-9.12             miniUI_0.1.2               
+    ## [101] pbapply_1.7-4               knitr_1.51                 
+    ## [103] gridExtra_2.3               Seqinfo_1.0.0              
+    ## [105] IRanges_2.44.0              edgeR_4.8.2                
+    ## [107] SummarizedExperiment_1.40.0 scattermore_1.2            
+    ## [109] stats4_4.5.2                xfun_0.55                  
+    ## [111] Biobase_2.70.0              statmod_1.5.1              
+    ## [113] matrixStats_1.5.0           stringi_1.8.7              
+    ## [115] lazyeval_0.2.2              yaml_2.3.12                
+    ## [117] evaluate_1.0.5              codetools_0.2-20           
+    ## [119] tibble_3.3.1                BiocManager_1.30.27        
+    ## [121] cli_3.6.5                   uwot_0.2.4                 
+    ## [123] xtable_1.8-4                reticulate_1.44.1          
+    ## [125] systemfonts_1.3.1           jquerylib_0.1.4            
+    ## [127] harmony_1.2.4               Rcpp_1.1.1                 
+    ## [129] globals_0.18.0              spatstat.random_3.4-3      
+    ## [131] png_0.1-8                   spatstat.univar_3.1-5      
+    ## [133] parallel_4.5.2              pkgdown_2.2.0              
+    ## [135] ggplot2_4.0.1               dotCall64_1.2              
+    ## [137] listenv_0.10.0              viridisLite_0.4.2          
+    ## [139] scales_1.4.0                ggridges_0.5.7             
+    ## [141] SeuratObject_5.3.0          purrr_1.2.1                
+    ## [143] rlang_1.1.7                 cowplot_1.2.0

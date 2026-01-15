@@ -38,7 +38,9 @@ detailed explanations.
 | R version  | 4.3+      | 4.5.2       |
 | RStudio    | 2023.06+  | Latest      |
 
-## Workshop Outline (~3 hours)
+## Workshop Outline
+
+### Session 1: Core Single Cell Analysis (Morning, ~3 hours)
 
 | Module       | Topic                       | Duration |
 |--------------|-----------------------------|----------|
@@ -49,6 +51,11 @@ detailed explanations.
 | **Module 3** | Cell Type Annotation        | 20 min   |
 | **Module 4** | Differential Expression     | 55 min   |
 |              | Wrap-up & Q&A               | 10 min   |
+
+### Session 2: Downstream Analysis (Afternoon, ~3 hours)
+
+*Coming soon* - Additional downstream analyses using the same heart
+development dataset.
 
 ## Learning Objectives
 
@@ -82,23 +89,34 @@ The workshop uses snRNA-seq data from human heart tissue (Sim et al.,
 
 ## Methods Covered
 
-| Analysis Step            | Method                      | Package      |
-|--------------------------|-----------------------------|--------------|
-| Quality control          | Per-cell metrics, filtering | Seurat       |
-| Normalisation            | SCTransform v2              | Seurat       |
-| Batch correction         | Harmony                     | harmony      |
-| Dimensionality reduction | PCA, UMAP                   | Seurat       |
-| Clustering               | Louvain algorithm           | Seurat       |
-| Cell type annotation     | Marker-based (manual)       | Seurat       |
-| Differential expression  | Pseudobulk + limma-voom     | edgeR, limma |
-| Composition analysis     | propeller                   | speckle      |
+| Analysis Step            | Method                      | Package           |
+|--------------------------|-----------------------------|-------------------|
+| Quality control          | Per-cell metrics, filtering | Seurat            |
+| Normalisation            | SCTransform v2              | Seurat, glmGamPoi |
+| Batch correction         | Harmony                     | harmony           |
+| Dimensionality reduction | PCA, UMAP                   | Seurat            |
+| Clustering               | Louvain algorithm           | Seurat            |
+| Cell type annotation     | Marker-based (manual)       | Seurat            |
+| Differential expression  | Pseudobulk + limma-voom     | edgeR, limma      |
+| Composition analysis     | propeller                   | speckle           |
 
-## Installation
+## Quick Start
 
-### Package Versions
+**Please complete setup at least one day before the workshop.**
 
-This workshop uses pinned package versions for reproducibility. The
-tutorial outputs were generated with these exact versions:
+1.  **Clone or download** this repository
+2.  **Open** `single_cell_workshop.Rproj` in RStudio
+3.  **Follow** [Module 0:
+    Setup](https://phipsonlab.github.io/single_cell_workshop/articles/00_setup.html)
+    for detailed instructions
+
+The setup involves: - Installing packages with
+[`renv::restore()`](https://rstudio.github.io/renv/reference/restore.html)
+(~10-15 minutes) - Downloading data from Zenodo (~420 MB, ~5 minutes)
+
+## Key Package Versions
+
+This workshop uses pinned package versions for reproducibility:
 
 | Package      | Version | Package      | Version |
 |--------------|---------|--------------|---------|
@@ -106,71 +124,24 @@ tutorial outputs were generated with these exact versions:
 | Seurat       | 5.4.0   | edgeR        | 4.8.2   |
 | SeuratObject | 5.3.0   | limma        | 3.66.0  |
 | harmony      | 1.2.4   | speckle      | 1.10.0  |
-| ggplot2      | 4.0.1   |              |         |
-
-### Step 1: Install Required Packages
-
-``` r
-# Install remotes and BiocManager
-install.packages(c("remotes", "BiocManager"))
-
-# Set Bioconductor version
-BiocManager::install(version = "3.22", ask = FALSE)
-
-# Install Bioconductor packages
-BiocManager::install(c(
-    "edgeR",
-    "limma",
-    "org.Hs.eg.db",
-    "AnnotationDbi",
-    "speckle"
-))
-
-# Install CRAN packages with specific versions
-remotes::install_version("Seurat", version = "5.4.0")
-remotes::install_version("SeuratObject", version = "5.3.0")
-remotes::install_version("harmony", version = "1.2.4")
-remotes::install_version("ggplot2", version = "4.0.1")
-remotes::install_version("patchwork", version = "1.3.2")
-remotes::install_version("dplyr", version = "1.1.4")
-remotes::install_version("tidyr", version = "1.3.2")
-remotes::install_version("RColorBrewer", version = "1.1.3")
-remotes::install_version("clustree", version = "0.5.1")
-remotes::install_version("pheatmap", version = "1.0.13")
-```
-
-### Step 2: Download Workshop Data
-
-The workshop data (~420 MB) is hosted on Zenodo:
-
-``` r
-# Download data from Zenodo
-zenodo_record <- "18237749"
-base_url <- paste0("https://zenodo.org/records/", zenodo_record, "/files/")
-
-dir.create("data", showWarnings = FALSE)
-for (f in c("heart-counts.Rds", "cellinfo_updated.Rds")) {
-    download.file(paste0(base_url, f, "?download=1"), file.path("data", f), mode = "wb")
-}
-```
-
-### Step 3: Verify Installation
-
-``` r
-# Check that key packages load correctly
-packages <- c("Seurat", "harmony", "edgeR", "limma", "speckle")
-sapply(packages, requireNamespace, quietly = TRUE)
-```
+| glmGamPoi    | 1.22.0  |              |         |
 
 ## Workshop Materials
 
-| Module                                                                                                 | Topic           | Description                                   |
-|--------------------------------------------------------------------------------------------------------|-----------------|-----------------------------------------------|
-| [Module 0](https://phipsonlab.github.io/single_cell_workshop/articles/00_setup.html)                   | Setup           | Environment setup and package installation    |
-| [Module 1](https://phipsonlab.github.io/single_cell_workshop/articles/01_quality_control.html)         | Quality Control | QC metrics, doublet detection, cell filtering |
-| [Module 2](https://phipsonlab.github.io/single_cell_workshop/articles/02_integration_clustering.html)  | Integration     | Normalisation, batch correction, clustering   |
-| [Module 3](https://phipsonlab.github.io/single_cell_workshop/articles/03_cell_type_annotation.html)    | Annotation      | Marker genes and cell type assignment         |
-| [Module 4](https://phipsonlab.github.io/single_cell_workshop/articles/04_differential_expression.html) | DE Analysis     | Pseudobulk DE and composition analysis        |
+### Session 1: Core Single Cell Analysis
+
+| Module                                                                                                 | Topic           | Description                                 |
+|--------------------------------------------------------------------------------------------------------|-----------------|---------------------------------------------|
+| [Module 0](https://phipsonlab.github.io/single_cell_workshop/articles/00_setup.html)                   | Setup           | Environment setup and data download         |
+| [Module 1](https://phipsonlab.github.io/single_cell_workshop/articles/01_quality_control.html)         | Quality Control | QC metrics, cell filtering                  |
+| [Module 2](https://phipsonlab.github.io/single_cell_workshop/articles/02_integration_clustering.html)  | Integration     | Normalisation, batch correction, clustering |
+| [Module 3](https://phipsonlab.github.io/single_cell_workshop/articles/03_cell_type_annotation.html)    | Annotation      | Marker genes and cell type assignment       |
+| [Module 4](https://phipsonlab.github.io/single_cell_workshop/articles/04_differential_expression.html) | DE Analysis     | Pseudobulk DE and composition analysis      |
+
+### Session 2: Downstream Analysis
+
+*Coming soon* - Additional downstream analyses using the same heart
+development dataset.
 
 ## Citation
 

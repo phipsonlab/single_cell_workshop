@@ -115,8 +115,11 @@
 </table>
 </div>
 <div class="section level2">
-<h2 id="workshop-outline-3-hours">Workshop Outline (~3 hours)<a class="anchor" aria-label="anchor" href="#workshop-outline-3-hours"></a>
+<h2 id="workshop-outline">Workshop Outline<a class="anchor" aria-label="anchor" href="#workshop-outline"></a>
 </h2>
+<div class="section level3">
+<h3 id="session-1-core-single-cell-analysis-morning-3-hours">Session 1: Core Single Cell Analysis (Morning, ~3 hours)<a class="anchor" aria-label="anchor" href="#session-1-core-single-cell-analysis-morning-3-hours"></a>
+</h3>
 <table class="table">
 <thead><tr class="header">
 <th>Module</th>
@@ -161,6 +164,12 @@
 </tr>
 </tbody>
 </table>
+</div>
+<div class="section level3">
+<h3 id="session-2-downstream-analysis-afternoon-3-hours">Session 2: Downstream Analysis (Afternoon, ~3 hours)<a class="anchor" aria-label="anchor" href="#session-2-downstream-analysis-afternoon-3-hours"></a>
+</h3>
+<p><em>Coming soon</em> - Additional downstream analyses using the same heart development dataset.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="learning-objectives">Learning Objectives<a class="anchor" aria-label="anchor" href="#learning-objectives"></a>
@@ -230,7 +239,7 @@
 <tr class="even">
 <td>Normalisation</td>
 <td>SCTransform v2</td>
-<td>Seurat</td>
+<td>Seurat, glmGamPoi</td>
 </tr>
 <tr class="odd">
 <td>Batch correction</td>
@@ -266,12 +275,23 @@
 </table>
 </div>
 <div class="section level2">
-<h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
+<h2 id="quick-start">Quick Start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h2>
-<div class="section level3">
-<h3 id="package-versions">Package Versions<a class="anchor" aria-label="anchor" href="#package-versions"></a>
-</h3>
-<p>This workshop uses pinned package versions for reproducibility. The tutorial outputs were generated with these exact versions:</p>
+<p><strong>Please complete setup at least one day before the workshop.</strong></p>
+<ol style="list-style-type: decimal">
+<li>
+<strong>Clone or download</strong> this repository</li>
+<li>
+<strong>Open</strong> <code>single_cell_workshop.Rproj</code> in RStudio</li>
+<li>
+<strong>Follow</strong> <a href="https://phipsonlab.github.io/single_cell_workshop/articles/00_setup.html">Module 0: Setup</a> for detailed instructions</li>
+</ol>
+<p>The setup involves: - Installing packages with <code><a href="https://rstudio.github.io/renv/reference/restore.html" class="external-link">renv::restore()</a></code> (~10-15 minutes) - Downloading data from Zenodo (~420 MB, ~5 minutes)</p>
+</div>
+<div class="section level2">
+<h2 id="key-package-versions">Key Package Versions<a class="anchor" aria-label="anchor" href="#key-package-versions"></a>
+</h2>
+<p>This workshop uses pinned package versions for reproducibility:</p>
 <table class="table">
 <thead><tr class="header">
 <th>Package</th>
@@ -305,71 +325,20 @@
 <td>1.10.0</td>
 </tr>
 <tr class="odd">
-<td>ggplot2</td>
-<td>4.0.1</td>
+<td>glmGamPoi</td>
+<td>1.22.0</td>
 <td></td>
 <td></td>
 </tr>
 </tbody>
 </table>
 </div>
-<div class="section level3">
-<h3 id="step-1-install-required-packages">Step 1: Install Required Packages<a class="anchor" aria-label="anchor" href="#step-1-install-required-packages"></a>
-</h3>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Install remotes and BiocManager</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"remotes"</span>, <span class="st">"BiocManager"</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Set Bioconductor version</span></span>
-<span><span class="fu">BiocManager</span><span class="fu">::</span><span class="fu"><a href="https://bioconductor.github.io/BiocManager/reference/install.html" class="external-link">install</a></span><span class="op">(</span>version <span class="op">=</span> <span class="st">"3.22"</span>, ask <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Install Bioconductor packages</span></span>
-<span><span class="fu">BiocManager</span><span class="fu">::</span><span class="fu"><a href="https://bioconductor.github.io/BiocManager/reference/install.html" class="external-link">install</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
-<span>    <span class="st">"edgeR"</span>,</span>
-<span>    <span class="st">"limma"</span>,</span>
-<span>    <span class="st">"org.Hs.eg.db"</span>,</span>
-<span>    <span class="st">"AnnotationDbi"</span>,</span>
-<span>    <span class="st">"speckle"</span></span>
-<span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Install CRAN packages with specific versions</span></span>
-<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_version</span><span class="op">(</span><span class="st">"Seurat"</span>, version <span class="op">=</span> <span class="st">"5.4.0"</span><span class="op">)</span></span>
-<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_version</span><span class="op">(</span><span class="st">"SeuratObject"</span>, version <span class="op">=</span> <span class="st">"5.3.0"</span><span class="op">)</span></span>
-<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_version</span><span class="op">(</span><span class="st">"harmony"</span>, version <span class="op">=</span> <span class="st">"1.2.4"</span><span class="op">)</span></span>
-<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_version</span><span class="op">(</span><span class="st">"ggplot2"</span>, version <span class="op">=</span> <span class="st">"4.0.1"</span><span class="op">)</span></span>
-<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_version</span><span class="op">(</span><span class="st">"patchwork"</span>, version <span class="op">=</span> <span class="st">"1.3.2"</span><span class="op">)</span></span>
-<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_version</span><span class="op">(</span><span class="st">"dplyr"</span>, version <span class="op">=</span> <span class="st">"1.1.4"</span><span class="op">)</span></span>
-<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_version</span><span class="op">(</span><span class="st">"tidyr"</span>, version <span class="op">=</span> <span class="st">"1.3.2"</span><span class="op">)</span></span>
-<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_version</span><span class="op">(</span><span class="st">"RColorBrewer"</span>, version <span class="op">=</span> <span class="st">"1.1.3"</span><span class="op">)</span></span>
-<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_version</span><span class="op">(</span><span class="st">"clustree"</span>, version <span class="op">=</span> <span class="st">"0.5.1"</span><span class="op">)</span></span>
-<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_version</span><span class="op">(</span><span class="st">"pheatmap"</span>, version <span class="op">=</span> <span class="st">"1.0.13"</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level3">
-<h3 id="step-2-download-workshop-data">Step 2: Download Workshop Data<a class="anchor" aria-label="anchor" href="#step-2-download-workshop-data"></a>
-</h3>
-<p>The workshop data (~420 MB) is hosted on Zenodo:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Download data from Zenodo</span></span>
-<span><span class="va">zenodo_record</span> <span class="op">&lt;-</span> <span class="st">"18237749"</span></span>
-<span><span class="va">base_url</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"https://zenodo.org/records/"</span>, <span class="va">zenodo_record</span>, <span class="st">"/files/"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="st">"data"</span>, showWarnings <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="kw">for</span> <span class="op">(</span><span class="va">f</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"heart-counts.Rds"</span>, <span class="st">"cellinfo_updated.Rds"</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/utils/download.file.html" class="external-link">download.file</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="va">base_url</span>, <span class="va">f</span>, <span class="st">"?download=1"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="st">"data"</span>, <span class="va">f</span><span class="op">)</span>, mode <span class="op">=</span> <span class="st">"wb"</span><span class="op">)</span></span>
-<span><span class="op">}</span></span></code></pre></div>
-</div>
-<div class="section level3">
-<h3 id="step-3-verify-installation">Step 3: Verify Installation<a class="anchor" aria-label="anchor" href="#step-3-verify-installation"></a>
-</h3>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Check that key packages load correctly</span></span>
-<span><span class="va">packages</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Seurat"</span>, <span class="st">"harmony"</span>, <span class="st">"edgeR"</span>, <span class="st">"limma"</span>, <span class="st">"speckle"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">packages</span>, <span class="va">requireNamespace</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-</div>
-</div>
 <div class="section level2">
 <h2 id="workshop-materials">Workshop Materials<a class="anchor" aria-label="anchor" href="#workshop-materials"></a>
 </h2>
+<div class="section level3">
+<h3 id="session-1-core-single-cell-analysis">Session 1: Core Single Cell Analysis<a class="anchor" aria-label="anchor" href="#session-1-core-single-cell-analysis"></a>
+</h3>
 <table class="table">
 <colgroup>
 <col width="28%">
@@ -385,12 +354,12 @@
 <tr class="odd">
 <td><a href="https://phipsonlab.github.io/single_cell_workshop/articles/00_setup.html">Module 0</a></td>
 <td>Setup</td>
-<td>Environment setup and package installation</td>
+<td>Environment setup and data download</td>
 </tr>
 <tr class="even">
 <td><a href="https://phipsonlab.github.io/single_cell_workshop/articles/01_quality_control.html">Module 1</a></td>
 <td>Quality Control</td>
-<td>QC metrics, doublet detection, cell filtering</td>
+<td>QC metrics, cell filtering</td>
 </tr>
 <tr class="odd">
 <td><a href="https://phipsonlab.github.io/single_cell_workshop/articles/02_integration_clustering.html">Module 2</a></td>
@@ -409,6 +378,18 @@
 </tr>
 </tbody>
 </table>
+</div>
+<div class="section level3">
+<h3 id="session-2-downstream-analysis">Session 2: Downstream Analysis<a class="anchor" aria-label="anchor" href="#session-2-downstream-analysis"></a>
+</h3>
+<p><em>Coming soon</em> - Additional downstream analyses using the same heart development dataset.</p>
+<!-- TODO: Add Session 2 modules here when ready
+| Module | Topic | Description |
+|--------|-------|-------------|
+| Module 5 | TBD | TBD |
+| Module 6 | TBD | TBD |
+-->
+</div>
 </div>
 <div class="section level2">
 <h2 id="citation">Citation<a class="anchor" aria-label="anchor" href="#citation"></a>
@@ -446,15 +427,6 @@
 <li>
 <a href="https://opensource.org/licenses/mit-license.php" class="external-link">MIT</a> + file <a href="LICENSE-text.html">LICENSE</a>
 </li>
-</ul>
-</div>
-
-<div class="developers">
-<h2 data-toc-skip>Developers</h2>
-<ul class="list-unstyled">
-<li>Belinda Phipson <br><small class="roles"> Author, maintainer </small> <a href="https://orcid.org/0000-0002-1711-7454" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a>  </li>
-<li>
-<a href="https://github.com/phipsonlab" class="external-link">Phipson Lab</a> <br><small class="roles"> Funder </small>   </li>
 </ul>
 </div>
 

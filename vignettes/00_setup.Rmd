@@ -141,7 +141,7 @@ if (length(missing) == 0) {
     message("All packages installed successfully!")
 } else {
     message("Missing packages: ", paste(missing, collapse = ", "))
-    message("Please run renv::restore() again or see Troubleshooting below.")
+    message("Please run renv::restore() again.")
 }
 ```
 
@@ -185,8 +185,8 @@ Maturation by the Progesterone Receptor", *Circulation*.
 
 Run the following code to download both files:
 
-```{r download-data, eval=TRUE}
-# Create data directory
+```{r download-data, eval=FALSE}
+# Create data directory if needed
 if (!dir.exists("data")) {
     dir.create("data")
 }
@@ -221,8 +221,8 @@ message("\nDownload complete!")
 
 Check that the files downloaded correctly:
 
-```{r verify-data, eval=TRUE}
-data_dir <- "../data"
+```{r verify-data, eval=FALSE}
+data_dir <- "data"
 
 counts_file <- file.path(data_dir, "heart-counts.Rds")
 cellinfo_file <- file.path(data_dir, "cellinfo_updated.Rds")
@@ -260,8 +260,8 @@ if (file.exists(counts_file) && file.exists(cellinfo_file)) {
 
 As a final check, verify the data can be loaded:
 
-```{r test-load, eval=TRUE}
-data_dir <- "../data"
+```{r test-load, eval=FALSE}
+data_dir <- "data"
 counts_file <- file.path(data_dir, "heart-counts.Rds")
 
 if (file.exists(counts_file)) {
@@ -282,7 +282,7 @@ if (file.exists(counts_file)) {
 
 Before the workshop, confirm you have completed all steps:
 
-```{r final-check, eval=TRUE}
+```{r final-check, eval=FALSE}
 cat("=== WORKSHOP SETUP CHECKLIST ===\n\n")
 
 # Check 1: R version
@@ -298,9 +298,8 @@ cat(sprintf("[%s] Essential packages installed\n",
             ifelse(pkg_ok, "OK", "!!")))
 
 # Check 3: Data files
-data_dir <- "../data"
-counts_exists <- file.exists(file.path(data_dir, "heart-counts.Rds"))
-cellinfo_exists <- file.exists(file.path(data_dir, "cellinfo_updated.Rds"))
+counts_exists <- file.exists("data/heart-counts.Rds")
+cellinfo_exists <- file.exists("data/cellinfo_updated.Rds")
 data_ok <- counts_exists && cellinfo_exists
 cat(sprintf("[%s] Workshop data downloaded\n",
             ifelse(data_ok, "OK", "!!")))

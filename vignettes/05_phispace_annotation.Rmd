@@ -1,0 +1,196 @@
+---
+title: "Module 5: Continuous Phenotyping with Φ-Space"
+author: "Single Cell Workshop"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: flatly
+    toc: true
+    toc_depth: 2
+    toc_float: true
+    number_sections: true
+    code_folding: show
+    df_print: paged
+vignette: >
+  %\VignetteIndexEntry{Module 5: Continuous Phenotyping with Φ-Space}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    echo = TRUE,
+    warning = FALSE,
+    message = FALSE,
+    fig.align = "center",
+    fig.width = 10,
+    fig.height = 6
+)
+```
+
+## Introduction
+
+In Module 3 we annotated cell types by looking up **marker genes** and assigning
+each cluster a single discrete label. That approach is intuitive and directly
+interpretable, but it rests on two assumptions that are not always true for the
+heart maturation dataset we are analysing:
+
+1. **Cells belong to one cell type.** A cluster is given a single label, and
+   every cell inside it inherits that label.
+2. **Cell identity is discrete.** Cells are either cardiomyocytes or they are
+   not; there is no notion of a cell that is *partly* a fetal cardiomyocyte and
+   *partly* an adult one.
+
+For a mature tissue with well-separated cell types, these assumptions are
+reasonable. But our dataset spans foetal, young and adult heart samples, so
+many cells — especially cardiomyocytes — are in the middle of a maturation
+continuum. A discrete label forces each cell into one bin and throws away the
+very gradient we want to study in Module 6 (pseudotime) and Module 7 (gene
+regulatory networks).
+
+In this module we use **Φ-Space**
+([Mao, Deng & Lê Cao, 2025, *Genome Biology*](https://doi.org/10.1186/s13059-025-03755-8))
+to re-annotate the heart data with *continuous* phenotype scores instead of
+hard labels.
+
+### From hard labels to soft scores
+
+The core idea of Φ-Space is simple: instead of asking *"which cell type is this
+cell?"*, ask *"how much does this cell resemble each reference phenotype?"*.
+For every query cell and every phenotype in the reference atlas, Φ-Space
+returns a real-valued score. A cell that sits halfway between "foetal
+cardiomyocyte" and "adult cardiomyocyte" will score positively on both; a cell
+committed firmly to one identity will score high on one and low on the other.
+
+Under the hood, Φ-Space fits a **partial least squares (PLS)** regression from
+gene expression in the reference onto a dummy matrix of phenotype labels. The
+fitted model is then applied to the query, producing one score per cell per
+phenotype. This matrix of scores — the **phenotype space embedding** — is
+stored as a `reducedDim` and becomes the substrate for every downstream
+analysis: visualisation, clustering, marker selection, and trajectory
+inference.
+
+### Why Φ-Space is a good fit for this dataset
+
+Five features of Φ-Space line up unusually well with the Sim et al. heart data:
+
+1. **Continuous biology deserves continuous annotation.** Cardiomyocyte
+   maturation is gradual. Φ-Space preserves the gradient; hard classification
+   collapses it.
+2. **Multiple phenotype layers at once.** We can score each cell simultaneously
+   against cell type *and* developmental stage (and sex, the original study's
+   focus). Most tools predict one label at a time.
+3. **Bulk references are allowed.** There is no single cross-age
+   snRNA-seq atlas of the human heart. Φ-Space accepts bulk RNA-seq
+   references, which opens up developmental bulk time-course atlases as viable
+   options.
+4. **No extra batch correction between reference and query.** PLS inherently
+   removes unwanted variation. You do not need to run Harmony *between* query
+   and reference — only to match normalisation.
+5. **The embedding feeds directly into Modules 6 and 7.** Because scores are
+   stored in `reducedDim`, they can be used as input for slingshot (pseudotime)
+   and NeighbourNet (gene regulatory networks) without any extra wrangling.
+
+### Learning objectives
+
+By the end of this module you will be able to:
+
+- Explain the difference between hard and soft classification for cell type
+  annotation, and identify situations where each is appropriate.
+- Prepare an annotated reference dataset and a query dataset for Φ-Space,
+  including matched normalisation and gene name harmonisation.
+- Run `PhiSpace()` to obtain a continuous phenotype space embedding for the
+  query cells.
+- Visualise and interpret the phenotype space embedding as a heatmap, a UMAP,
+  and a set of per-phenotype score maps.
+- Derive discrete labels from continuous scores when needed, and understand
+  what is gained and lost in that step.
+- Export the phenotype space embedding in a form that Modules 6 and 7 can
+  consume.
+
+## Load Libraries and Data
+
+```{r load-libraries, eval=FALSE}
+# TODO: finalise once reference dataset and Seurat↔SCE conversion path are fixed
+library(PhiSpace)
+library(SingleCellExperiment)
+library(Seurat)
+library(ggplot2)
+library(dplyr)
+library(patchwork)
+```
+
+```{r load-data, eval=FALSE}
+# TODO: load the processed Seurat object produced by Module 4
+# seu <- readRDS("../data/processed/04_annotated.rds")
+# query_sce <- as.SingleCellExperiment(seu)
+```
+
+## Choosing a Reference Dataset
+
+<!-- TODO:
+  - Criteria for a good reference for this dataset:
+      * cross-age coverage (foetal through adult heart)
+      * annotated cell types at a useful granularity
+      * publicly available
+  - Candidate references to discuss with instructor:
+      * Litviňuková et al. 2020 (Nature) — adult heart cell atlas
+      * Kanemaru et al. 2023 (Nature) — adult human heart
+      * Developmental heart bulk RNA-seq time course (TBD)
+  - Decide: single reference or multi-reference list?
+-->
+
+## Preparing Reference and Query
+
+<!-- TODO:
+  - Match normalisation: RankTransf() / logTransf() / scranTransf()
+  - KeepCommonGenes() between reference and query
+  - zeroFeatQC() on query
+  - subsample() the reference for balance and speed
+  - Convert Seurat ↔ SCE as required
+-->
+
+## Running Φ-Space
+
+<!-- TODO:
+  - PhiSpace() call with phenotypes = c("cell_type", "stage") if multi-layer
+  - Show how to access reducedDim(query_sce, "PhiSpace")
+  - Discuss ncomp default and when to tune with tunePhiSpace()
+-->
+
+## Exploring the Phenotype Space
+
+<!-- TODO:
+  - Heatmap of scores grouped by query cluster / morning-module cell type
+  - PCA on reference scores, project query → 2D "meta-phenotype" plot
+  - UMAP on phenotype space embedding
+  - Per-phenotype score UMAPs for a few highlighted phenotypes
+    (e.g. adult cardiomyocyte, foetal cardiomyocyte, fibroblast)
+-->
+
+## Hard vs Soft Classification
+
+<!-- TODO:
+  - getClass() to derive a single label per cell
+  - Compare to Module 3 marker-based labels in a confusion table
+  - Discuss which cells disagree and why — teaching moment about
+    transitional states
+-->
+
+## Handing Off to Module 6
+
+<!-- TODO:
+  - Save updated SCE / Seurat object with PhiSpace embedding in reducedDim
+  - Recap: cardiomyocytes are the subset we'll carry into slingshot
+  - Brief preview of pseudotime
+-->
+
+## Summary
+
+<!-- TODO: bullet recap of what we did and what stays with us into Modules 6-7 -->
+
+## Session Info
+
+```{r session-info, eval=FALSE}
+sessionInfo()
+```

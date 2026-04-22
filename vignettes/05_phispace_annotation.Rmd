@@ -78,12 +78,12 @@ Five features of Φ-Space line up unusually well with the Sim et al. heart data:
    maturation is gradual. Φ-Space preserves the gradient; hard classification
    collapses it.
 2. **Multiple phenotype layers at once.** We can score each cell simultaneously
-   against cell type *and* developmental stage (and sex, the original study's
-   focus). Most tools predict one label at a time.
-3. **Bulk references are allowed.** There is no single cross-age
-   snRNA-seq atlas of the human heart. Φ-Space accepts bulk RNA-seq
-   references, which opens up developmental bulk time-course atlases as viable
-   options.
+   against cell type *and* developmental stage. Most tools predict one label
+   at a time.
+3. **Bulk references are allowed.** There is no single cross-age snRNA-seq
+   atlas of the human heart that covers fetal through adult equally well.
+   Φ-Space also accepts bulk RNA-seq references, which opens up developmental
+   bulk time-course atlases as viable options.
 4. **No extra batch correction between reference and query.** PLS inherently
    removes unwanted variation. You do not need to run Harmony *between* query
    and reference — only to match normalisation.
@@ -101,8 +101,8 @@ By the end of this module you will be able to:
   including matched normalisation and gene name harmonisation.
 - Run `PhiSpace()` to obtain a continuous phenotype space embedding for the
   query cells.
-- Visualise and interpret the phenotype space embedding as a heatmap, a UMAP,
-  and a set of per-phenotype score maps.
+- Visualise and interpret the phenotype space embedding through heatmaps and a
+  PCA biplot.
 - Derive discrete labels from continuous scores when needed, and understand
   what is gained and lost in that step.
 - Export the phenotype space embedding in a form that Modules 6 and 7 can
@@ -110,87 +110,413 @@ By the end of this module you will be able to:
 
 ## Load Libraries and Data
 
-```{r load-libraries, eval=FALSE}
-# TODO: finalise once reference dataset and Seurat↔SCE conversion path are fixed
+```{r load-libraries}
 library(PhiSpace)
 library(SingleCellExperiment)
 library(Seurat)
 library(ggplot2)
 library(dplyr)
+library(tibble)
 library(patchwork)
+library(ComplexHeatmap)
 ```
 
-```{r load-data, eval=FALSE}
-# TODO: load the processed Seurat object produced by Module 4
-# seu <- readRDS("../data/processed/04_annotated.rds")
-# query_sce <- as.SingleCellExperiment(seu)
+We need two data objects:
+
+- a **query** — the heart snRNA-seq data from the morning session, trimmed to
+  the essentials (raw counts, sample / stage / sex metadata, ~10,000 cells).
+- a **reference** — an annotated left-ventricle atlas covering the full
+  developmental axis (see the next section for details).
+
+```{r load-data}
+seu <- readRDS("../data/afternoon_mvp.rds")
+reference <- readRDS("../references/reference_gao2026.rds")
+
+cat("Query (Seurat):\n")
+cat("  - cells:", ncol(seu), "\n")
+cat("  - genes:", nrow(seu), "\n")
+cat("  - metadata:", paste(colnames(seu@meta.data), collapse = ", "), "\n\n")
+
+cat("Reference (SingleCellExperiment):\n")
+cat("  - cells:", ncol(reference), "\n")
+cat("  - genes:", nrow(reference), "\n")
+cat("  - assays:", paste(assayNames(reference), collapse = ", "), "\n")
+cat("  - cell types:", length(unique(reference$final_cell_type)), "\n")
+cat("  - age groups:", paste(unique(reference$age_group), collapse = ", "), "\n")
+```
+
+Φ-Space works with `SingleCellExperiment` (SCE) objects, so we convert the
+query from Seurat to SCE. The raw counts travel across as the `counts` assay;
+the cell-level metadata travels across as `colData`.
+
+```{r seurat-to-sce}
+query <- as.SingleCellExperiment(seu)
+assayNames(query)
+head(colData(query)[, c("sample", "group", "sex")])
+```
+
+We will also set up a cache folder for intermediate results. Computations that
+take more than a few seconds are cached to `../results/` so that re-rendering
+this vignette is fast, and so that workshop participants can download the
+pre-computed caches directly if they prefer.
+
+```{r cache-setup}
+results_dir <- "../results"
+dir.create(results_dir, showWarnings = FALSE, recursive = TRUE)
 ```
 
 ## Choosing a Reference Dataset
 
-<!-- TODO:
-  - Criteria for a good reference for this dataset:
-      * cross-age coverage (foetal through adult heart)
-      * annotated cell types at a useful granularity
-      * publicly available
-  - Candidate references to discuss with instructor:
-      * Litviňuková et al. 2020 (Nature) — adult heart cell atlas
-      * Kanemaru et al. 2023 (Nature) — adult human heart
-      * Developmental heart bulk RNA-seq time course (TBD)
-  - Decide: single reference or multi-reference list?
--->
+A Φ-Space annotation is only as good as the reference it is built on. For the
+Sim et al. heart data we need a reference that:
+
+- **covers the full developmental axis** — foetal, paediatric and adult heart,
+  so that every query cell has something biologically sensible to score
+  against;
+- **annotates cell types at a useful granularity** — at least the major heart
+  lineages (cardiomyocyte, fibroblast, endothelial, pericyte, immune,
+  epicardial, neuronal);
+- **is publicly available** and free of major disease confounders.
+
+We use the **Gao et al. 2026** (*Genome Biology*) integrative snRNA-seq atlas
+of the human left ventricle. It combines 299 donors from eight published
+studies, spans 8 post-conceptional weeks through ≥60 years, and provides
+harmonised cell type and age-group annotations. We have pre-filtered it to
+non-diseased donors and balanced the major cell types by down-sampling; the
+processing script lives at
+[`references/prepare_gao_2026.R`](../references/prepare_gao_2026.R).
+
+Two columns from the reference drive everything that follows:
+
+```{r reference-metadata}
+table(reference$final_cell_type)
+table(reference$age_group)
+```
+
+Notice the reference's `age_group` is `fetal / young / middle / old`, while
+our query's `group` is `fetal / young / adult`. That is fine — Φ-Space will
+score each query cell against all four reference age groups, and we will use
+those four scores as a fine-grained read-out of where on the maturation axis
+each cell sits.
 
 ## Preparing Reference and Query
 
-<!-- TODO:
-  - Match normalisation: RankTransf() / logTransf() / scranTransf()
-  - KeepCommonGenes() between reference and query
-  - zeroFeatQC() on query
-  - subsample() the reference for balance and speed
-  - Convert Seurat ↔ SCE as required
--->
+Three preparation steps are required before we can run Φ-Space:
+
+1. **Match normalisation.** Φ-Space does not do batch correction between
+   reference and query; it relies on both being on the same numerical scale.
+2. **Match gene names.** PLS can only use genes present in both datasets.
+3. **Quality control.** Remove all-zero genes from the query, which would
+   otherwise carry no signal but still consume model capacity.
+
+### Match normalisation with rank transformation
+
+The reference is stored with a `logcounts` assay; the query carries raw
+`counts`. Rather than hand-matching library-size normalisations across two
+very different pipelines, we apply **rank transformation** to both. Rank
+transformation replaces each cell's expression vector with the ranks of its
+genes, making the result invariant to library size, scale, and monotone
+transformations — exactly what we need when matching across platforms.
+
+```{r rank-transform}
+reference <- RankTransf(reference, assayname = "logcounts")
+query     <- RankTransf(query,     assayname = "counts")
+assayNames(reference)
+assayNames(query)
+```
+
+Both objects now carry a `rank` assay, and that is what Φ-Space will use.
+
+### Keep common genes and remove zero-expression genes
+
+```{r common-genes}
+common <- intersect(rownames(reference), rownames(query))
+cat("Reference genes:", nrow(reference), "\n")
+cat("Query genes:    ", nrow(query), "\n")
+cat("Common:         ", length(common), "\n")
+
+reference <- reference[common, ]
+query     <- query[common, ]
+query     <- zeroFeatQC(query)
+dim(query)
+```
+
+The gene-symbol overlap is comfortably above ten thousand, which is plenty for
+PLS.
+
+### Balancing the reference
+
+A good reference is balanced across cell types — if 90 % of the reference cells
+are cardiomyocytes, the model will over-learn cardiomyocyte variation and
+under-learn everything else. Our Gao 2026 reference has already been
+down-sampled per cell type during processing (see
+[`prepare_gao_2026.R`](../references/prepare_gao_2026.R)), with each rare cell
+type capped at 100 cells and abundant types capped at a few thousand. If you
+ever work with a less curated reference, `PhiSpace::subsample()` is the
+function you want — it draws a stratified subset by any `colData` column.
 
 ## Running Φ-Space
 
-<!-- TODO:
-  - PhiSpace() call with phenotypes = c("cell_type", "stage") if multi-layer
-  - Show how to access reducedDim(query_sce, "PhiSpace")
-  - Discuss ncomp default and when to tune with tunePhiSpace()
--->
+We now fit the PLS model on the reference and project the query into the
+phenotype space. We ask for two phenotype layers at once:
+
+- `final_cell_type` (13 levels) — what kind of cell is this?
+- `age_group` (4 levels) — where on the maturation axis does it sit?
+
+The resulting embedding will have 13 + 4 = 17 columns: one score per query
+cell per phenotype level.
+
+This step is the computational bottleneck of the module (roughly one minute
+on a laptop), so we cache the output.
+
+```{r run-phispace}
+phispace_cache <- file.path(results_dir, "05_phispace_query.rds")
+
+if (file.exists(phispace_cache)) {
+    query <- readRDS(phispace_cache)
+    message("Loaded cached PhiSpace result from ", phispace_cache)
+} else {
+    query <- PhiSpace(
+        reference  = reference,
+        query      = query,
+        phenotypes = c("final_cell_type", "age_group"),
+        refAssay   = "rank",
+        regMethod  = "PLS",
+        center     = TRUE,
+        scale      = FALSE
+    )
+    # Drop the intermediate rank assay before caching — it is no longer
+    # needed downstream and roughly halves the file size.
+    assay(query, "rank") <- NULL
+    saveRDS(query, phispace_cache)
+}
+```
+
+The phenotype-space embedding is stored as a `reducedDim`:
+
+```{r inspect-scores}
+phi_scores <- reducedDim(query, "PhiSpace")
+dim(phi_scores)
+colnames(phi_scores)
+round(phi_scores[1:4, 1:6], 3)
+```
+
+Each row is a query cell, each column is a reference phenotype level. Values
+are column-wise normalised so that the median of each column is zero and the
+maximum absolute deviation is one — high positive values mean the cell
+resembles that phenotype, values near zero mean average, and negative values
+mean the cell is confidently *not* that phenotype.
+
+### On the number of components
+
+Φ-Space defaults `ncomp` to the total number of phenotype levels (here 17).
+This is a sensible starting point that we have found works well in practice.
+For a more principled choice — especially with large references — you can
+cross-validate `ncomp` and feature count with `tunePhiSpace()`; we skip it
+here in the interest of time, but the function is a one-liner when you need
+it.
 
 ## Exploring the Phenotype Space
 
-<!-- TODO:
-  - Heatmap of scores grouped by query cluster / morning-module cell type
-  - PCA on reference scores, project query → 2D "meta-phenotype" plot
-  - UMAP on phenotype space embedding
-  - Per-phenotype score UMAPs for a few highlighted phenotypes
-    (e.g. adult cardiomyocyte, foetal cardiomyocyte, fibroblast)
--->
+### Heatmap of scores grouped by developmental stage
+
+A good first look is a heatmap with query cells as rows (grouped by
+developmental stage) and reference phenotypes as columns. The expectation is
+clear: cells from the foetal group should score high on foetal-related
+reference phenotypes, and similarly for young and adult.
+
+```{r heatmap-scores, fig.height=7}
+split_phenotype <- c(
+    rep("cell type", length(unique(reference$final_cell_type))),
+    rep("age group", length(unique(reference$age_group)))
+)
+
+ht <- Heatmap(
+    phi_scores,
+    name             = "Φ-Space score",
+    row_split        = query$group,
+    column_split     = split_phenotype,
+    cluster_row_slices = FALSE,
+    show_row_names   = FALSE,
+    show_row_dend    = FALSE,
+    show_column_dend = FALSE,
+    column_names_rot = 45,
+    row_title_rot    = 0
+)
+draw(ht, heatmap_legend_side = "right")
+```
+
+Two patterns should jump out:
+
+- Within the `age group` columns, the diagonal block structure tells you that
+  Φ-Space has correctly recovered the developmental stage of each query cell
+  without ever being told what stage it was from.
+- Within the `cell type` columns, the dominant column for most cells is
+  `Cardiomyocyte`, as expected for a heart sample — but a subset of cells
+  score high on `Fibroblast`, `Endothelial`, `Myeloid`, etc.
+
+### PCA biplot of the phenotype space
+
+The phenotype-space embedding is 17-dimensional. To get a two-dimensional view
+that still reflects the geometry of the embedding, we apply PCA to the score
+matrix. Φ-Space ships a `getPC()` helper that returns scores, loadings and
+variance-explained in one call.
+
+```{r phispace-pca}
+pc_res <- getPC(phi_scores, ncomp = 5, center = TRUE, scale = FALSE)
+round(pc_res$props * 100, 1)
+```
+
+PC1 and PC2 together explain a large fraction of the variance in phenotype
+space. We now plot the embedding as a **biplot**: one panel shows the query
+cells (the `scores`), the other panel shows the reference phenotypes (the
+`loadings`) in the same 2D basis. Reading the two panels together tells you
+*why* cells sit where they do — a cell in the positive-PC1 / positive-PC2
+quadrant is being pulled there by the phenotypes that load positively on both.
+
+```{r biplot, fig.width=14, fig.height=6}
+scores_df <- as.data.frame(pc_res$scores[, 1:2])
+colnames(scores_df) <- c("PC1", "PC2")
+scores_df$group <- query$group
+
+loadings_df <- as.data.frame(pc_res$loadings[, 1:2])
+colnames(loadings_df) <- c("PC1", "PC2")
+loadings_df$phenotype <- rownames(loadings_df)
+loadings_df$layer <- ifelse(
+    loadings_df$phenotype %in% unique(reference$age_group),
+    "age group", "cell type"
+)
+
+pc1_lab <- sprintf("PC1 (%.1f%%)", pc_res$props[1] * 100)
+pc2_lab <- sprintf("PC2 (%.1f%%)", pc_res$props[2] * 100)
+
+p_scores <- ggplot(scores_df, aes(PC1, PC2, colour = group)) +
+    geom_point(size = 0.6, alpha = 0.7) +
+    scale_colour_brewer(palette = "Set1") +
+    labs(title = "Query cells", x = pc1_lab, y = pc2_lab, colour = "Stage") +
+    theme_bw(base_size = 13) +
+    theme(legend.position = "bottom") +
+    guides(colour = guide_legend(override.aes = list(size = 3, alpha = 1)))
+
+p_loadings <- ggplot(loadings_df, aes(PC1, PC2, colour = layer)) +
+    geom_segment(aes(x = 0, y = 0, xend = PC1, yend = PC2),
+                 arrow = arrow(length = unit(0.015, "npc")), alpha = 0.5) +
+    geom_text(aes(label = phenotype), size = 3.5, vjust = -0.4) +
+    scale_colour_manual(values = c("age group" = "#d95f02", "cell type" = "#1b9e77")) +
+    labs(title = "Reference phenotypes (loadings)",
+         x = pc1_lab, y = pc2_lab, colour = "Phenotype layer") +
+    theme_bw(base_size = 13) +
+    theme(legend.position = "bottom")
+
+p_scores + p_loadings
+```
+
+This biplot is the single most useful visualisation in Φ-Space. Read it like
+this:
+
+- **Query cells cluster by stage.** The three stage colours should separate
+  along the PC that is loaded most heavily by `fetal`, `young`, `middle`,
+  `old` — that is the maturation axis we will hand off to slingshot in
+  Module 6.
+- **Cell-type phenotypes point to where each lineage lives.** A query cell
+  near the `Cardiomyocyte` arrow is a cardiomyocyte; one near `Fibroblast`
+  is a fibroblast. Cells in between the two arrows are transitional /
+  ambiguous and would be assigned inconsistently by a hard classifier.
+- **The foetal→adult axis is visible even within cardiomyocytes.** Look at
+  where the `Cardiomyocyte` loading sits relative to `fetal` and `old` —
+  query cardiomyocytes should spread along that direction, which is precisely
+  the trajectory Module 6 will trace.
 
 ## Hard vs Soft Classification
 
-<!-- TODO:
-  - getClass() to derive a single label per cell
-  - Compare to Module 3 marker-based labels in a confusion table
-  - Discuss which cells disagree and why — teaching moment about
-    transitional states
--->
+Sometimes you genuinely do need a single label per cell — for example, to
+tabulate cell-type composition per donor. Φ-Space provides `getClass()` for
+exactly this: it picks the column with the highest score for each cell.
+
+```{r hard-labels}
+cell_type_cols <- unique(reference$final_cell_type)
+query$PhiCellType <- getClass(phi_scores[, cell_type_cols])
+
+age_cols <- unique(reference$age_group)
+query$PhiAge <- getClass(phi_scores[, age_cols])
+
+table(query$PhiCellType)
+table(query$group, query$PhiAge)
+```
+
+The `group` × `PhiAge` cross-table is a useful sanity check: most foetal
+query cells should land in the `fetal` reference bin, and most adult query
+cells in `old` — but the off-diagonal entries are where the teaching is.
+Those cells are the ones whose continuous scores straddle two age groups.
+
+Let's look at the cardiomyocytes more closely — they are the main interest
+for Module 6:
+
+```{r cm-score-distribution, fig.width=10, fig.height=4}
+cm_scores <- phi_scores[query$PhiCellType == "Cardiomyocyte", age_cols, drop = FALSE]
+cm_df <- as.data.frame(cm_scores) %>%
+    tibble::rownames_to_column("cell") %>%
+    mutate(group = query$group[match(cell, colnames(query))]) %>%
+    tidyr::pivot_longer(all_of(age_cols), names_to = "age_phenotype",
+                        values_to = "score") %>%
+    mutate(age_phenotype = factor(age_phenotype,
+                                  levels = c("fetal", "young", "middle", "old")))
+
+ggplot(cm_df, aes(age_phenotype, score, fill = group)) +
+    geom_violin(scale = "width", alpha = 0.8) +
+    scale_fill_brewer(palette = "Set1") +
+    labs(x = "Reference age group", y = "Φ-Space score",
+         fill = "Query stage",
+         title = "Age-group scores for query cardiomyocytes") +
+    theme_bw(base_size = 13)
+```
+
+Notice that even within a single query stage there is substantial spread
+along the age-group axis. A hard classifier hides this spread; the continuous
+scores are exactly what slingshot will exploit to trace a maturation
+trajectory.
 
 ## Handing Off to Module 6
 
-<!-- TODO:
-  - Save updated SCE / Seurat object with PhiSpace embedding in reducedDim
-  - Recap: cardiomyocytes are the subset we'll carry into slingshot
-  - Brief preview of pseudotime
--->
+We save the annotated query object so that Module 6 can pick up where we
+leave off.
+
+```{r save-for-module-6}
+final_cache <- file.path(results_dir, "05_phispace_query.rds")
+if (!file.exists(final_cache)) saveRDS(query, final_cache)
+cat("Annotated query at", final_cache, "\n")
+```
+
+The object now carries:
+
+- `reducedDim(query, "PhiSpace")` — the 17-column score matrix.
+- `colData(query)$PhiCellType` — discrete cell-type label.
+- `colData(query)$PhiAge` — discrete maturation-stage label.
+- all original metadata (`sample`, `group`, `sex`, QC metrics).
+
+In Module 6 we will **subset this object to cardiomyocytes** (using
+`PhiCellType == "Cardiomyocyte"`) and apply **slingshot** to the PhiSpace
+score matrix. The continuous age-group scores will act as the biological
+anchor that tells slingshot which end of the trajectory is foetal and which
+end is adult.
 
 ## Summary
 
-<!-- TODO: bullet recap of what we did and what stays with us into Modules 6-7 -->
+- Φ-Space replaces a hard cell-type label with a continuous score per
+  reference phenotype per cell — a natural fit for a dataset that spans a
+  developmental gradient.
+- The workflow is four steps: match normalisation (we used rank
+  transformation on both reference and query), keep common genes, run
+  `PhiSpace()` with one or more phenotype layers, inspect the scores.
+- Continuous scores can always be collapsed to a discrete label with
+  `getClass()`, but the inverse is not possible — preserve the scores for
+  any downstream analysis that benefits from soft assignments (trajectory
+  inference, co-phenotype analysis, gradient visualisation).
+- The phenotype-space embedding we saved is the input to Module 6
+  (pseudotime) and Module 7 (gene regulatory networks).
 
 ## Session Info
 
-```{r session-info, eval=FALSE}
+```{r session-info}
 sessionInfo()
 ```

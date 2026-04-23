@@ -55,7 +55,6 @@ Raw Data → QC → Normalisation → Integration → Clustering → Annotation 
 | Module | Topic | Duration | Description |
 |--------|-------|----------|-------------|
 | [**Module 5**](articles/05_phispace_annotation.html) | Continuous Phenotyping with Φ-Space | 45 min | Soft cell-type + stage scores via PLS on a reference atlas |
-| **Module 6** | Pseudotime (slingshot) | XX min | Trajectory inference on the Φ-Space embedding |
 | **Module 7** | Gene Regulatory Networks | XX min | NeighbourNet from the continuous phenotype scores |
 
 ---

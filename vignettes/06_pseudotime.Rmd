@@ -57,23 +57,31 @@ where the Φ-Space age-group scores earn their keep: the cluster with the
 highest mean `fetal` score is an obvious anchor for the start of the
 cardiomyocyte maturation trajectory.
 
-### Two methods, two embeddings
+### Two methods × two embeddings
 
-We run two families of method, chosen to be maximally complementary:
+We run two families of method on two different embeddings — four
+pseudotimes in total, laid out on a 2 × 2 grid:
+
+|                | Φ-Space scores  | PCA of expression |
+|----------------|-----------------|-------------------|
+| **slingshot**  | `pt_sling_phi`  | `pt_sling_pca`    |
+| **DPT**        | `pt_dpt_phi`    | `pt_dpt_pca`      |
 
 - **Slingshot** — a *principal-curve* method. Cluster cells, build a
   minimum spanning tree on the cluster centroids, fit a smooth curve
   through each lineage, project every cell onto the curve. Pseudotime =
-  arc length. We run slingshot **twice**: once on PCA of scran logcounts
-  (the classical choice), once on the Φ-Space score matrix. Same cells,
-  same clusters, same anchor. Any difference between the two pseudotimes
-  is an *embedding effect*.
-- **DPT (diffusion pseudotime) via destiny** — a *diffusion / random walk*
-  method. Build a Gaussian-kernel affinity graph, eigendecompose the
-  associated Markov chain, and use accumulated transition probability
-  from a root as pseudotime. We run DPT once, on PCA of scran logcounts,
-  as a cross-check: a different statistical machinery on the *same*
-  embedding as the first slingshot run.
+  arc length.
+- **DPT (diffusion pseudotime) via destiny** — a *diffusion / random
+  walk* method. Build a Gaussian-kernel affinity graph, eigendecompose
+  the associated Markov chain, and use accumulated transition
+  probability from a root as pseudotime.
+
+Crossing the two methods with two embeddings separates what is otherwise
+confounded: a disagreement along a row of the table is an *embedding
+effect* (same method, different embedding), a disagreement along a
+column is a *method effect* (same embedding, different method), and a
+disagreement on the diagonal is both. The comparison section below
+reads out all four cells of this grid.
 
 One thing destiny gets "for free" that slingshot does not: **endpoint
 detection**. Without a `tips` argument, destiny picks trajectory tips
@@ -91,11 +99,11 @@ By the end of this module you will be able to:
 
 - Explain what pseudotime is, what it is not, and why it needs an
   external directionality anchor for principal-curve methods.
-- Fit a slingshot trajectory on two different embeddings and interpret
-  the difference.
-- Fit a DPT trajectory via destiny and compare it against slingshot.
-- Use a simple multi-pseudotime correlation matrix as a sanity check on
-  any single trajectory result.
+- Fit slingshot and DPT trajectories on two different embeddings
+  (PCA and Φ-Space) and separate embedding effects from method effects.
+- Visualise pseudotime and principal curves on a shared UMAP.
+- Use a four-pseudotime correlation matrix as a sanity check on any
+  single trajectory result.
 - Save a pseudotime-annotated CM subset for Module 7.
 
 ## Load Libraries and Module 5 Output
@@ -184,6 +192,26 @@ cat("PhiSpace dims: ", paste(dim(reducedDim(cm, "PhiSpace")),
 We keep 20 PCs. That is a defensible default for single-cell data of this
 size; tunePhiSpace-style cross-validation of the component count is
 possible but not the point here.
+
+## UMAP for Visualisation
+
+We compute a UMAP on the PCA embedding purely for visualisation — none
+of the pseudotime methods below take UMAP as input. A single shared
+UMAP lets us overlay the four pseudotimes, and the slingshot curves,
+on the same two-dimensional layout.
+
+```{r umap}
+umap_cache <- file.path(results_dir, "06_cm_umap.rds")
+
+if (file.exists(umap_cache)) {
+    reducedDim(cm, "UMAP") <- readRDS(umap_cache)
+    message("Loaded cached UMAP")
+} else {
+    set.seed(42)
+    cm <- scater::runUMAP(cm, dimred = "PCA", name = "UMAP")
+    saveRDS(reducedDim(cm, "UMAP"), umap_cache)
+}
+```
 
 ## Picking the Trajectory Anchor
 
@@ -276,17 +304,20 @@ cm$pt_sling_pca <- rowMeans(pt_pca, na.rm = TRUE)
 summary(cm$pt_sling_pca)
 ```
 
-## DPT via destiny on PCA
+## DPT via destiny
 
-For the diffusion cross-check we build a diffusion map on the PCA
-embedding and compute DPT from the same root cell we used above.
+For the diffusion branch of the 2 × 2 grid we build a diffusion map on
+each embedding and compute DPT from the same root cell we pinned
+above.
 
-```{r destiny-dpt}
+### DPT on PCA
+
+```{r destiny-dpt-pca}
 dpt_cache <- file.path(results_dir, "06_dpt_pca.rds")
 
 if (file.exists(dpt_cache)) {
     dpt <- readRDS(dpt_cache)
-    message("Loaded cached DPT result")
+    message("Loaded cached DPT/PCA result")
 } else {
     dm  <- DiffusionMap(as.matrix(reducedDim(cm, "PCA")),
                         n_eigs = 20, sigma = "local", verbose = FALSE)
@@ -298,16 +329,50 @@ cm$pt_dpt_pca <- dpt$dpt
 summary(cm$pt_dpt_pca)
 ```
 
+### DPT on Φ-Space
+
+Φ-Space gives us only 17 coordinates (13 cell types + 4 age groups), so
+we cap `n_eigs` accordingly; everything else is identical to the PCA
+run.
+
+```{r destiny-dpt-phi}
+dpt_phi_cache <- file.path(results_dir, "06_dpt_phispace.rds")
+
+if (file.exists(dpt_phi_cache)) {
+    dpt_phi <- readRDS(dpt_phi_cache)
+    message("Loaded cached DPT/PhiSpace result")
+} else {
+    n_eigs_phi <- min(15, ncol(reducedDim(cm, "PhiSpace")) - 1)
+    dm_phi <- DiffusionMap(as.matrix(reducedDim(cm, "PhiSpace")),
+                           n_eigs = n_eigs_phi, sigma = "local",
+                           verbose = FALSE)
+    dpt_phi <- DPT(dm_phi, tips = root_cell)
+    saveRDS(dpt_phi, dpt_phi_cache)
+}
+
+cm$pt_dpt_phi <- dpt_phi$dpt
+summary(cm$pt_dpt_phi)
+```
+
 A note on what we *did not* pass: if we had called `DPT(dm)` with no
 `tips`, destiny would have auto-detected trajectory endpoints from the
 diffusion-map geometry — that is the "endpoints for free" property of
 diffusion methods. We pass the root explicitly here only to keep
-destiny's pseudotime directly comparable with the two slingshot runs.
+destiny's pseudotime directly comparable with the slingshot runs.
 
-## Three-Way Comparison
+## Visualising Pseudotimes on UMAP
 
-All three pseudotimes live on different absolute scales, so we rescale
-each to `[0, 1]` before comparing.
+Before any quantitative comparison, it helps to *see* the four
+pseudotimes on a shared layout. We colour cells by pseudotime using a
+blue → yellow → red scale — low values blue, mid yellow, high red —
+which is the most intuitive encoding for an ordered scalar (reversible
+methods like viridis wash out the two endpoints against each other).
+
+For the two slingshot panels we overlay the principal curves on top of
+the UMAP using `slingshot::embedCurves()`, which re-fits the curves in
+any reduced-dimensional space given the existing cell ordering. DPT is
+a per-cell scalar with no curve object, so those two panels show only
+the pseudotime colouring.
 
 ```{r rescale-pt}
 rescale01 <- function(x) {
@@ -317,13 +382,96 @@ rescale01 <- function(x) {
 
 cm$pt_sling_phi_01 <- rescale01(cm$pt_sling_phi)
 cm$pt_sling_pca_01 <- rescale01(cm$pt_sling_pca)
+cm$pt_dpt_phi_01   <- rescale01(cm$pt_dpt_phi)
 cm$pt_dpt_pca_01   <- rescale01(cm$pt_dpt_pca)
+```
 
+```{r umap-curves}
+umap_df <- as.data.frame(reducedDim(cm, "UMAP"))
+colnames(umap_df) <- c("UMAP1", "UMAP2")
+
+# Embed slingshot curves from their native embeddings into UMAP space.
+sling_phi_umap <- embedCurves(sling_phi, reducedDim(cm, "UMAP"))
+sling_pca_umap <- embedCurves(sling_pca, reducedDim(cm, "UMAP"))
+
+curve_df <- function(sds, label) {
+    curves <- slingCurves(sds)
+    do.call(rbind, lapply(seq_along(curves), function(i) {
+        crv <- curves[[i]]
+        s   <- crv$s[crv$ord, , drop = FALSE]
+        data.frame(UMAP1 = s[, 1], UMAP2 = s[, 2],
+                   lineage = paste0(label, "_L", i))
+    }))
+}
+
+curves_phi_df <- curve_df(sling_phi_umap, "phi")
+curves_pca_df <- curve_df(sling_pca_umap, "pca")
+```
+
+```{r umap-pt-plots, fig.width=12, fig.height=10}
+pt_scale <- scale_colour_gradientn(
+    colours = c("blue", "yellow", "red"),
+    name    = "Pseudotime"
+)
+
+umap_base <- function(pt_vec) {
+    df <- cbind(umap_df, pt = pt_vec)
+    ggplot(df, aes(UMAP1, UMAP2, colour = pt)) +
+        geom_point(size = 0.4, alpha = 0.7) +
+        pt_scale +
+        theme_bw(base_size = 11) +
+        theme(aspect.ratio = 1)
+}
+
+p_sling_phi <- umap_base(cm$pt_sling_phi_01) +
+    geom_path(data = curves_phi_df,
+              aes(UMAP1, UMAP2, group = lineage),
+              inherit.aes = FALSE,
+              colour = "black", linewidth = 0.8) +
+    labs(title = "slingshot / Φ-Space")
+
+p_sling_pca <- umap_base(cm$pt_sling_pca_01) +
+    geom_path(data = curves_pca_df,
+              aes(UMAP1, UMAP2, group = lineage),
+              inherit.aes = FALSE,
+              colour = "black", linewidth = 0.8) +
+    labs(title = "slingshot / PCA")
+
+p_dpt_phi <- umap_base(cm$pt_dpt_phi_01) +
+    labs(title = "DPT / Φ-Space")
+
+p_dpt_pca <- umap_base(cm$pt_dpt_pca_01) +
+    labs(title = "DPT / PCA")
+
+(p_sling_phi | p_sling_pca) / (p_dpt_phi | p_dpt_pca) +
+    plot_layout(guides = "collect") +
+    plot_annotation(title = "Pseudotime on UMAP — two methods × two embeddings")
+```
+
+Read the figure column-by-column and row-by-row:
+
+- **Rows** (method). Slingshot curves emphasise a single backbone;
+  DPT spreads cells along whichever geometry the diffusion kernel
+  picks out.
+- **Columns** (embedding). Φ-Space forces the trajectory through
+  cells whose cell-type and age scores change smoothly. PCA can pick
+  up other axes of variation (donor, batch, technical) that Φ-Space
+  never saw.
+
+If all four panels paint the same blue → red gradient across the same
+UMAP regions, the trajectory is robust. If the two slingshot panels
+agree but the two DPT panels disagree with them, that is a pure method
+effect; if the two PhiSpace panels agree but the PCA panels do not,
+that is a pure embedding effect.
+
+## Four-Way Comparison
+
+```{r pt-mat}
 pt_mat <- as.data.frame(colData(cm)[,
-    c("pt_sling_phi_01", "pt_sling_pca_01", "pt_dpt_pca_01")])
-colnames(pt_mat) <- c("slingshot/PhiSpace",
-                      "slingshot/PCA",
-                      "DPT/PCA")
+    c("pt_sling_phi_01", "pt_sling_pca_01",
+      "pt_dpt_phi_01",   "pt_dpt_pca_01")])
+colnames(pt_mat) <- c("slingshot/PhiSpace", "slingshot/PCA",
+                      "DPT/PhiSpace",       "DPT/PCA")
 ```
 
 ### Correlation matrix
@@ -338,7 +486,7 @@ of cells.
 
 ### Pairs plot
 
-```{r pt-pairs, fig.width=9, fig.height=9}
+```{r pt-pairs, fig.width=10, fig.height=10}
 pt_long <- pt_mat |>
     rownames_to_column("cell") |>
     mutate(group = cm$group[match(cell, colnames(cm))])
@@ -354,37 +502,36 @@ make_pair <- function(x, y) {
         labs(x = x, y = y)
 }
 
-pairs <- list(
-    make_pair("slingshot/PhiSpace", "slingshot/PCA"),
-    make_pair("slingshot/PhiSpace", "DPT/PCA"),
-    make_pair("slingshot/PCA",      "DPT/PCA")
-)
+method_names <- c("slingshot/PhiSpace", "slingshot/PCA",
+                  "DPT/PhiSpace",       "DPT/PCA")
+pair_idx <- combn(method_names, 2, simplify = FALSE)
+pairs <- lapply(pair_idx, function(p) make_pair(p[1], p[2]))
 
-wrap_plots(pairs, ncol = 2) +
+wrap_plots(pairs, ncol = 3) +
     plot_annotation(title = "Pairwise agreement between pseudotimes")
 ```
 
-Read the three panels as answers to three different questions:
+Read the 2 × 2 grid of methods diagonally:
 
-- **slingshot/PhiSpace vs slingshot/PCA** — pure *embedding* effect.
-  Same method, same clusters, same anchor. Disagreement here says the
-  choice of embedding moves the trajectory.
-- **slingshot vs DPT on PCA** — pure *method* effect. Same embedding,
-  different trajectory family. Disagreement says the result is
-  geometry-specific.
-- **slingshot/PhiSpace vs DPT/PCA** — the hardest diagonal; if this
-  one agrees, the trajectory is probably robust.
+- **Rows of the method table** (slingshot/PhiSpace ↔ slingshot/PCA, or
+  DPT/PhiSpace ↔ DPT/PCA) isolate the *embedding* effect — same method,
+  different embedding.
+- **Columns of the method table** (slingshot/PhiSpace ↔ DPT/PhiSpace,
+  or slingshot/PCA ↔ DPT/PCA) isolate the *method* effect — same
+  embedding, different trajectory family.
+- **Anti-diagonal pairs** (slingshot/PhiSpace ↔ DPT/PCA, slingshot/PCA
+  ↔ DPT/PhiSpace) vary both at once; agreement here is the strongest
+  evidence the trajectory is not an artefact of either choice.
 
 ### Pseudotime vs donor stage
 
 ```{r pt-vs-group, fig.width=12, fig.height=4}
 box_df <- pt_long |>
     tidyr::pivot_longer(
-        cols = c("slingshot/PhiSpace", "slingshot/PCA", "DPT/PCA"),
+        cols = all_of(method_names),
         names_to = "method", values_to = "pseudotime"
     ) |>
-    mutate(method = factor(method,
-        levels = c("slingshot/PhiSpace", "slingshot/PCA", "DPT/PCA")))
+    mutate(method = factor(method, levels = method_names))
 
 ggplot(box_df, aes(group, pseudotime, fill = group)) +
     geom_violin(scale = "width", alpha = 0.8) +
@@ -398,14 +545,14 @@ ggplot(box_df, aes(group, pseudotime, fill = group)) +
     theme(legend.position = "none")
 ```
 
-The donor stage (`group`) is held-out information: none of the three
+The donor stage (`group`) is held-out information: none of the four
 pseudotime methods saw it. If the violins step upward cleanly from
-`fetal` to `adult` on all three panels, the trajectory is recovering the
+`fetal` to `adult` on all four panels, the trajectory is recovering the
 real maturation order.
 
 ## Handing Off to Module 7
 
-We save the CM object with all three pseudotimes attached so Module 7
+We save the CM object with all four pseudotimes attached so Module 7
 can use them as the time axis for gene-regulatory-network inference.
 
 ```{r save-for-module-7}
@@ -417,32 +564,33 @@ cat("Annotated CM object at", final_cache, "\n")
 The object carries, in addition to everything Module 5 handed us:
 
 - `reducedDim(cm, "PCA")` — 20 PCs on scran logcounts of HVGs.
-- `colData(cm)$pt_sling_phi` / `pt_sling_pca` / `pt_dpt_pca` — raw
-  pseudotimes from the three runs.
+- `reducedDim(cm, "UMAP")` — 2D UMAP on the PCA embedding, for plotting.
+- `colData(cm)$pt_sling_phi` / `pt_sling_pca` / `pt_dpt_phi` /
+  `pt_dpt_pca` — raw pseudotimes from the four runs.
 - `colData(cm)$pt_*_01` — the same pseudotimes rescaled to `[0, 1]`
   for cross-method comparison.
 
 For Module 7 we will primarily use `pt_sling_phi` — the Φ-Space
-slingshot pseudotime — as the canonical time axis. The other two live
-in the object for optional sensitivity analyses.
+slingshot pseudotime — as the canonical time axis. The other three
+live in the object for optional sensitivity analyses.
 
 ## Summary
 
 - Pseudotime gives a scalar ordering of cells along a biological
   process; it is not real time, and its direction for principal-curve
   methods comes from an external anchor.
-- Slingshot is our primary method: cluster centroids → MST → principal
-  curves → arc-length pseudotime. We ran it on both a PCA-of-expression
-  embedding and on the Φ-Space score matrix to isolate the effect of
-  the embedding.
-- DPT via destiny is our diffusion cross-check on the PCA embedding.
-  It adds two useful things: (i) automatic endpoint detection, and
-  (ii) a fundamentally different statistical object (random-walk
-  probabilities rather than arc length), which catches principal-curve
-  artefacts.
-- The three-pseudotime comparison is not bureaucratic — it tells you
-  whether your trajectory is robust to embedding choice, method choice,
-  or both.
+- We ran two methods on two embeddings — slingshot and DPT, each on
+  PCA and on Φ-Space — giving four pseudotimes in a 2 × 2 grid.
+- Slingshot is our principal-curve method: cluster centroids → MST →
+  principal curves → arc-length pseudotime. We overlay its curves on
+  the UMAP to make the trajectory visible.
+- DPT via destiny is our diffusion cross-check. It adds two useful
+  things: (i) automatic endpoint detection, and (ii) a fundamentally
+  different statistical object (random-walk probabilities rather than
+  arc length), which catches principal-curve artefacts.
+- The four-pseudotime comparison is not bureaucratic — crossing method
+  with embedding is what lets us separate embedding effects from method
+  effects and decide whether the trajectory is robust to either.
 
 ## Session Info
 

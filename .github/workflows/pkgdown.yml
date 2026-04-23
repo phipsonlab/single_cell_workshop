@@ -78,7 +78,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: data
-          key: workshop-data-v3
+          key: workshop-data-v4
 
       - name: Download workshop data from Zenodo
         if: steps.cache-data.outputs.cache-hit != 'true'
@@ -89,6 +89,19 @@ jobs:
           curl -L --retry 3 --max-time 1200 -o data/heart-counts.Rds "https://zenodo.org/records/18237749/files/heart-counts.Rds?download=1"
           echo "Downloading cellinfo_updated.Rds..."
           curl -L --retry 3 --max-time 60 -o data/cellinfo_updated.Rds "https://zenodo.org/records/18237749/files/cellinfo_updated.Rds?download=1"
+
+          # Module 5 data — only fetched if present on Zenodo. These files
+          # must be uploaded to the same record (18237749) for Module 5 to
+          # render with its code chunks evaluated; otherwise the module
+          # falls back to prose-only via the vignette's `data_ok` guard.
+          echo "Downloading afternoon_mvp.rds (Module 5 query)..."
+          curl -L --retry 3 --max-time 600 -f -o data/afternoon_mvp.rds \
+            "https://zenodo.org/records/18237749/files/afternoon_mvp.rds?download=1" \
+            || echo "  (not yet on Zenodo — Module 5 will render prose-only)"
+          echo "Downloading reference_gao2026.rds (Module 5 reference)..."
+          curl -L --retry 3 --max-time 600 -f -o data/reference_gao2026.rds \
+            "https://zenodo.org/records/18237749/files/reference_gao2026.rds?download=1" \
+            || echo "  (not yet on Zenodo — Module 5 will render prose-only)"
           ls -lh data/
 
       - name: Save workshop data cache
@@ -96,7 +109,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: data
-          key: workshop-data-v3
+          key: workshop-data-v4
 
       - name: Verify data files
         run: |
@@ -120,6 +133,18 @@ jobs:
       - name: Install pkgdown
         run: |
           install.packages("pkgdown")
+        shell: Rscript {0}
+
+      # Install Module 5 (Φ-Space) extra dependencies not in renv.lock.
+      # PhiSpace is not on Bioconductor/CRAN yet, so install from GitHub.
+      - name: Install Module 5 extras
+        run: |
+          if (!requireNamespace("BiocManager", quietly = TRUE))
+              install.packages("BiocManager")
+          BiocManager::install(c("ComplexHeatmap"), update = FALSE, ask = FALSE)
+          if (!requireNamespace("remotes", quietly = TRUE))
+              install.packages("remotes")
+          remotes::install_github("jiadongm/PhiSpace/pkg", upgrade = "never")
         shell: Rscript {0}
 
       # Install local package (needed for pkgdown to build reference docs)

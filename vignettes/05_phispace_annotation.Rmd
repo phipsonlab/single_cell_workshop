@@ -18,14 +18,32 @@ vignette: >
 ---
 
 ```{r setup, include=FALSE}
+# Module 5 needs two data files that live outside the default workshop
+# download: the heart query object (`afternoon_mvp.rds`) and the Gao 2026
+# reference (`reference_gao2026.rds`). If either is missing (e.g. on a
+# fresh clone or in CI before the Zenodo upload), skip execution but still
+# render the prose so the site build succeeds.
+data_ok <- all(file.exists(
+    "../data/afternoon_mvp.rds",
+    "../data/reference_gao2026.rds"
+))
+
 knitr::opts_chunk$set(
     echo = TRUE,
     warning = FALSE,
     message = FALSE,
     fig.align = "center",
     fig.width = 10,
-    fig.height = 6
+    fig.height = 6,
+    eval = data_ok
 )
+```
+
+```{asis, echo = !data_ok}
+> **Note.** This module's code chunks are not evaluated because
+> `data/afternoon_mvp.rds` and/or `data/reference_gao2026.rds` are not
+> present. Download them from the workshop's Zenodo record (see Module 0)
+> and re-render to reproduce the analysis.
 ```
 
 ## Introduction
@@ -130,7 +148,7 @@ We need two data objects:
 
 ```{r load-data}
 seu <- readRDS("../data/afternoon_mvp.rds")
-reference <- readRDS("../references/reference_gao2026.rds")
+reference <- readRDS("../data/reference_gao2026.rds")
 
 cat("Query (Seurat):\n")
 cat("  - cells:", ncol(seu), "\n")
@@ -199,6 +217,70 @@ score each query cell against all four reference age groups, and we will use
 those four scores as a fine-grained read-out of where on the maturation axis
 each cell sits.
 
+### Zooming in: splitting cardiomyocyte and fibroblast into subtypes
+
+Looking at `final_cell_type` above, **Cardiomyocyte** (~1,900 cells) and
+**Fibroblast** (~1,300 cells) dominate the reference. They are also the two
+lineages we care about most biologically: cardiomyocytes carry the
+foetal→adult maturation signal we will trace in Module 6, and fibroblasts
+reshape the extracellular matrix across development. The Gao 2026 authors
+further annotated these two lineages into biologically meaningful subclusters
+(e.g. `Fetal_enriched_metabolic`, `Stressed`, `Interstitial`,
+`Perivascular` …) — stored in the `cell_type_plus_subcluster` column as
+`CellType:Subtype` strings.
+
+We therefore build a **fine cell-type column** that keeps every non-CM,
+non-Fibroblast cell on its broad label, and replaces the CM / Fibroblast
+labels with the Gao subclusters. Two things happen at once:
+
+1. **We zoom in on the cells we care about.** When a small number of cell
+   types carry most of the biological signal, it is worth asking Φ-Space to
+   resolve them more finely. Every CM subcluster becomes its own phenotype
+   column in the score matrix, so we can tell a `Fetal_enriched_metabolic`
+   CM from a `Stressed` CM rather than collapsing both into "Cardiomyocyte".
+2. **The reference becomes more balanced.** Splitting the two giant classes
+   into ~8 + ~7 smaller classes brings their per-class counts closer to the
+   rarer lineages (Pericyte, Myeloid, Endothelial, …). PLS over-fits the
+   majority class when the reference is unbalanced, and this split softens
+   that skew for free.
+
+```{r split-subtypes}
+ct <- reference$final_cell_type
+sub <- reference$cell_type_plus_subcluster
+# Replace only the two populous lineages with their subclusters;
+# leave the rest on their broad label.
+reference$cell_type_fine <- ifelse(
+    ct %in% c("Cardiomyocyte", "Fibroblast"),
+    sub,
+    ct
+)
+
+sort(table(reference$cell_type_fine), decreasing = TRUE)
+```
+
+Note the alternative we did **not** take: **balanced subsampling**. Instead
+of splitting the majority classes, you could down-sample them with
+`PhiSpace::subsample(..., key = "final_cell_type", minCellNum = ...)` so every
+cell type contributes a comparable number of reference cells. That is the
+right move when you are happy with the broad-class annotation and simply want
+fairer PLS training; here we chose to split instead because the CM / Fibroblast
+subclusters are interesting in their own right. The two approaches can also
+be combined — split first, then subsample within each fine label.
+
+### A note on very rare phenotypes
+
+Even after splitting, some fine labels are tiny (e.g.
+`Cardiomyocyte:Senescent` ≈ 4 cells, `Fibroblast:Inflammatory` ≈ 6 cells).
+Training PLS with a phenotype represented by a handful of cells is a bad
+bargain: the column it produces in the score matrix is mostly noise, and it
+still consumes a component in the PLS fit.
+
+`PhiSpace()` exposes a `cellTypeThreshold` argument for exactly this case —
+set it to, say, `20`, and any phenotype level with fewer than 20 reference
+cells is dropped before model fitting. We use it below to prune the long
+tail of the subtype split while keeping every lineage that is biologically
+well-represented.
+
 ## Preparing Reference and Query
 
 Three preparation steps are required before we can run Φ-Space:
@@ -209,23 +291,53 @@ Three preparation steps are required before we can run Φ-Space:
 3. **Quality control.** Remove all-zero genes from the query, which would
    otherwise carry no signal but still consume model capacity.
 
-### Match normalisation with rank transformation
+### Match normalisation with scran
 
-The reference is stored with a `logcounts` assay; the query carries raw
-`counts`. Rather than hand-matching library-size normalisations across two
-very different pipelines, we apply **rank transformation** to both. Rank
-transformation replaces each cell's expression vector with the ranks of its
-genes, making the result invariant to library size, scale, and monotone
-transformations — exactly what we need when matching across platforms.
+The reference is stored with a `logcounts` assay (scran-normalised during
+reference preparation — see
+[`HPC_reference_processing.md`](../references/HPC_reference_processing.md));
+the query carries raw `counts`. To put both on the same numerical scale we
+apply **scran normalisation** to the query as well, via PhiSpace's
+`scranTransf()` wrapper. `scranTransf()` computes pool-based size factors
+with `scran::computeSumFactors()` and then calls `scuttle::logNormCounts()`,
+storing the result in a `logcounts` assay — the same assay name and the
+same normalisation family the reference already uses.
 
-```{r rank-transform}
-reference <- RankTransf(reference, assayname = "logcounts")
-query     <- RankTransf(query,     assayname = "counts")
+An earlier draft of this module used rank transformation instead. Rank is
+fast and invariant to library size, which is attractive when reference and
+query come from very different platforms. But for this dataset both sides
+are snRNA-seq, so the cross-platform argument is weaker, and scran's
+size-factor normalisation preserves more of the count-level variation that
+PLS can exploit. The trade-off is that scran is slower, so we cache the
+intermediate object.
+
+```{r scran-transform}
+ref_cache   <- file.path(results_dir, "05_reference_scran.rds")
+query_cache <- file.path(results_dir, "05_query_scran.rds")
+
+if (file.exists(ref_cache)) {
+    reference <- readRDS(ref_cache)
+    message("Loaded cached scran-normalised reference from ", ref_cache)
+} else {
+    # Reference logcounts is already scran-normalised from the HPC prep
+    # script — nothing to recompute, just cache for reproducibility.
+    saveRDS(reference, ref_cache)
+}
+
+if (file.exists(query_cache)) {
+    query <- readRDS(query_cache)
+    message("Loaded cached scran-normalised query from ", query_cache)
+} else {
+    query <- scranTransf(query)
+    saveRDS(query, query_cache)
+}
+
 assayNames(reference)
 assayNames(query)
 ```
 
-Both objects now carry a `rank` assay, and that is what Φ-Space will use.
+Both objects now carry a `logcounts` assay, and that is what Φ-Space will
+use below (`refAssay = "logcounts"`).
 
 ### Keep common genes and remove zero-expression genes
 
@@ -244,27 +356,30 @@ dim(query)
 The gene-symbol overlap is comfortably above ten thousand, which is plenty for
 PLS.
 
-### Balancing the reference
+### Balancing the reference — a recap
 
-A good reference is balanced across cell types — if 90 % of the reference cells
-are cardiomyocytes, the model will over-learn cardiomyocyte variation and
-under-learn everything else. Our Gao 2026 reference has already been
-down-sampled per cell type during processing (see
-[`prepare_gao_2026.R`](../references/prepare_gao_2026.R)), with each rare cell
-type capped at 100 cells and abundant types capped at a few thousand. If you
-ever work with a less curated reference, `PhiSpace::subsample()` is the
-function you want — it draws a stratified subset by any `colData` column.
+Two levers keep the reference balanced: **splitting** dense majority classes
+into biologically meaningful subclusters (what we did above with CM and
+Fibroblast), and **subsampling** with `PhiSpace::subsample(key = ...)` to cap
+the per-class cell count. The Gao 2026 reference was already down-sampled
+during preparation (see
+[`HPC_reference_processing.md`](../references/HPC_reference_processing.md)),
+capping rare types at ~100 and abundant types at a few thousand — so between
+that and our fine split, we are in a reasonable spot without further action.
 
 ## Running Φ-Space
 
 We now fit the PLS model on the reference and project the query into the
 phenotype space. We ask for two phenotype layers at once:
 
-- `final_cell_type` (13 levels) — what kind of cell is this?
+- `cell_type_fine` — the split label we built above (CM / Fibroblast
+  replaced by their Gao subclusters, everything else on its broad label).
 - `age_group` (4 levels) — where on the maturation axis does it sit?
 
-The resulting embedding will have 13 + 4 = 17 columns: one score per query
-cell per phenotype level.
+We also pass `cellTypeThreshold = 20` so that phenotype levels represented
+by fewer than 20 reference cells are dropped before PLS fitting — this
+trims the long tail of rare CM / Fibroblast subclusters without touching
+the well-populated ones.
 
 This step is the computational bottleneck of the module (roughly one minute
 on a laptop), so we cache the output.
@@ -277,17 +392,18 @@ if (file.exists(phispace_cache)) {
     message("Loaded cached PhiSpace result from ", phispace_cache)
 } else {
     query <- PhiSpace(
-        reference  = reference,
-        query      = query,
-        phenotypes = c("final_cell_type", "age_group"),
-        refAssay   = "rank",
-        regMethod  = "PLS",
-        center     = TRUE,
-        scale      = FALSE
+        reference         = reference,
+        query             = query,
+        phenotypes        = c("cell_type_fine", "age_group"),
+        refAssay          = "logcounts",
+        regMethod         = "PLS",
+        center            = TRUE,
+        scale             = FALSE,
+        cellTypeThreshold = 20
     )
-    # Drop the intermediate rank assay before caching — it is no longer
+    # Drop the intermediate logcounts assay before caching — it is no longer
     # needed downstream and roughly halves the file size.
-    assay(query, "rank") <- NULL
+    assay(query, "logcounts") <- NULL
     saveRDS(query, phispace_cache)
 }
 ```
@@ -326,9 +442,9 @@ clear: cells from the foetal group should score high on foetal-related
 reference phenotypes, and similarly for young and adult.
 
 ```{r heatmap-scores, fig.height=7}
-split_phenotype <- c(
-    rep("cell type", length(unique(reference$final_cell_type))),
-    rep("age group", length(unique(reference$age_group)))
+age_levels <- unique(reference$age_group)
+split_phenotype <- ifelse(
+    colnames(phi_scores) %in% age_levels, "age group", "cell type"
 )
 
 ht <- Heatmap(
@@ -419,13 +535,56 @@ this:
   `old` — that is the maturation axis we will hand off to slingshot in
   Module 6.
 - **Cell-type phenotypes point to where each lineage lives.** A query cell
-  near the `Cardiomyocyte` arrow is a cardiomyocyte; one near `Fibroblast`
-  is a fibroblast. Cells in between the two arrows are transitional /
+  near a `Cardiomyocyte:*` arrow is a cardiomyocyte; one near a `Fibroblast:*`
+  arrow is a fibroblast. Cells in between the two arrows are transitional /
   ambiguous and would be assigned inconsistently by a hard classifier.
 - **The foetal→adult axis is visible even within cardiomyocytes.** Look at
-  where the `Cardiomyocyte` loading sits relative to `fetal` and `old` —
-  query cardiomyocytes should spread along that direction, which is precisely
-  the trajectory Module 6 will trace.
+  where the `Cardiomyocyte:Fetal_enriched_*` loadings sit relative to the
+  adult-stage CM subclusters — query cardiomyocytes should spread along
+  that direction, which is precisely the trajectory Module 6 will trace.
+
+### Query cells coloured by broad cell type
+
+The stage panel tells us *where each donor group lands* in phenotype space,
+but not *which lineage* each cell belongs to. To see that, we recolour the
+same query PCA by the broad cell type derived from the fine Φ-Space call
+(collapsing every `Fibroblast:*` back to `Fibroblast`, every
+`Cardiomyocyte:*` to `Cardiomyocyte`, etc.). We use `RColorBrewer`'s
+`Set1` / `Dark2` — pooled to get enough distinct, high-contrast hues for
+up to ~12 broad lineages without relying on subtle shade differences.
+
+We colour by the *broad* label rather than the fine one because the fine
+label has 20+ levels — more than any qualitative palette can distinguish
+cleanly. If we ever need to visualise at the fine resolution, a
+`facet_wrap(~ broad)` with the fine label inside each panel is much more
+legible than a single plot with 20+ colours.
+
+```{r biplot-broad, fig.width=8, fig.height=6}
+age_levels_biplot <- unique(reference$age_group)
+ct_cols_biplot    <- setdiff(colnames(phi_scores), age_levels_biplot)
+fine_call         <- getClass(phi_scores[, ct_cols_biplot])
+scores_df$broad   <- sub(":.*$", "", fine_call)
+
+n_broad <- length(unique(scores_df$broad))
+broad_palette <- c(
+    RColorBrewer::brewer.pal(9, "Set1"),
+    RColorBrewer::brewer.pal(8, "Dark2")
+)[seq_len(n_broad)]
+
+ggplot(scores_df, aes(PC1, PC2, colour = broad)) +
+    geom_point(size = 0.6, alpha = 0.8) +
+    scale_colour_manual(values = broad_palette) +
+    labs(title = "Query cells coloured by broad cell type",
+         x = pc1_lab, y = pc2_lab, colour = "Broad cell type") +
+    theme_bw(base_size = 13) +
+    theme(legend.position = "right") +
+    guides(colour = guide_legend(override.aes = list(size = 3, alpha = 1)))
+```
+
+Read this panel against the loadings panel above: each broad-cell-type blob
+should sit on top of (or adjacent to) the loading arrows of its own
+subtypes. Cardiomyocyte cells should cluster around the `Cardiomyocyte:*`
+arrows, fibroblasts around the `Fibroblast:*` arrows, and so on.
 
 ## Hard vs Soft Classification
 
@@ -434,13 +593,17 @@ tabulate cell-type composition per donor. Φ-Space provides `getClass()` for
 exactly this: it picks the column with the highest score for each cell.
 
 ```{r hard-labels}
-cell_type_cols <- unique(reference$final_cell_type)
-query$PhiCellType <- getClass(phi_scores[, cell_type_cols])
+age_cols        <- unique(reference$age_group)
+cell_type_cols  <- setdiff(colnames(phi_scores), age_cols)
 
-age_cols <- unique(reference$age_group)
-query$PhiAge <- getClass(phi_scores[, age_cols])
+query$PhiCellType <- getClass(phi_scores[, cell_type_cols])
+query$PhiAge      <- getClass(phi_scores[, age_cols])
+
+# Broad label: collapse "CellType:Subtype" back to "CellType".
+query$PhiCellTypeBroad <- sub(":.*$", "", query$PhiCellType)
 
 table(query$PhiCellType)
+table(query$PhiCellTypeBroad)
 table(query$group, query$PhiAge)
 ```
 
@@ -453,7 +616,7 @@ Let's look at the cardiomyocytes more closely — they are the main interest
 for Module 6:
 
 ```{r cm-score-distribution, fig.width=10, fig.height=4}
-cm_scores <- phi_scores[query$PhiCellType == "Cardiomyocyte", age_cols, drop = FALSE]
+cm_scores <- phi_scores[query$PhiCellTypeBroad == "Cardiomyocyte", age_cols, drop = FALSE]
 cm_df <- as.data.frame(cm_scores) %>%
     tibble::rownames_to_column("cell") %>%
     mutate(group = query$group[match(cell, colnames(query))]) %>%
@@ -489,24 +652,28 @@ cat("Annotated query at", final_cache, "\n")
 
 The object now carries:
 
-- `reducedDim(query, "PhiSpace")` — the 17-column score matrix.
-- `colData(query)$PhiCellType` — discrete cell-type label.
+- `reducedDim(query, "PhiSpace")` — the score matrix (fine cell-type
+  columns + age-group columns).
+- `colData(query)$PhiCellType` — discrete *fine* cell-type label
+  (CM / Fibroblast resolved to subtype).
+- `colData(query)$PhiCellTypeBroad` — discrete broad cell-type label
+  (CM and Fibroblast subtypes collapsed back).
 - `colData(query)$PhiAge` — discrete maturation-stage label.
 - all original metadata (`sample`, `group`, `sex`, QC metrics).
 
 In Module 6 we will **subset this object to cardiomyocytes** (using
-`PhiCellType == "Cardiomyocyte"`) and apply **slingshot** to the PhiSpace
-score matrix. The continuous age-group scores will act as the biological
-anchor that tells slingshot which end of the trajectory is foetal and which
-end is adult.
+`PhiCellTypeBroad == "Cardiomyocyte"`) and apply **slingshot** to the
+PhiSpace score matrix. The continuous age-group scores will act as the
+biological anchor that tells slingshot which end of the trajectory is
+foetal and which end is adult.
 
 ## Summary
 
 - Φ-Space replaces a hard cell-type label with a continuous score per
   reference phenotype per cell — a natural fit for a dataset that spans a
   developmental gradient.
-- The workflow is four steps: match normalisation (we used rank
-  transformation on both reference and query), keep common genes, run
+- The workflow is four steps: match normalisation (we used scran
+  normalisation on both reference and query), keep common genes, run
   `PhiSpace()` with one or more phenotype layers, inspect the scores.
 - Continuous scores can always be collapsed to a discrete label with
   `getClass()`, but the inverse is not possible — preserve the scores for

@@ -26,13 +26,15 @@ We analyse **single-nucleus RNA-sequencing (snRNA-seq) data from human heart tis
 ## Workshop Overview
 
 ```
-Raw Data → QC & Filtering → Normalisation → Integration → Clustering → Annotation → DE Analysis
+Raw Data → QC → Normalisation → Integration → Clustering → Annotation → DE
+                                                             ↘
+                                             Φ-Space → Pseudotime → GRN
 ```
 
 | Session | Duration | Topics |
 |---------|----------|--------|
 | **Session 1** | 3 hours | QC, Normalisation, Integration, Clustering, Annotation, DE |
-| **Session 2** | 3 hours | *[Afternoon topics]* |
+| **Session 2** | 3 hours | Φ-Space soft annotation, pseudotime, gene regulatory networks |
 
 ---
 
@@ -48,13 +50,13 @@ Raw Data → QC & Filtering → Normalisation → Integration → Clustering →
 
 ---
 
-## Session 2: [Afternoon Session]
+## Session 2: Trajectory and Gene Regulation
 
 | Module | Topic | Duration | Description |
 |--------|-------|----------|-------------|
-| **Module 5** | *[Topic]* | XX min | *[Description]* |
-| **Module 6** | *[Topic]* | XX min | *[Description]* |
-| **Module 7** | *[Topic]* | XX min | *[Description]* |
+| [**Module 5**](articles/05_phispace_annotation.html) | Continuous Phenotyping with Φ-Space | 45 min | Soft cell-type + stage scores via PLS on a reference atlas |
+| **Module 6** | Pseudotime (slingshot) | XX min | Trajectory inference on the Φ-Space embedding |
+| **Module 7** | Gene Regulatory Networks | XX min | NeighbourNet from the continuous phenotype scores |
 
 ---
 
@@ -91,6 +93,7 @@ Raw Data → QC & Filtering → Normalisation → Integration → Clustering →
 | Annotation | Marker-based | Seurat |
 | DE Analysis | Pseudobulk + limma-voom | edgeR, limma |
 | Composition | propeller | speckle |
+| Soft annotation | PLS on reference atlas | PhiSpace |
 
 ---
 

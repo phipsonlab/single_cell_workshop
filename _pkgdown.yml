@@ -41,6 +41,8 @@ navbar:
           href: articles/04_differential_expression.html
         - text: "Module 5: Continuous Phenotyping with Φ-Space"
           href: articles/05_phispace_annotation.html
+        - text: "Module 6: Pseudotime Trajectory Analysis"
+          href: articles/06_pseudotime.html
     resources:
       text: Resources
       href: articles/resources.html
@@ -58,6 +60,7 @@ articles:
       - 03_cell_type_annotation
       - 04_differential_expression
       - 05_phispace_annotation
+      - 06_pseudotime
   - title: "Additional Resources"
     navbar: ~
     contents:

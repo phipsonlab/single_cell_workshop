@@ -401,9 +401,8 @@ if (file.exists(phispace_cache)) {
         scale             = FALSE,
         cellTypeThreshold = 20
     )
-    # Drop the intermediate logcounts assay before caching — it is no longer
-    # needed downstream and roughly halves the file size.
-    assay(query, "logcounts") <- NULL
+    # Keep logcounts in the cache — Module 6 needs it for PCA on the
+    # expression side of its pseudotime comparison.
     saveRDS(query, phispace_cache)
 }
 ```
@@ -646,7 +645,7 @@ leave off.
 
 ```{r save-for-module-6}
 final_cache <- file.path(results_dir, "05_phispace_query.rds")
-if (!file.exists(final_cache)) saveRDS(query, final_cache)
+saveRDS(query, final_cache)
 cat("Annotated query at", final_cache, "\n")
 ```
 

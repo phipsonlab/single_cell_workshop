@@ -135,13 +135,19 @@ jobs:
           install.packages("pkgdown")
         shell: Rscript {0}
 
-      # Install Module 5 (Φ-Space) extra dependencies not in renv.lock.
-      # PhiSpace is not on Bioconductor/CRAN yet, so install from GitHub.
-      - name: Install Module 5 extras
+      # Install afternoon-session (Modules 5/6/7) extras not in renv.lock.
+      # PhiSpace is GitHub-only; everything else is Bioconductor/CRAN.
+      - name: Install afternoon extras
         run: |
           if (!requireNamespace("BiocManager", quietly = TRUE))
               install.packages("BiocManager")
-          BiocManager::install(c("ComplexHeatmap"), update = FALSE, ask = FALSE)
+          BiocManager::install(
+              c("ComplexHeatmap",   # Module 5 heatmap
+                "slingshot",        # Module 6 principal-curve pseudotime
+                "destiny",          # Module 6 diffusion pseudotime (DPT)
+                "scater"),          # Module 6 SCE helpers / plotting
+              update = FALSE, ask = FALSE
+          )
           if (!requireNamespace("remotes", quietly = TRUE))
               install.packages("remotes")
           remotes::install_github("jiadongm/PhiSpace/pkg", upgrade = "never")

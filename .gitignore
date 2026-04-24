@@ -19,6 +19,7 @@ results/*.Rds
 results/*.csv
 results/figures/
 results/tables/
+results/umap_sweep/
 
 # pkgdown site - uncomment below when using GitHub Actions
 # docs/

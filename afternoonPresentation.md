@@ -96,8 +96,9 @@ Participants should be able to explain:
   trajectory);
 - the three statistical families and which one gives directionality
   "for free";
-- why we run slingshot twice (PCA vs. Φ-Space) and what agreement or
-  disagreement between the two means;
+- why slingshot depends on both an embedding and a clustering;
+- why we compare PCA vs. Φ-Space embeddings and slingshot vs. DPT
+  method families;
 - why velocity is discussed but not run on this dataset.
 
 ### Slide structure
@@ -130,9 +131,10 @@ pick, main failure mode.**
 Principal-curve pseudotime is the default in most single-cell
 workflows; we spend the majority of the talk here.
 
-- Inputs: a reducedDim + a clustering. We'll use scran logcounts as the
-  expression normalisation throughout, and clusters come from the fine
-  Φ-Space cell-type labels (already biologically meaningful).
+- Inputs: a reducedDim + a clustering. We'll compare PCA of scran
+  logcounts against the Φ-Space score matrix, and compare two
+  clusterings: unsupervised Louvain clusters and the fine PhiCellType
+  labels from Module 5.
 - Algorithm in three steps:
   1. Cluster centroids in the chosen embedding.
   2. Minimum spanning tree across the centroids → a tree of
@@ -148,16 +150,16 @@ workflows; we spend the majority of the talk here.
 - Outputs: one pseudotime per lineage, per cell, plus a cell-weight
   matrix assigning cells softly to lineages. Slots directly into
   `tradeSeq::fitGAM` for DE along pseudotime.
-- **Comparison built into this module**: run slingshot twice — once on
-  **PCA of scran logcounts** (the classical choice) and once on the
-  **Φ-Space score matrix**. Same clusters, same anchor. The two
-  pseudotimes should correlate; where they diverge is where the choice
-  of embedding actually moves the biology.
+- **Comparison built into this module**: run slingshot four ways —
+  two embeddings crossed with two clusterings. Same fetal-score anchor.
+  The point is to show that clustering is not a preprocessing detail:
+  it changes the MST that slingshot fits.
 
 **4. DPT via destiny — the diffusion cross-check (~3 min)**
 
-A different statistical family gives a useful sanity check, but we keep
-it deliberately simple: one method, one embedding.
+A different statistical family gives a useful sanity check. We run DPT
+on both PCA and Φ-Space so the final comparison crosses two methods
+with two embeddings.
 
 - Why destiny: the only serious diffusion-pseudotime package that is
   pure R. Palantir / scFates / CellRank are Python; PAGA lives inside
@@ -170,22 +172,12 @@ it deliberately simple: one method, one embedding.
   - DPT(i, j) = accumulated transition probability between cells. Fix
     a root → scalar pseudotime per cell.
 - Three-line API: `DiffusionMap(data)` → (pick root) → `DPT(dm, ...)`.
-- We run destiny on **PCA of scran logcounts only**, not on the
-  Φ-Space scores. Reason: we already get the PCA-vs-PhiSpace comparison
-  from slingshot; what destiny adds is a different *method* on the same
-  embedding, not a second embedding sweep.
-- **Endpoints — a genuine advantage.** Unlike slingshot, destiny does
-  not require you to name a terminal cluster. With no `tips` argument
-  it auto-detects tips from the diffusion-map geometry; you can
-  optionally pin a root by passing `tips = <root_cell_index>`. The
-  diffusion trajectory is in that sense *more automatic* — a
-  feature for exploratory work where you do not know the endpoints
-  yet.
-- **Less control is also a feature, not a con.** The flip side: when
-  you *do* know the endpoints, slingshot's explicit `start.clus` /
-  `end.clus` lets you enforce them cleanly, whereas destiny will do
-  what the eigenvectors dictate. Worth calling out as a property of the
-  method, not a defect.
+- We run destiny on **PCA of scran logcounts** and on **Φ-Space
+  scores**. That gives the same embedding comparison as slingshot, but
+  with a graph/diffusion method rather than a principal curve.
+- Direction: external. We pin the root cell to the cell with the
+  highest fetal Φ-score, matching the slingshot anchor logic and keeping
+  the pseudotimes comparable.
 - Caveats to flag: O(n²) affinity matrix (fine at 10k cells, not at
   100k); destiny returns one scalar plus branch labels, not
   per-lineage arc lengths.
@@ -199,29 +191,25 @@ it deliberately simple: one method, one embedding.
   and the standard velocity assumptions break down; even with counts
   this would not be a slam-dunk.
 
-**6. The three-way comparison (~2 min)**
+**6. Sensitivity and four-way comparison (~2 min)**
 
-Three pseudotimes on the same CM subset:
+Six pseudotimes on the same CM subset:
 
-  - slingshot × PCA of scran logcounts
-  - slingshot × Φ-Space scores
-  - destiny-DPT × PCA of scran logcounts
+- slingshot × PCA/Φ-Space × unsupervised/PhiCellType clusters;
+- destiny-DPT × PCA/Φ-Space.
 
-One figure: a pairs plot / correlation matrix of the three pseudotimes.
-Two axes of disagreement are worth articulating for participants:
+Two figures are worth articulating for participants:
 
-- **slingshot PCA vs slingshot Φ-Space** (embedding effect, same
-  method) — tests whether stress / inflammation PCs or a reference-gap
-  is distorting the trajectory. This is the "why Φ-Space matters for
-  pseudotime" payoff.
-- **slingshot PCA vs DPT PCA** (method effect, same embedding) —
-  tests whether the trajectory is a principal-curve artefact or a
-  genuine density ridge that a diffusion method also picks up.
+- **Slingshot sensitivity grid** — shows how changing clustering moves
+  the trajectory even when the embedding is fixed.
+- **Canonical four-way comparison** — PhiCellType-clustered slingshot
+  vs DPT, each on PCA and Φ-Space. Rows isolate embedding effects;
+  columns isolate method effects.
 
-Strong agreement across all three is the case we hope for: the
-trajectory is real and robust to both embedding and method. Anything
-else is interesting and teaches participants how to sanity-check a
-pseudotime result in general.
+Strong agreement across the canonical four is the case we hope for: the
+trajectory is robust to both embedding and method. Disagreement is still
+useful because it teaches participants how to sanity-check a pseudotime
+result rather than treating one trajectory as truth.
 
 ---
 

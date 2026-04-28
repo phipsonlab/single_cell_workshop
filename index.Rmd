@@ -56,7 +56,7 @@ Raw Data → QC → Normalisation → Integration → Clustering → Annotation 
 |--------|-------|----------|-------------|
 | [**Module 5**](articles/05_phispace_annotation.html) | Continuous Phenotyping with Φ-Space | 45 min | Soft cell-type + stage scores via PLS on a reference atlas |
 | [**Module 6**](articles/06_pseudotime.html) | Pseudotime Trajectory Analysis | 45 min | Slingshot and DPT on PCA and Φ-Space, with clustering sensitivity on the CM lineage |
-| [**Module 7**](articles/07_grn_neighbournet.html) | Cell-specific Co-expression Networks | 45 min | NeighbourNet meta-networks from maturation-associated target genes |
+| [**Module 7**](articles/07_nnet.html) | Cell-specific Co-expression Networks | 45 min | NeighbourNet meta-networks from maturation-associated target genes |
 
 ---
 

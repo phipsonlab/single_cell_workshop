@@ -44,7 +44,7 @@ navbar:
         - text: "Module 6: Pseudotime Trajectory Analysis"
           href: articles/06_pseudotime.html
         - text: "Module 7: Cell-specific Co-expression Networks"
-          href: articles/07_grn_neighbournet.html
+          href: articles/07_nnet.html
     resources:
       text: Resources
       href: articles/resources.html
@@ -63,7 +63,7 @@ articles:
       - 04_differential_expression
       - 05_phispace_annotation
       - 06_pseudotime
-      - 07_grn_neighbournet
+      - 07_nnet
   - title: "Additional Resources"
     navbar: ~
     contents:

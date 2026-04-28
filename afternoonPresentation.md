@@ -225,11 +225,70 @@ pseudotime result in general.
 
 ---
 
-## Module 7 — NeighbourNet / GRN (TBD)
+## Module 7 — Cell-specific co-expression networks (NeighbourNet) (~15 min)
 
-To be expanded when the module lands. Expected topics:
+### Learning outcomes
 
-- What a gene regulatory network is, what it is not.
-- NeighbourNet's input: continuous phenotype scores + expression.
-- Relationship to the pseudotime output of Module 6.
-- Interpretation of edges: correlation-level vs. causal-level claims.
+Participants should be able to explain:
+
+- why co-expression networks are useful but are not causal GRNs;
+- how NeighbourNet turns noisy per-cell networks into denoised
+  meta-networks;
+- why we use `pt_phi_score` to select maturation-associated target genes;
+- how to read the NeighbourNet meta-network plot without over-claiming
+  directionality.
+
+### Slide structure
+
+**1. The framing: scaffold, not causal GRN (~3 min)**
+
+- A true GRN is directional, mechanistic and causal.
+- scRNA-seq expression alone mostly gives associations, not perturbation
+  evidence.
+- What we can build is a co-expression scaffold: a structured set of
+  TF-target associations that may contain regulatory hypotheses.
+- This distinction matters because the figure will look directional, but
+  the direction comes partly from prior knowledge, not from the expression
+  data alone.
+
+**2. Why cell-specific networks? (~3 min)**
+
+- A global network averages over fetal-like and adult-like cardiomyocytes.
+- A per-cell network asks whether the local gene-gene relationships change
+  across the maturation continuum.
+- Individual per-cell networks are noisy, so NeighbourNet borrows strength
+  from k-nearest neighbours in PC space.
+- The key idea: many noisy local networks can be aggregated into stable
+  recurring meta-networks.
+
+**3. What NeighbourNet does (~4 min)**
+
+- Input: a Seurat object with normalised expression.
+- Choose targets and TFs. For this module, targets are the top
+  maturation-associated genes from `PhiSpace::rankFeatures()` using
+  `pt_phi_score`.
+- PCA + kNN graph defines each cell's local neighbourhood.
+- For each cell, regress target-gene expression on local PC structure and
+  score TF-target co-expression.
+- Stack all per-cell networks into a cell × edge matrix.
+- Run non-negative PCA to get meta-networks and per-cell meta-network
+  scores.
+
+**4. Why `pt_phi_score`, not slingshot pseudotime? (~2 min)**
+
+- `pt_phi_score = adult-like Φ-Space score - fetal Φ-Space score`.
+- It is trajectory-free: no slingshot curve, no DPT graph, no clustering
+  decision.
+- That keeps Module 7 focused on network rewiring, while Module 6 remains
+  the place where we compare trajectory methods.
+
+**5. Reading the output (~3 min)**
+
+- First plot: meta-network score space coloured by donor stage and
+  `pt_phi_score`.
+- Pick the maturation meta-network by correlation with `pt_phi_score`.
+- Final plot: receptors / TFs / target clusters arranged by the prior
+  knowledge graph; edge strength reflects co-expression evidence.
+- Take-home: the plot suggests hypotheses about maturation-associated
+  regulatory programs, but perturbation or external evidence is needed
+  before calling any edge causal.

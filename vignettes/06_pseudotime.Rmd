@@ -205,7 +205,7 @@ possible but not the point here.
 ## UMAP for Visualisation
 
 We compute a single UMAP on the PCA embedding for visualisation. All
-four pseudotimes end up displayed on this same layout, which makes
+pseudotime panels end up displayed on this same layout, which makes
 cross-method comparison a matter of eyeballing the same regions of the
 same plot. `n_neighbors = 15` and `min_dist = 0.5` were picked from the
 parameter sweep in `scripts/06_umap_param_sweep.R` — low `n_neighbors`
@@ -753,8 +753,9 @@ real maturation order.
 
 ## Handing Off to Module 7
 
-We save the CM object with all four pseudotimes attached so Module 7
-can use them as the time axis for gene-regulatory-network inference.
+We save the CM object with the Φ-Space maturation score and all six
+pseudotimes attached so Module 7 can use the same cardiomyocyte subset
+for cell-specific co-expression network analysis.
 
 ```{r save-for-module-7}
 final_cache <- file.path(results_dir, "06_cm_pseudotime.rds")
@@ -780,18 +781,19 @@ The object carries, in addition to everything Module 5 handed us:
 - `colData(cm)$pt_*_01` — the same pseudotimes rescaled to `[0, 1]`
   for cross-method comparison.
 
-For Module 7 we will primarily use `pt_sling_phi_phict` — the Φ-Space
-slingshot pseudotime with PhiCellType clusters — as the canonical time
-axis. The other five live in the object for optional sensitivity
-analyses.
+For Module 7 we will primarily use `pt_phi_score` — the trajectory-free
+Φ-Space maturation baseline — to select maturation-associated target
+genes. The six fitted pseudotimes live in the object for optional
+sensitivity analyses, but the NeighbourNet module is intentionally
+decoupled from the slingshot/DPT comparison.
 
 ## Summary
 
 - Pseudotime gives a scalar ordering of cells along a biological
   process; it is not real time, and its direction for principal-curve
   methods comes from an external anchor.
-- We ran two methods on two embeddings — slingshot and DPT, each on
-  PCA and on Φ-Space — giving four pseudotimes in a 2 × 2 grid.
+- We ran six pseudotimes: four slingshot runs crossing two embeddings
+  with two clusterings, plus two DPT runs crossing PCA and Φ-Space.
 - Slingshot is our principal-curve method: cluster centroids → MST →
   principal curves → arc-length pseudotime. We overlay its curves on
   the UMAP to make the trajectory visible.

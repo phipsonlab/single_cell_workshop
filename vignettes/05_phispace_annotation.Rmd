@@ -63,8 +63,8 @@ For a mature tissue with well-separated cell types, these assumptions are
 reasonable. But our dataset spans foetal, young and adult heart samples, so
 many cells — especially cardiomyocytes — are in the middle of a maturation
 continuum. A discrete label forces each cell into one bin and throws away the
-very gradient we want to study in Module 6 (pseudotime) and Module 7 (gene
-regulatory networks).
+very gradient we want to study in Module 6 (pseudotime) and Module 7
+(cell-specific co-expression networks).
 
 In this module we use **Φ-Space**
 ([Mao, Deng & Lê Cao, 2025, *Genome Biology*](https://doi.org/10.1186/s13059-025-03755-8))
@@ -106,8 +106,9 @@ Five features of Φ-Space line up unusually well with the Sim et al. heart data:
    removes unwanted variation. You do not need to run Harmony *between* query
    and reference — only to match normalisation.
 5. **The embedding feeds directly into Modules 6 and 7.** Because scores are
-   stored in `reducedDim`, they can be used as input for slingshot (pseudotime)
-   and NeighbourNet (gene regulatory networks) without any extra wrangling.
+   stored in `reducedDim`, they can be used as input for slingshot
+   (pseudotime) and NeighbourNet target-gene selection without any extra
+   wrangling.
 
 ### Learning objectives
 
@@ -679,7 +680,7 @@ foetal and which end is adult.
   any downstream analysis that benefits from soft assignments (trajectory
   inference, co-phenotype analysis, gradient visualisation).
 - The phenotype-space embedding we saved is the input to Module 6
-  (pseudotime) and Module 7 (gene regulatory networks).
+  (pseudotime) and Module 7 (cell-specific co-expression networks).
 
 ## Session Info
 

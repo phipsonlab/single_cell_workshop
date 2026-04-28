@@ -151,6 +151,7 @@ jobs:
           if (!requireNamespace("remotes", quietly = TRUE))
               install.packages("remotes")
           remotes::install_github("jiadongm/PhiSpace/pkg", upgrade = "never")
+          remotes::install_github("meiosis97/NeighbourNet", upgrade = "never")
         shell: Rscript {0}
 
       # Install local package (needed for pkgdown to build reference docs)

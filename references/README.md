@@ -8,8 +8,9 @@ but are not themselves part of what participants run live.
 | File | Purpose |
 |---|---|
 | `PhiSpace.pdf` | Mao, Deng & Lê Cao 2025, *Genome Biology* — the Φ-Space paper |
-| `NNet.pdf` | NeighbourNet paper |
+| `NNet.pdf` | Deng, Mao, Choi & Lê Cao 2026, *Genome Research* — the NeighbourNet (NNet) paper, "Scalable cell-specific coexpression networks for granular regulatory pattern discovery with NeighbourNet" |
 | `PhiSpace_Guide_for_VibeCoding.md` | Internal API reference for PhiSpace |
+| `NeighbourNet_Guide_for_VibeCoding.md` | Internal API reference for NeighbourNet (NNet) |
 | `prepare_kanemaru_2023.R` | Download + process the Kanemaru 2023 adult-heart snRNA-seq reference |
 | `prepare_nicin_2022.R` | Download + process the Nicin 2022 foetal/paediatric heart snRNA-seq reference |
 

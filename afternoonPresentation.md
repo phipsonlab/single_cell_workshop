@@ -219,64 +219,99 @@ result rather than treating one trajectory as truth.
 
 Participants should be able to explain:
 
-- why co-expression networks are useful but are not causal GRNs;
-- how NeighbourNet turns noisy per-cell networks into denoised
-  meta-networks;
-- why we use `pt_phi_score` to select maturation-associated target genes;
-- how to read the NeighbourNet meta-network plot without over-claiming
-  directionality.
+- why a single global network can miss gradual rewiring along a
+  developmental continuum;
+- what a cell-specific co-expression network is, and why it is not by
+  itself a causal GRN;
+- how NeighbourNet uses PCA, k-nearest neighbours, local regression and
+  meta-network factorisation;
+- how to interpret meta-network scores, adjacency heatmaps and network
+  plots as high-level summaries of recurring co-expression programs.
 
 ### Slide structure
 
-**1. The framing: scaffold, not causal GRN (~3 min)**
+**1. The biological question: does the wiring change? (~2 min)**
+
+- Modules 5 and 6 gave every cardiomyocyte a continuous maturation
+  coordinate.
+- Differential expression asks which genes go up or down along that
+  coordinate.
+- Network analysis asks a different question: do relationships between
+  genes change as cells mature?
+- In this module, "wiring" means co-expression structure among TFs and
+  target genes, not experimentally proven regulation.
+
+**2. Why not one network per cluster? (~3 min)**
+
+- A global network averages fetal-like, transitional and adult-like
+  cardiomyocytes into one static picture.
+- Cluster-level networks improve on that, but they assume discrete cell
+  states. That is exactly the assumption Modules 5 and 6 tried to move
+  beyond.
+- Cell-specific networks ask for a local network around each cell, so
+  subtle changes along a continuum can be seen before they become hard
+  cluster differences.
+- The challenge: a single cell and its neighbours are noisy, sparse and
+  computationally expensive to use directly.
+
+**3. Co-expression scaffold, not causal GRN (~2 min)**
 
 - A true GRN is directional, mechanistic and causal.
 - scRNA-seq expression alone mostly gives associations, not perturbation
   evidence.
-- What we can build is a co-expression scaffold: a structured set of
-  TF-target associations that may contain regulatory hypotheses.
-- This distinction matters because the figure will look directional, but
-  the direction comes partly from prior knowledge, not from the expression
-  data alone.
+- NeighbourNet builds cell-specific **co-expression** networks. Edges are
+  statistical evidence that a TF and target vary together locally.
+- The radial visualisation can show receptor → TF → target layers because
+  NeighbourNet overlays prior knowledge. That direction is biological
+  context, not something inferred from expression alone.
+- Take-home phrase: co-expression networks are hypothesis generators.
 
-**2. Why cell-specific networks? (~3 min)**
+**4. NNet algorithm at a high level (~5 min)**
 
-- A global network averages over fetal-like and adult-like cardiomyocytes.
-- A per-cell network asks whether the local gene-gene relationships change
-  across the maturation continuum.
-- Individual per-cell networks are noisy, so NeighbourNet borrows strength
-  from k-nearest neighbours in PC space.
-- The key idea: many noisy local networks can be aggregated into stable
-  recurring meta-networks.
+One schematic slide with five boxes:
 
-**3. What NeighbourNet does (~4 min)**
+1. **PCA denoising.** Start with normalised expression and compute PCs.
+   PCs give a lower-dimensional, less sparse representation of each cell.
+2. **kNN neighbourhoods.** For each cell, find its neighbours in PC space.
+   The neighbourhood is the local sample used to estimate that cell's
+   network.
+3. **Local PC regression.** For each response/target gene, regress local
+   expression on PC coordinates. This asks which axes of local variation
+   predict that target.
+4. **Recover TF-target co-expression.** Use the PC loadings to translate
+   the regression back into predictor-gene contributions. The result is a
+   TF × target co-expression matrix for each cell.
+5. **Embed the network ensemble.** Stack all cell-specific networks into a
+   cell × edge matrix, then use non-negative PCA to find recurring
+   meta-networks.
 
-- Input: a Seurat object with normalised expression.
-- Choose targets and TFs. For this module, targets are the top
-  maturation-associated genes from `PhiSpace::rankFeatures()` using
-  `pt_phi_score`.
-- PCA + kNN graph defines each cell's local neighbourhood.
-- For each cell, regress target-gene expression on local PC structure and
-  score TF-target co-expression.
-- Stack all per-cell networks into a cell × edge matrix.
-- Run non-negative PCA to get meta-networks and per-cell meta-network
-  scores.
+Emphasise the computational shape:
 
-**4. Why `pt_phi_score`, not slingshot pseudotime? (~2 min)**
+`cells × target genes × TF predictors`.
 
-- `pt_phi_score = adult-like Φ-Space score - fetal Φ-Space score`.
-- It is trajectory-free: no slingshot curve, no DPT graph, no clustering
-  decision.
-- That keeps Module 7 focused on network rewiring, while Module 6 remains
-  the place where we compare trajectory methods.
+This is why target-gene selection matters, and why we keep only 10
+maturation-associated targets in the workshop vignette.
 
-**5. Reading the output (~3 min)**
+**5. What is a meta-network? (~2 min)**
 
-- First plot: meta-network score space coloured by donor stage and
-  `pt_phi_score`.
-- Pick the maturation meta-network by correlation with `pt_phi_score`.
-- Final plot: receptors / TFs / target clusters arranged by the prior
-  knowledge graph; edge strength reflects co-expression evidence.
-- Take-home: the plot suggests hypotheses about maturation-associated
-  regulatory programs, but perturbation or external evidence is needed
-  before calling any edge causal.
+- Individual cell-specific networks are noisy.
+- Meta-networks are weighted averages of many similar cell-specific
+  networks.
+- Meta-network 1 is the strongest recurring co-expression pattern;
+  meta-network 2 is the next strongest pattern.
+- Each cell gets a score on each meta-network, analogous to a component
+  score in PCA.
+
+**6. What the vignette will show (~3 min)**
+
+- Select maturation-associated target genes using `pt_phi_score`:
+  adult-like Φ-Space score minus fetal Φ-Space score.
+- Run NeighbourNet on those targets and the built-in TF prior.
+- Project meta-network scores onto the familiar PCA UMAP, like Figure 3B
+  in the paper.
+- Show meta-network adjacency heatmaps, like Figure 3C: TFs as rows,
+  target genes as columns, tile intensity as co-expression weight.
+- Show radial network plots and representative cell-specific networks to
+  connect the aggregate meta-networks back to individual cells.
+- Interpretation rule: strong patterns are candidates for maturation
+  biology, but causal claims need perturbation or external evidence.

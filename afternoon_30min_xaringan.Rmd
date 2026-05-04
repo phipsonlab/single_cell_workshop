@@ -283,7 +283,7 @@ Timing: 3 minutes. Explain how to read the stage separation without over-interpr
 
 ---
 
-# Scores become a maturation coordinate
+# PhiSpace scores as pseudotime
 
 .cols.middle[
 .col[
@@ -312,7 +312,7 @@ Timing: 2 minutes. This is the hinge between Modules 5 and 6.
 
 ---
 
-# Module 6: pseudotime as an ordering
+# Module 6: pseudotime 
 
 .cols.middle[
 .col[
@@ -378,9 +378,9 @@ For principal-curve methods, clustering is an important choice.
 ]
 
 .panel[
-### Four slingshot runs
+### Four pseudotime runs
 
-Φ-Space or PCA embedding, crossed with Louvain or PhiCellType clustering.
+Φ-Space or PCA embedding, slingshot or DPT.
 ]
 ]
 
@@ -389,7 +389,7 @@ Timing: 3 minutes. This prepares participants to read the sensitivity grid in th
 
 ---
 
-# Module 6 proof object
+# Different pseudotime results
 
 ```{r pseudotime-proof, fig.width=10.8, fig.height=5.5}
 cm <- read_cache("results/06_cm_pseudotime.rds")
@@ -514,17 +514,15 @@ Keep 10 maturation-associated target genes so the vignette remains feasible.
 ]
 ]
 
-???
-Timing: 4 minutes. Keep this conceptual; participants will see the function-level workflow in the vignette.
 
 ---
 
 # NeighbourNet output
 
 .figure-pair[
-![](afternoon_30min_xaringan_files/figure-html/nnet_cell-specific.png)
+![](figs/nnet_cell-specific.png)
 
-![](afternoon_30min_xaringan_files/figure-html/nnet_metanetwork.png)
+![](figs/nnet_metanetwork.png)
 ]
 
 ---

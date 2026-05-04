@@ -141,6 +141,17 @@ jobs:
         run: |
           if (!requireNamespace("BiocManager", quietly = TRUE))
               install.packages("BiocManager")
+          if (!requireNamespace("remotes", quietly = TRUE))
+              install.packages("remotes")
+          # smoother (destiny dependency) was archived from CRAN on
+          # 2025-12-19, so BiocManager::install("destiny") can no longer
+          # resolve it from PPM. Install the last archived version first.
+          if (!requireNamespace("smoother", quietly = TRUE))
+              remotes::install_version(
+                  "smoother", version = "1.3",
+                  repos = "https://cloud.r-project.org",
+                  upgrade = "never"
+              )
           BiocManager::install(
               c("ComplexHeatmap",   # Module 5 heatmap
                 "slingshot",        # Module 6 principal-curve pseudotime
@@ -148,10 +159,19 @@ jobs:
                 "scater"),          # Module 6 SCE helpers / plotting
               update = FALSE, ask = FALSE
           )
-          if (!requireNamespace("remotes", quietly = TRUE))
-              install.packages("remotes")
-          remotes::install_github("jiadongm/PhiSpace/pkg", upgrade = "never")
-          remotes::install_github("meiosis97/NeighbourNet", upgrade = "never")
+          # Use pak for the GitHub installs. The remotes package (>=2.5)
+          # errors with "can't convert package edgeR with RemoteType
+          # 'bioconductor' to remote" when a Bioconductor-installed
+          # transitive dependency is already on the library path; pak
+          # resolves Bioconductor remotes correctly.
+          if (!requireNamespace("pak", quietly = TRUE))
+              install.packages("pak")
+          pak::pkg_install(
+              c("github::jiadongm/PhiSpace/pkg",
+                "github::meiosis97/NeighbourNet"),
+              ask = FALSE,
+              upgrade = FALSE
+          )
         shell: Rscript {0}
 
       # Install local package (needed for pkgdown to build reference docs)

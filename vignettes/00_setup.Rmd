@@ -200,6 +200,22 @@ if (!pkgbuild::has_build_tools(debug = FALSE)) {
 if (!requireNamespace("BiocManager", quietly = TRUE)) {
     install.packages("BiocManager")
 }
+if (!requireNamespace("remotes", quietly = TRUE)) {
+    install.packages("remotes")
+}
+
+# `smoother` is a transitive dependency of `destiny` that was archived
+# from CRAN on 2025-12-19. BiocManager / install.packages can no longer
+# resolve it, so install the last archived version directly before
+# pulling destiny.
+if (!requireNamespace("smoother", quietly = TRUE)) {
+    remotes::install_version(
+        "smoother", version = "1.3",
+        repos = "https://cloud.r-project.org",
+        upgrade = "never"
+    )
+}
+
 BiocManager::install(
     c("ComplexHeatmap",   # Module 5 heatmap
       "slingshot",        # Module 6 principal-curve pseudotime
@@ -209,11 +225,20 @@ BiocManager::install(
 )
 
 # 3. GitHub-only packages — source-only, will trigger compilation.
-if (!requireNamespace("remotes", quietly = TRUE)) {
-    install.packages("remotes")
+#    We use `pak` rather than `remotes::install_github` because newer
+#    versions of remotes raise "can't convert package edgeR with
+#    RemoteType 'bioconductor' to remote" when a Bioconductor-installed
+#    package (like edgeR) is on the library path. pak handles
+#    Bioconductor remotes correctly.
+if (!requireNamespace("pak", quietly = TRUE)) {
+    install.packages("pak")
 }
-remotes::install_github("jiadongm/PhiSpace/pkg", upgrade = "never")
-remotes::install_github("meiosis97/NeighbourNet", upgrade = "never")
+pak::pkg_install(
+    c("github::jiadongm/PhiSpace/pkg",
+      "github::meiosis97/NeighbourNet"),
+    ask = FALSE,
+    upgrade = FALSE
+)
 ```
 
 ### 3c. Verify every package loaded successfully

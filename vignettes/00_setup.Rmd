@@ -29,8 +29,16 @@ Welcome to the Single Cell RNA-Sequencing Workshop. This document guides you thr
 
 ### What We Will Set Up
 
-1. **R packages** using `renv` for reproducibility
-2. **Workshop data** downloaded from Zenodo (~420 MB)
+1. **System build tools** so packages with C/C++ code can compile
+2. **All R packages** the workshop needs, in one combined install step
+3. **Workshop data** downloaded from Zenodo (~420 MB)
+
+### Supported Platforms
+
+The workshop has been tested on **Windows 10/11**, **macOS 12+ (Intel and
+Apple Silicon)**, and **Ubuntu 22.04+ / equivalent Linux**. Each platform
+needs a one-time toolchain install (Step 2 below); after that the same
+`renv.lock` is used everywhere.
 
 ### System Requirements
 
@@ -69,56 +77,182 @@ cd single_cell_workshop
 
 Then open `single_cell_workshop.Rproj` in RStudio.
 
-## Step 2: Install Packages with renv
+> **Windows users — work from a short path.** Long Windows paths (deeply
+> nested under `C:\Users\<name>\OneDrive\Documents\…`) can hit the legacy
+> 260-character `MAX_PATH` limit when `renv` installs packages with deep
+> internal directory trees, producing cryptic `cannot rename file` errors.
+> If you can, clone to something like `C:\workshop\single_cell_workshop`.
+> If you can't, enable [Long Paths in
+> Windows](https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation?tabs=registry).
 
-This workshop uses **renv** for reproducible package management. All package versions are locked in `renv.lock`, ensuring everyone has identical environments.
+## Step 2: Install System Build Tools
 
-When you open the project in RStudio, renv should automatically bootstrap itself. If prompted to install renv, select "Yes".
+Several workshop packages contain C / C++ code that R must compile during
+installation (`destiny`, `harmony`, `PhiSpace`, `NeighbourNet`, …). Each
+operating system has its own one-line install for the required toolchain.
 
-Then run:
+**Windows — install Rtools45**
+
+R 4.5.x on Windows needs **Rtools45**:
+
+1. Download the installer from
+   <https://cran.r-project.org/bin/windows/Rtools/rtools45/rtools.html>.
+2. Run the installer with the default options (it adds itself to `PATH`).
+3. Restart R.
+
+You can verify Rtools is detected from R:
+
+```{r verify-rtools-windows}
+# Run only on Windows; on macOS / Linux this returns "" or NA.
+if (.Platform$OS.type == "windows") {
+    cat("Rtools detected:", pkgbuild::has_build_tools(debug = FALSE), "\n")
+}
+```
+
+If `pkgbuild` is not yet installed, run `install.packages("pkgbuild")` first.
+A `FALSE` result means Rtools is missing or not on `PATH` — re-run the
+installer or restart R / RStudio.
+
+**macOS — install the Xcode Command Line Tools**
+
+```bash
+xcode-select --install
+```
+
+Click "Install" in the pop-up dialog. This is needed on both Intel and
+Apple Silicon Macs. If you already use Homebrew or have Xcode itself, you
+already have the toolchain.
+
+**Linux (Ubuntu / Debian) — install the build essentials and a few dev
+headers**
+
+```bash
+sudo apt-get update
+sudo apt-get install -y \
+    build-essential \
+    libcurl4-openssl-dev \
+    libssl-dev \
+    libxml2-dev \
+    libfontconfig1-dev \
+    libfreetype6-dev \
+    libpng-dev \
+    libtiff5-dev \
+    libjpeg-dev \
+    libharfbuzz-dev \
+    libfribidi-dev \
+    libgit2-dev \
+    libglpk-dev \
+    libgmp3-dev \
+    libhdf5-dev
+```
+
+(On Fedora / RHEL the equivalent is `dnf groupinstall "Development Tools"`
+plus the `*-devel` versions of the libraries above.)
+
+## Step 3: Install R Packages
+
+This workshop uses **renv** for the core packages and `BiocManager` /
+`remotes` for a handful of Bioconductor and GitHub-only extras that are
+not yet captured in `renv.lock`. The chunks below install everything
+needed for the whole workshop in one pass — run them in order.
+
+When you open the project in RStudio, renv should automatically bootstrap
+itself. If prompted to install renv, select "Yes".
+
+### 3a. Restore the locked package set
 
 ```{r renv-restore}
-# Install all packages with exact versions from renv.lock
-# This may take 10-15 minutes on first run
+# Install all packages with exact versions from renv.lock.
+# This may take 10-15 minutes on first run.
 renv::restore()
 ```
 
 When prompted "Do you want to proceed?", type `y` and press Enter.
 
-### What renv Does
+`renv::restore()` installs packages into a project-specific library (not
+your global R library) at the exact versions recorded in `renv.lock`, so
+everyone in the workshop ends up with the same environment.
 
-- Installs packages to a project-specific library (not your global R library)
-- Uses exact package versions from `renv.lock`
-- Ensures reproducibility across different machines
+### 3b. Install the extras (Φ-Space, pseudotime, NeighbourNet)
 
-### Key Packages Installed
+A few packages used in the later modules are not yet in `renv.lock`:
+`ComplexHeatmap`, `slingshot`, `destiny`, `scater` from Bioconductor, plus
+`PhiSpace` and `NeighbourNet` from GitHub. The two GitHub packages ship as
+source and must compile, which is why Step 2 (build tools) had to come
+first.
 
-| Package | Version | Purpose |
-|---------|---------|---------|
-| Seurat | 5.4.0 | Core single cell analysis |
-| harmony | 1.2.4 | Batch correction |
-| glmGamPoi | 1.22.0 | Fast SCTransform (critical) |
-| edgeR | 4.8.2 | Differential expression |
-| limma | 3.66.0 | Linear models |
-| speckle | 1.10.0 | Composition analysis |
+```{r install-extras}
+# 1. Sanity check that the build toolchain is available. On Windows this
+#    looks for Rtools; on macOS / Linux it returns TRUE when the system
+#    gcc / clang toolchain is present.
+if (!requireNamespace("pkgbuild", quietly = TRUE)) {
+    install.packages("pkgbuild")
+}
+if (!pkgbuild::has_build_tools(debug = FALSE)) {
+    stop(
+        "No build tools detected. Re-run Step 2 of this notebook to ",
+        "install the right toolchain for your operating system, then ",
+        "restart R and try again."
+    )
+}
 
-## Step 3: Verify Package Installation
+# 2. Bioconductor extras (binary on Windows / macOS, source on Linux).
+if (!requireNamespace("BiocManager", quietly = TRUE)) {
+    install.packages("BiocManager")
+}
+BiocManager::install(
+    c("ComplexHeatmap",   # Module 5 heatmap
+      "slingshot",        # Module 6 principal-curve pseudotime
+      "destiny",          # Module 6 diffusion pseudotime (DPT)
+      "scater"),          # Module 6 SCE helpers / plotting
+    update = FALSE, ask = FALSE
+)
 
-After `renv::restore()` completes, verify that all critical packages are installed:
+# 3. GitHub-only packages — source-only, will trigger compilation.
+if (!requireNamespace("remotes", quietly = TRUE)) {
+    install.packages("remotes")
+}
+remotes::install_github("jiadongm/PhiSpace/pkg", upgrade = "never")
+remotes::install_github("meiosis97/NeighbourNet", upgrade = "never")
+```
+
+### 3c. Verify every package loaded successfully
 
 ```{r verify-packages, eval=TRUE}
-packages <- c("Seurat", "harmony", "glmGamPoi", "edgeR", "limma", "speckle")
-
+packages <- c(
+    # Core (from renv.lock)
+    "Seurat", "harmony", "glmGamPoi", "edgeR", "limma", "speckle",
+    # Extras (Bioconductor + GitHub)
+    "ComplexHeatmap", "slingshot", "destiny", "scater",
+    "PhiSpace", "NeighbourNet"
+)
 check <- sapply(packages, requireNamespace, quietly = TRUE)
 missing <- names(check)[!check]
 
 if (length(missing) == 0) {
-    message("All critical packages installed successfully!")
+    message("All workshop packages installed successfully!")
 } else {
     message("WARNING: Missing packages: ", paste(missing, collapse = ", "))
-    message("Try running renv::restore() again.")
+    message("Re-run the relevant chunk above (3a for the locked set, ",
+            "3b for the extras), then verify again.")
 }
 ```
+
+### Key Packages Installed
+
+| Package | Source | Purpose |
+|---------|--------|---------|
+| Seurat | renv.lock | Core single cell analysis |
+| harmony | renv.lock | Batch correction |
+| glmGamPoi | renv.lock | Fast SCTransform (critical for reproducibility) |
+| edgeR / limma | renv.lock | Differential expression |
+| speckle | renv.lock | Composition analysis |
+| ComplexHeatmap | Bioconductor | Module 5 heatmap |
+| slingshot | Bioconductor | Module 6 principal-curve pseudotime |
+| destiny | Bioconductor | Module 6 diffusion pseudotime (DPT) |
+| scater | Bioconductor | Module 6 SCE helpers / plotting |
+| PhiSpace | GitHub | Module 5 continuous phenotyping |
+| NeighbourNet | GitHub | Module 7 cell-specific co-expression networks |
 
 ## Step 4: Download Workshop Data
 
@@ -158,18 +292,24 @@ Run this final check to ensure everything is ready:
 ```{r final-check, eval=TRUE}
 cat("=== Workshop Setup Verification ===\n\n")
 
-# Check R version
-cat("R Version:", R.version.string, "\n\n")
+# Platform + R version
+cat("Platform:  ", R.version$platform, "\n")
+cat("OS:        ", Sys.info()[["sysname"]], Sys.info()[["release"]], "\n")
+cat("R Version: ", R.version.string, "\n\n")
 
-# Check critical packages
-cat("Package Status:\n")
-packages <- c("Seurat", "harmony", "glmGamPoi", "edgeR", "limma", "speckle")
+# All workshop packages
+cat("Packages:\n")
+packages <- c(
+    "Seurat", "harmony", "glmGamPoi", "edgeR", "limma", "speckle",
+    "ComplexHeatmap", "slingshot", "destiny", "scater",
+    "PhiSpace", "NeighbourNet"
+)
 for (pkg in packages) {
     status <- if (requireNamespace(pkg, quietly = TRUE)) "OK" else "MISSING"
-    cat(sprintf("  %-12s %s\n", pkg, status))
+    cat(sprintf("  %-15s %s\n", pkg, status))
 }
 
-# Check data files
+# Workshop data
 cat("\nData Files:\n")
 data_dir <- if (dir.exists("data")) "data" else "../data"
 for (f in c("heart-counts.Rds", "cellinfo_updated.Rds")) {
@@ -199,13 +339,28 @@ If you encounter "cannot allocate vector" errors:
 2. Restart R
 3. Try again
 
-### macOS compilation errors
+### Compilation errors ("compilation failed for package …")
 
-Install Xcode Command Line Tools:
+Almost always means the system toolchain from Step 2 is missing or out of
+date. Re-check it:
 
-```bash
-xcode-select --install
-```
+- **Windows** — open R and run `pkgbuild::has_build_tools(debug = TRUE)`.
+  If it returns `FALSE`, reinstall
+  [Rtools45](https://cran.r-project.org/bin/windows/Rtools/rtools45/rtools.html)
+  and restart R / RStudio.
+- **macOS** — run `xcode-select --install` in a terminal and click
+  "Install" in the dialog.
+- **Linux** — re-run the `apt-get install` block from Step 2; if a specific
+  header file is named in the error (e.g. `hdf5.h`), install the matching
+  `*-dev` package.
+
+### Windows: "cannot rename file" / very long install paths
+
+Windows still enforces a 260-character path limit on many APIs. If you
+cloned the repo deep under `OneDrive` or a long username, move it to a
+short path (e.g. `C:\workshop\single_cell_workshop`) and re-run
+`renv::restore()`. Alternatively, enable
+[Long Paths in Windows](https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation?tabs=registry).
 
 ### Package conflicts
 

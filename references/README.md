@@ -11,8 +11,8 @@ but are not themselves part of what participants run live.
 | `NNet.pdf` | Deng, Mao, Choi & Lê Cao 2026, *Genome Research* — the NeighbourNet (NNet) paper, "Scalable cell-specific coexpression networks for granular regulatory pattern discovery with NeighbourNet" |
 | `PhiSpace_Guide_for_VibeCoding.md` | Internal API reference for PhiSpace |
 | `NeighbourNet_Guide_for_VibeCoding.md` | Internal API reference for NeighbourNet (NNet) |
-| `prepare_kanemaru_2023.R` | Download + process the Kanemaru 2023 adult-heart snRNA-seq reference |
-| `prepare_nicin_2022.R` | Download + process the Nicin 2022 foetal/paediatric heart snRNA-seq reference |
+| `prepare_kanemaru_2023.R` | Download + process the Kanemaru 2023 adult-heart snRNA-seq reference (fallback only) |
+| `HPC_reference_processing.md` | HPC recipe for processing the Gao 2026 reference (the script itself is to be written — see "Open issues" below) |
 
 ## PhiSpace reference strategy
 
@@ -36,12 +36,10 @@ participants. They produce a processed `SingleCellExperiment` object that is
 uploaded to Zenodo alongside the query data, and loaded directly by the
 Module 5 vignette.
 
-```r
-# From the repo root — requires ~64 GB RAM and ~40 GB free disk
-source("references/prepare_gao_2026.R")
-```
-
-Output (not tracked in git):
+The Gao 2026 processing script (`prepare_gao_2026.R`) is not yet committed —
+follow the recipe in [`HPC_reference_processing.md`](HPC_reference_processing.md)
+to assemble it on an HPC node with ~64 GB RAM and ~40 GB free disk. The
+expected output (not tracked in git) is:
 
 ```
 data/processed/reference_gao2026.rds
@@ -49,9 +47,12 @@ data/processed/reference_gao2026.rds
 
 ## Open issues
 
+- **Script not yet committed**: `prepare_gao_2026.R` itself is yet to be
+  written; the HPC instructions describe the intended workflow but are not a
+  runnable file.
 - **Metadata column names**: exact colData column names for cell type, disease,
-  stage, and tissue need to be confirmed after first loading the h5ad.
-  TODOs are marked in `prepare_gao_2026.R`.
+  stage, and tissue need to be confirmed after first loading the h5ad. TODOs
+  to add to `prepare_gao_2026.R` are listed in `HPC_reference_processing.md`.
 - **Subsampling**: need to inspect cell-type counts after filtering to
   non-diseased LV, then tune `proportion` and `minCellNum` in `subsample()`.
 - **Memory**: the h5ad is 13.9 GB compressed; loading uncompressed will require

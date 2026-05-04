@@ -66,7 +66,7 @@ Raw Data → QC → Normalisation → Integration → Clustering → Annotation 
 1. Check system requirements (8GB RAM minimum, 16GB recommended)
 2. Follow the [installation guide](articles/00_setup.html)
 3. Download workshop data from [Zenodo](https://zenodo.org/records/18237749) (~300 MB)
-4. Verify with `scWorkshop::check_installation()`
+4. Verify the install with the final-check chunk in [Module 0](articles/00_setup.html)
 
 ---
 

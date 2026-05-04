@@ -25,175 +25,198 @@ class: title-slide, middle
 
 ### 6 May 2026
 
-.footnote[
-Modules 5-7: Φ-Space -&gt; pseudotime -&gt; NeighbourNet
-]
-
 ---
 
 class: section-slide, middle
 
-&lt;div class="kicker"&gt;Afternoon arc&lt;/div&gt;
 
-&lt;div class="claim"&gt;The afternoon session asks what we lose when we force continuous biology into discrete bins.&lt;/div&gt;
+.claim[
+Discrete --&gt; continuous cell states:
+]
 
-&lt;div class="flow"&gt;
-  &lt;div class="flow-step"&gt;Module 5&lt;br&gt;soft phenotype scores&lt;/div&gt;
-  &lt;div class="arrow"&gt;-&gt;&lt;/div&gt;
-  &lt;div class="flow-step"&gt;Module 6&lt;br&gt;maturation ordering&lt;/div&gt;
-  &lt;div class="arrow"&gt;-&gt;&lt;/div&gt;
-  &lt;div class="flow-step"&gt;Module 7&lt;br&gt;network rewiring hypotheses&lt;/div&gt;
-&lt;/div&gt;
+.flow[
+.flow-step[
+**Module 5**&lt;br&gt;
+Reference-based soft annotation
+]
+.arrow[-&gt;]
+.flow-step[
+**Module 6**&lt;br&gt;
+Inferring cell's maturation stages
+]
+.arrow[-&gt;]
+.flow-step[
+**Module 7**&lt;br&gt;
+Cell-specific co-expression networks
+]
+]
 
-???
-Timing: 2 minutes. Tie back to Session 1: QC, integration, clustering, annotation, DE.
+
 
 ---
 
-# The biological problem
+# Biological problem
 
-&lt;div class="cols middle"&gt;
-&lt;div&gt;
-&lt;div class="kicker"&gt;Human heart development&lt;/div&gt;
 
-* The dataset spans **foetal**, **young**, and **adult** heart samples.
-* Cardiomyocyte maturation is not a set of clean bins.
-* A hard label can be correct and still hide the gradient we care about.
-&lt;/div&gt;
+- We have foetal, young and adult heart samples.
+- Cardiomyocyte maturation is continuous.
+- Often we care about gradients.
 
-&lt;div class="panel"&gt;
-&lt;h3&gt;Morning workflow&lt;/h3&gt;
-&lt;p&gt;Cluster -&gt; marker genes -&gt; one label per cluster.&lt;/p&gt;
-&lt;h3&gt;Afternoon question&lt;/h3&gt;
-&lt;p&gt;Can we preserve gradual identity and use it for trajectory and network analysis?&lt;/p&gt;
-&lt;/div&gt;
-&lt;/div&gt;
 
-???
-Timing: 2 minutes. The core contrast is not that hard labels are bad; they are insufficient for this biological question.
+.panel[
+### Morning workflow
+
+Cluster -&gt; marker genes -&gt; one label per cluster.
+
+### Afternoon question
+
+Three ways of characterising cell state continuum: cell type scoring; pseudotime; cell-specific networks.
+]
+
+
 
 ---
 
 # Module 5: Φ-Space turns labels into scores
 
-&lt;div class="cols middle"&gt;
-&lt;div&gt;
-&lt;div class="claim"&gt;Ask “how much does this cell resemble each reference phenotype?” rather than “which single label wins?”&lt;/div&gt;
+.cols.middle[
+.col[
+.claim[
+How much does this cell resemble each reference phenotype?
+]
 
 * Output: a **cells × phenotype scores** matrix.
 * Scores can be collapsed to labels with `getClass()`.
-* The reverse is impossible: labels cannot recover the original continuum.
-&lt;/div&gt;
+* Can handle multiple layers of phenotypes, ie cell type &amp; developmental stages.
+]
 
-&lt;div class="panel"&gt;
-&lt;h3&gt;Method sketch&lt;/h3&gt;
-&lt;p&gt;Annotated reference expression `X` is mapped onto a dummy phenotype matrix `Y` using PLS regression.&lt;/p&gt;
-&lt;p&gt;The fitted model is applied to query cells to produce `reducedDim(query, "PhiSpace")`.&lt;/p&gt;
-&lt;/div&gt;
-&lt;/div&gt;
+.col[
+.panel[
+### Method sketch
 
-???
-Timing: 3 minutes. Keep PLS high level: components maximize covariance between expression and phenotype labels.
+Mapping gene expression `X` to a dummy phenotype matrix `Y` using PLS regression.
+
+Fitted model applied to query cells to produce `reducedDim(query, "PhiSpace")`.
+]
+
+.toy-object[
+`reducedDim(query, "PhiSpace")`
+
+| cell | fetal | young | adult | CM | Fibroblast |
+|---|---:|---:|---:|---:|---:|
+| cell_01 | 1.72 | 0.31 | -1.08 | 2.43 | -0.64 |
+| cell_02 | 0.42 | 1.15 | 0.18 | 2.10 | -0.51 |
+| cell_03 | -0.91 | 0.27 | 1.66 | 1.89 | -0.72 |
+]
+]
+]
+
+
 
 ---
 
-# Φ-Space proof object
+# Phenotype space analyses
 
 &lt;img src="afternoon_30min_xaringan_files/figure-html/phispace-proof-1.png" alt="" width="100%" style="display: block; margin: auto;" /&gt;
 
-&lt;div class="caption"&gt;Use this slide to show that continuous phenotype scores retain developmental signal inside a cell type.&lt;/div&gt;
+.caption[
+Use this slide to show that continuous phenotype scores retain developmental signal inside a cell type.
+]
 
 ???
 Timing: 3 minutes. Explain how to read the stage separation without over-interpreting PCA axes.
 
 ---
 
-# Bridge: scores become a maturation coordinate
+# Scores become a maturation coordinate
 
-&lt;div class="cols middle"&gt;
-&lt;div&gt;
-&lt;div class="kicker"&gt;The payoff of Module 5&lt;/div&gt;
+.cols.middle[
+.col[
+* Age group scores to define pseudotime.
+* `pt_phi_score`: adult-like score minus fetal score.
+]
 
-* The age scores give a biological anchor for direction.
-* `pt_phi_score` is the trajectory-free baseline: adult-like score minus fetal score.
-* Module 6 compares fitted pseudotimes against this simple maturation signal.
-&lt;/div&gt;
-
-&lt;div&gt;
+.col[
 &lt;img src="afternoon_30min_xaringan_files/figure-html/phispace-pt-umap-1.png" alt="" width="100%" style="display: block; margin: auto;" /&gt;
-&lt;/div&gt;
-&lt;/div&gt;
+]
+]
 
 ???
 Timing: 2 minutes. This is the hinge between Modules 5 and 6.
 
 ---
 
-# Module 6: pseudotime is an ordering, not a clock
+# Module 6: pseudotime as an ordering
 
-&lt;div class="cols middle"&gt;
-&lt;div&gt;
-&lt;div class="claim"&gt;Pseudotime assigns each cell a scalar position along a biological process.&lt;/div&gt;
+.cols.middle[
+.col[
+.claim[
+Pseudotime assigns each cell an inferred position along a biological process.
+]
 
 * It is not real elapsed time.
 * Its absolute scale is not identified.
-* Direction must come from outside the method unless velocity is available.
-&lt;/div&gt;
+* Direction must come from input (except for RNA velocity methods).
+]
 
-&lt;div class="panel"&gt;
-&lt;h3&gt;In this workshop&lt;/h3&gt;
-&lt;p&gt;The highest fetal Φ-Space score anchors the early end of the cardiomyocyte maturation trajectory.&lt;/p&gt;
-&lt;/div&gt;
-&lt;/div&gt;
+.panel[
+### In this workshop
 
-???
-Timing: 2 minutes. Make sure participants do not treat pseudotime values as calendar time.
+Starting point: cells/clusters with highest fetal score.
+]
+]
 
 ---
 
-# Two method families, two kinds of uncertainty
+# Three method families
 
-&lt;div class="cols-3"&gt;
-&lt;div class="panel"&gt;
-&lt;h3&gt;Slingshot&lt;/h3&gt;
-&lt;p&gt;Cluster centroids -&gt; minimum spanning tree -&gt; principal curves -&gt; arc-length pseudotime.&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Main choice:&lt;/strong&gt; embedding and clustering.&lt;/p&gt;
-&lt;/div&gt;
+.cols-3[
+.panel[
+### Slingshot
 
-&lt;div class="panel"&gt;
-&lt;h3&gt;DPT via destiny&lt;/h3&gt;
-&lt;p&gt;Cell-cell affinity graph -&gt; diffusion components -&gt; transition distance from a root.&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Main choice:&lt;/strong&gt; embedding and root cell.&lt;/p&gt;
-&lt;/div&gt;
+Cluster centroids -&gt; minimum spanning tree -&gt; principal curves -&gt; arc-length pseudotime.
 
-&lt;div class="panel"&gt;
-&lt;h3&gt;Velocity&lt;/h3&gt;
-&lt;p&gt;Splicing dynamics estimate local time derivatives.&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Not run:&lt;/strong&gt; needs unspliced counts and has snRNA-seq caveats.&lt;/p&gt;
-&lt;/div&gt;
-&lt;/div&gt;
+**Main choice:** embedding, clustering, staring cluster.
+]
 
-???
-Timing: 3 minutes. Mention velocity only as context; do not let it take over the talk.
+.panel[
+### Diffusion pseudotime (Destiny)
+
+Cell-cell affinity graph -&gt; diffusion components -&gt; transition distance from a root.
+
+**Main choice:** embedding, root cell.
+]
+
+.panel[
+### Velocity
+
+Splicing dynamics estimate local time derivatives.
+
+**Not run:** Work on eg BAM files (splicing info), single-batach and snRNA-seq caveats.
+]
+]
 
 ---
 
-# Slingshot sensitivity is the lesson
+# Slingshot sensitivity 
 
-&lt;div class="cols middle"&gt;
-&lt;div&gt;
-&lt;div class="claim"&gt;For principal-curve methods, clustering is a modelling choice.&lt;/div&gt;
+.cols.middle[
+.col[
+.claim[
+For principal-curve methods, clustering is an important choice.
+]
 
 * Slingshot builds its tree on cluster centroids.
-* Changing the clustering can move the trajectory even with the same cells.
-* Module 6 therefore crosses two embeddings with two clusterings.
-&lt;/div&gt;
+* Changing clustering moves trajectory, even for same cells.
+* Try different two embeddings and clusterings.
+]
 
-&lt;div class="panel"&gt;
-&lt;h3&gt;Four slingshot runs&lt;/h3&gt;
-&lt;p&gt;Φ-Space or PCA embedding, crossed with Louvain or PhiCellType clustering.&lt;/p&gt;
-&lt;/div&gt;
-&lt;/div&gt;
+.panel[
+### Four slingshot runs
+
+Φ-Space or PCA embedding, crossed with Louvain or PhiCellType clustering.
+]
+]
 
 ???
 Timing: 3 minutes. This prepares participants to read the sensitivity grid in the vignette.
@@ -204,116 +227,141 @@ Timing: 3 minutes. This prepares participants to read the sensitivity grid in th
 
 &lt;img src="afternoon_30min_xaringan_files/figure-html/pseudotime-proof-1.png" alt="" width="100%" style="display: block; margin: auto;" /&gt;
 
-&lt;div class="caption"&gt;Rows separate method effects; columns separate embedding effects.&lt;/div&gt;
+.caption[
+Rows separate method effects; columns separate embedding effects.
+]
 
 ???
 Timing: 4 minutes. The ideal result is broad agreement; disagreement is also useful because it exposes method sensitivity.
 
 ---
 
-# Bridge: from gene levels to gene relationships
+# From gene expression levels to gene relationships
 
-&lt;div class="cols middle"&gt;
-&lt;div&gt;
-&lt;div class="kicker"&gt;After pseudotime&lt;/div&gt;
+.cols.middle[
+.col[
+* Differential expression: **which genes go up or down?**
+* Network analysis: **which gene relationships change?**
+* Continuity: one global network can average away rewiring.
+]
 
-* Differential expression asks: **which genes go up or down?**
-* Network analysis asks: **which gene relationships change?**
-* Along a continuum, one global network can average away rewiring.
-&lt;/div&gt;
+.panel[
+### Module 7 question
 
-&lt;div class="panel"&gt;
-&lt;h3&gt;Module 7 question&lt;/h3&gt;
-&lt;p&gt;As cardiomyocytes mature, do transcription factors and target genes change how they co-vary locally?&lt;/p&gt;
-&lt;/div&gt;
-&lt;/div&gt;
+As cardiomyocytes mature, do *co-expression* transcription factors and target genes change?
 
-???
-Timing: 2 minutes. This is the transition into NeighbourNet.
+* Co-expression ≠ gene regulation
+]
+]
+
 
 ---
 
-# Module 7: co-expression scaffold, not causal GRN
+# Module 7: co-expression networks at cellular level
 
-&lt;div class="cols middle"&gt;
-&lt;div&gt;
-&lt;div class="claim"&gt;NeighbourNet builds cell-specific co-expression networks.&lt;/div&gt;
 
-* Edges are local TF-target co-expression evidence.
-* Prior knowledge can arrange receptor, TF, and target layers.
-* The direction in the plot is biological context, not causality inferred from expression alone.
-&lt;/div&gt;
+.claim[
+NeighbourNet builds cell-specific co-expression networks.
+]
 
-&lt;div class="panel"&gt;
-&lt;h3&gt;Interpretation rule&lt;/h3&gt;
-&lt;p&gt;Use these networks as structured hypothesis generators. Causal claims need perturbation or external evidence.&lt;/p&gt;
-&lt;/div&gt;
-&lt;/div&gt;
+* Local network: look at each cell and its neighbours (by default PCA space).
+* Edges: significant local TF-target co-expression.
+* Prior knowledge can be incorporated.
+* Edge doesn't mean causality, but contains causality.
 
-???
-Timing: 3 minutes. This slide prevents over-claiming.
+
+.panel[
+### Interpretation rule
+
+Use these networks as structured hypothesis generators. Causal claims need perturbation or external evidence.
+]
+
 
 ---
 
 # NeighbourNet algorithm at high level
 
-&lt;div class="flow"&gt;
-  &lt;div class="flow-step"&gt;PCA&lt;br&gt;denoise cells&lt;/div&gt;
-  &lt;div class="arrow"&gt;-&gt;&lt;/div&gt;
-  &lt;div class="flow-step"&gt;kNN&lt;br&gt;local samples&lt;/div&gt;
-  &lt;div class="arrow"&gt;-&gt;&lt;/div&gt;
-  &lt;div class="flow-step"&gt;Local PC&lt;br&gt;regression&lt;/div&gt;
-  &lt;div class="arrow"&gt;-&gt;&lt;/div&gt;
-  &lt;div class="flow-step"&gt;Cell-specific&lt;br&gt;networks&lt;/div&gt;
-  &lt;div class="arrow"&gt;-&gt;&lt;/div&gt;
-  &lt;div class="flow-step"&gt;nPCA&lt;br&gt;meta-networks&lt;/div&gt;
-&lt;/div&gt;
+.flow[
+.flow-step[
+**PCA**&lt;br&gt;
+denoise cells
+]
+.arrow[-&gt;]
+.flow-step[
+**kNN**&lt;br&gt;
+local samples
+]
+.arrow[-&gt;]
+.flow-step[
+**Local PC**&lt;br&gt;
+regression
+]
+.arrow[-&gt;]
+.flow-step[
+**Cell-specific**&lt;br&gt;
+networks
+]
+.arrow[-&gt;]
+.flow-step[
+**nPCA**&lt;br&gt;
+meta-networks
+]
+]
 
-&lt;div class="cols middle" style="margin-top: 40px;"&gt;
-&lt;div class="panel"&gt;
-&lt;h3&gt;Computational shape&lt;/h3&gt;
-&lt;p&gt;&lt;code&gt;cells × target genes × TF predictors&lt;/code&gt;&lt;/p&gt;
-&lt;/div&gt;
-&lt;div class="panel"&gt;
-&lt;h3&gt;Workshop constraint&lt;/h3&gt;
-&lt;p&gt;Keep 10 maturation-associated target genes so the vignette remains feasible.&lt;/p&gt;
-&lt;/div&gt;
-&lt;/div&gt;
+.cols.middle[
+.panel[
+### Computational shape
+
+`cells × target genes × TF predictors`
+]
+.panel[
+### Workshop constraint
+
+Keep 10 maturation-associated target genes so the vignette remains feasible.
+]
+]
 
 ???
 Timing: 4 minutes. Keep this conceptual; participants will see the function-level workflow in the vignette.
 
 ---
 
-# Module 7 proof object
+# NeighbourNet output
 
+.figure-pair[
+![](afternoon_30min_xaringan_files/figure-html/nnet_cell-specific.png)
 
-
-&lt;img src="afternoon_30min_xaringan_files/figure-html/nnet-placeholder-1.png" alt="" width="100%" style="display: block; margin: auto;" /&gt;
-
-&lt;div class="caption"&gt;Recommended final figure: meta-network scores plus an adjacency heatmap or radial network plot from Module 7.&lt;/div&gt;
-
-???
-Timing: 4 minutes. Explain meta-network scores as PCA-like cell scores for recurring network patterns.
+![](afternoon_30min_xaringan_files/figure-html/nnet_metanetwork.png)
+]
 
 ---
 
 class: section-slide, middle
 
-&lt;div class="kicker"&gt;Take-home&lt;/div&gt;
+.kicker[
+Take-home
+]
 
-&lt;div class="claim"&gt;The afternoon workflow keeps continuous biology continuous long enough to ask better questions.&lt;/div&gt;
+.claim[
+Keep continuous biology continuous.
+]
 
-&lt;div class="flow"&gt;
-  &lt;div class="flow-step"&gt;Soft phenotype scores&lt;br&gt;preserve gradients&lt;/div&gt;
-  &lt;div class="arrow"&gt;-&gt;&lt;/div&gt;
-  &lt;div class="flow-step"&gt;Pseudotime&lt;br&gt;tests trajectory robustness&lt;/div&gt;
-  &lt;div class="arrow"&gt;-&gt;&lt;/div&gt;
-  &lt;div class="flow-step"&gt;Meta-networks&lt;br&gt;summarise rewiring hypotheses&lt;/div&gt;
-&lt;/div&gt;
-
-???
-Timing: 2 minutes. End by directing participants back to the three vignettes.
+.flow[
+.flow-step[
+**Soft phenotype scores**&lt;br&gt;
+preserve gradients
+]
+.arrow[-&gt;]
+.flow-step[
+**Pseudotime**&lt;br&gt;
+(trajectory robustness)
+]
+.arrow[-&gt;]
+.flow-step[
+**Meta-networks**&lt;br&gt;
+clues for gene regulation
+]
+]
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>

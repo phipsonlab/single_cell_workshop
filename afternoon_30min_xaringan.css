@@ -203,6 +203,35 @@ code {
   color: var(--blue);
 }
 
+.toy-object {
+  background: #f8fbfd;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin-top: 14px;
+}
+
+.toy-object p {
+  font-size: 16px;
+  line-height: 1.2;
+  margin: 0 0 7px 0;
+}
+
+.toy-object table {
+  font-size: 15px;
+  line-height: 1.05;
+  margin: 0;
+}
+
+.toy-object th {
+  color: var(--blue);
+}
+
+.toy-object td,
+.toy-object th {
+  padding: 3px 8px;
+}
+
 .placeholder {
   border: 2px dashed #9aa8b5;
   background: #f6f8fa;
@@ -244,6 +273,21 @@ code {
   border-color: var(--teal);
 }
 
+.flow-step p,
+.arrow p {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.flow-step p {
+  color: var(--ink);
+}
+
+.arrow p {
+  color: inherit;
+}
+
 .node.teal {
   border-color: var(--teal);
 }
@@ -279,4 +323,31 @@ code {
 
 .title-slide .footnote {
   color: #d9e7f2;
+}
+
+.figure-only {
+  padding: 30px 44px;
+}
+
+.figure-only img {
+  display: block;
+  max-width: 100%;
+  max-height: 650px;
+  margin: 0 auto;
+  object-fit: contain;
+}
+
+.figure-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  align-items: center;
+}
+
+.figure-pair img {
+  display: block;
+  max-width: 100%;
+  max-height: 520px;
+  margin: 0 auto;
+  object-fit: contain;
 }

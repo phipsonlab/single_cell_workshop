@@ -9,23 +9,23 @@ for the tools and methods used in this workshop.
 
 ### Data Processing & Visualisation
 
-| Tool        | Description                                      | Links                                                                                                                                                          |
-|-------------|--------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Seurat**  | Comprehensive R toolkit for single-cell analysis | [Website](https://satijalab.org/seurat/) · [Vignettes](https://satijalab.org/seurat/articles/get_started.html) · [GitHub](https://github.com/satijalab/seurat) |
-| **Harmony** | Fast integration of single-cell data             | [GitHub](https://github.com/immunogenomics/harmony) · [Paper](https://doi.org/10.1038/s41592-019-0619-0)                                                       |
+| Tool | Description | Links |
+|----|----|----|
+| **Seurat** | Comprehensive R toolkit for single-cell analysis | [Website](https://satijalab.org/seurat/) · [Vignettes](https://satijalab.org/seurat/articles/get_started.html) · [GitHub](https://github.com/satijalab/seurat) |
+| **Harmony** | Fast integration of single-cell data | [GitHub](https://github.com/immunogenomics/harmony) · [Paper](https://doi.org/10.1038/s41592-019-0619-0) |
 
 ### Differential Expression
 
-| Tool      | Description                                    | Links                                                                                                                                                                                                                         |
-|-----------|------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Tool | Description | Links |
+|----|----|----|
 | **edgeR** | Differential expression analysis of count data | [Bioconductor](https://bioconductor.org/packages/edgeR/) · [User Guide](https://bioconductor.org/packages/release/bioc/vignettes/edgeR/inst/doc/edgeRUsersGuide.pdf) · [Paper](https://doi.org/10.1093/bioinformatics/btp616) |
-| **limma** | Linear models for microarray and RNA-seq       | [Bioconductor](https://bioconductor.org/packages/limma/) · [User Guide](https://bioconductor.org/packages/release/bioc/vignettes/limma/inst/doc/usersguide.pdf) · [Paper](https://doi.org/10.1093/nar/gkv007)                 |
-| **voom**  | Precision weights for RNA-seq                  | [Paper](https://doi.org/10.1186/gb-2014-15-2-r29)                                                                                                                                                                             |
+| **limma** | Linear models for microarray and RNA-seq | [Bioconductor](https://bioconductor.org/packages/limma/) · [User Guide](https://bioconductor.org/packages/release/bioc/vignettes/limma/inst/doc/usersguide.pdf) · [Paper](https://doi.org/10.1093/nar/gkv007) |
+| **voom** | Precision weights for RNA-seq | [Paper](https://doi.org/10.1186/gb-2014-15-2-r29) |
 
 ### Composition Analysis
 
-| Tool                  | Description                  | Links                                                                                                                                                                                                                     |
-|-----------------------|------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Tool | Description | Links |
+|----|----|----|
 | **speckle/propeller** | Cell type proportion testing | [Bioconductor](https://bioconductor.org/packages/speckle/) · [Vignette](https://bioconductor.org/packages/release/bioc/vignettes/speckle/inst/doc/speckle.html) · [Paper](https://doi.org/10.1093/bioinformatics/btac582) |
 
 ------------------------------------------------------------------------
@@ -46,26 +46,26 @@ for the tools and methods used in this workshop.
 
 ### Bioconductor
 
-| Resource                                                                          | Description                             |
-|-----------------------------------------------------------------------------------|-----------------------------------------|
-| [Bioconductor](https://bioconductor.org/)                                         | Open source software for bioinformatics |
-| [Support Forum](https://support.bioconductor.org/)                                | Community Q&A for Bioconductor packages |
-| [Workflows](https://bioconductor.org/packages/release/BiocViews.html#___Workflow) | End-to-end analysis workflows           |
+| Resource | Description |
+|----|----|
+| [Bioconductor](https://bioconductor.org/) | Open source software for bioinformatics |
+| [Support Forum](https://support.bioconductor.org/) | Community Q&A for Bioconductor packages |
+| [Workflows](https://bioconductor.org/packages/release/BiocViews.html#___Workflow) | End-to-end analysis workflows |
 
 ### Single-Cell Analysis
 
-| Resource                                                         | Description                                          |
-|------------------------------------------------------------------|------------------------------------------------------|
-| [OSCA Book](https://bioconductor.org/books/release/OSCA/)        | Orchestrating Single-Cell Analysis with Bioconductor |
-| [Single Cell Best Practices](https://www.sc-best-practices.org/) | Community best practices for scRNA-seq               |
-| [scRNA-tools](https://www.scrna-tools.org/)                      | Database of single-cell analysis tools               |
+| Resource | Description |
+|----|----|
+| [OSCA Book](https://bioconductor.org/books/release/OSCA/) | Orchestrating Single-Cell Analysis with Bioconductor |
+| [Single Cell Best Practices](https://www.sc-best-practices.org/) | Community best practices for scRNA-seq |
+| [scRNA-tools](https://www.scrna-tools.org/) | Database of single-cell analysis tools |
 
 ### Statistics & Methods
 
-| Resource                                                                | Description                   |
-|-------------------------------------------------------------------------|-------------------------------|
-| [StatQuest](https://www.youtube.com/c/joshstarmer)                      | Statistics explained visually |
-| [Modern Statistics for Modern Biology](https://www.huber.embl.de/msmb/) | Free online textbook          |
+| Resource | Description |
+|----|----|
+| [StatQuest](https://www.youtube.com/c/joshstarmer) | Statistics explained visually |
+| [Modern Statistics for Modern Biology](https://www.huber.embl.de/msmb/) | Free online textbook |
 
 ------------------------------------------------------------------------
 
@@ -77,9 +77,9 @@ This workshop uses data from:
 > Heart Maturation by the Progesterone Receptor.** *Circulation*.
 > 2021;143(10):1614-1628.
 
-| Resource               | Link                                                                                                    |
-|------------------------|---------------------------------------------------------------------------------------------------------|
-| Paper                  | [doi:10.1161/CIRCULATIONAHA.120.051921](https://doi.org/10.1161/CIRCULATIONAHA.120.051921)              |
-| Analysis workflow      | [bphipson.github.io/Human_Development_snRNAseq](https://bphipson.github.io/Human_Development_snRNAseq/) |
-| GEO Data               | [GSE161921](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE161921)                               |
-| Workshop Data (Zenodo) | [zenodo.org/records/18237749](https://zenodo.org/records/18237749)                                      |
+| Resource | Link |
+|----|----|
+| Paper | [doi:10.1161/CIRCULATIONAHA.120.051921](https://doi.org/10.1161/CIRCULATIONAHA.120.051921) |
+| Analysis workflow | [bphipson.github.io/Human_Development_snRNAseq](https://bphipson.github.io/Human_Development_snRNAseq/) |
+| GEO Data | [GSE161921](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE161921) |
+| Workshop Data (Zenodo) | [zenodo.org/records/18237749](https://zenodo.org/records/18237749) |

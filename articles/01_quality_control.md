@@ -66,6 +66,7 @@ module. Each package provides specific functionality:
 - **org.Hs.eg.db**: Database of human gene annotations
 
 ``` r
+
 library(Seurat)
 library(ggplot2)
 library(patchwork)
@@ -82,6 +83,7 @@ developmental groups follow a biological progression from warm (foetal)
 to cool (adult) tones:
 
 ``` r
+
 # Developmental group colours
 group_colors <- c(
     "Fetal" = "#E64B35",
@@ -117,6 +119,7 @@ Our workshop data consists of two files:
 Let us load these files and examine their structure:
 
 ``` r
+
 # Set the path to the data directory
 # We use a relative path from the tutorials folder
 data_dir <- "../data"
@@ -136,6 +139,7 @@ entry represents the number of UMI counts for a particular gene in a
 particular cell. Let us examine its dimensions and structure:
 
 ``` r
+
 # Check dimensions and structure of the count matrix
 cat("Count matrix:\n")
 ```
@@ -143,18 +147,21 @@ cat("Count matrix:\n")
     ## Count matrix:
 
 ``` r
+
 cat("- Class:", class(counts), "\n")
 ```
 
     ## - Class: dgCMatrix
 
 ``` r
+
 cat("- Genes:", format(nrow(counts), big.mark = ","), "\n")
 ```
 
     ## - Genes: 33,939
 
 ``` r
+
 cat("- Cells:", format(ncol(counts), big.mark = ","), "\n")
 ```
 
@@ -170,6 +177,7 @@ The cell metadata contains information about each cell that we will use
 throughout our analysis:
 
 ``` r
+
 # Check the structure of the metadata
 dim(cellinfo)
 ```
@@ -177,6 +185,7 @@ dim(cellinfo)
     ## [1] 54140     7
 
 ``` r
+
 head(cellinfo)
 ```
 
@@ -207,6 +216,7 @@ The metadata contains several columns:
 Let us examine the sample composition of our dataset:
 
 ``` r
+
 # Cells per sample and group
 table(cellinfo$Sample, cellinfo$Group)
 ```
@@ -239,6 +249,7 @@ and results.
 Here, we create a Seurat object from our count matrix:
 
 ``` r
+
 # Create the Seurat object
 # min.cells = 3: Keep genes detected in at least 3 cells (removes very rare genes)
 # min.features = 200: Keep cells with at least 200 genes detected (removes likely empty droplets)
@@ -256,12 +267,14 @@ cat("Initial filtering:\n")
     ## Initial filtering:
 
 ``` r
+
 cat("- Genes:", nrow(counts), "->", nrow(seu), "\n")
 ```
 
     ## - Genes: 33939 -> 29323
 
 ``` r
+
 cat("- Cells:", ncol(counts), "->", ncol(seu), "\n")
 ```
 
@@ -283,6 +296,7 @@ will be used for grouping cells in visualisations and statistical
 analyses.
 
 ``` r
+
 # The cell order in the Seurat object may differ from the metadata
 # We need to match them by cell ID
 cellinfo_matched <- cellinfo[match(colnames(seu), cellinfo$CellID), ]
@@ -301,14 +315,15 @@ gc()  # Garbage collection to release memory
 ```
 
     ##             used   (Mb) gc trigger   (Mb)   max used   (Mb)
-    ## Ncells   7679266  410.2   14374837  767.7   12637155  674.9
-    ## Vcells 281865092 2150.5 1210275588 9233.7 1179995766 9002.7
+    ## Ncells   7682881  410.4   13937455  744.4   12640770  675.1
+    ## Vcells 281892878 2150.7 1210321682 9234.1 1180023552 9002.9
 
 ### Examining the Seurat Object
 
 Let us examine the structure of our Seurat object:
 
 ``` r
+
 # Print a summary of the object
 seu
 ```
@@ -319,6 +334,7 @@ seu
     ##  1 layer present: counts
 
 ``` r
+
 # View the first few rows of metadata
 head(seu@meta.data)
 ```
@@ -361,6 +377,7 @@ We use the *org.Hs.eg.db* package, which contains comprehensive
 annotation information for human genes.
 
 ``` r
+
 # Get the list of gene names from our Seurat object
 gene_symbols <- rownames(seu)
 
@@ -386,18 +403,21 @@ cat("Gene annotation:\n")
     ## Gene annotation:
 
 ``` r
+
 cat("- Total genes:", length(gene_symbols), "\n")
 ```
 
     ## - Total genes: 29323
 
 ``` r
+
 cat("- Annotated:", sum(!is.na(ann$GENENAME)), "\n")
 ```
 
     ## - Annotated: 20071
 
 ``` r
+
 cat("- Success rate:", round(sum(!is.na(ann$GENENAME)) / length(gene_symbols) * 100, 1), "%\n")
 ```
 
@@ -409,6 +429,7 @@ Mitochondrial genes in human data can be identified by their gene names,
 which begin with “MT-”. Let us find these genes:
 
 ``` r
+
 # Find genes that start with "MT-"
 mito_genes <- grep("^MT-", gene_symbols, value = TRUE)
 mito_genes
@@ -427,6 +448,7 @@ Ribosomal protein genes follow a naming convention: RPS (ribosomal
 protein small subunit) and RPL (ribosomal protein large subunit):
 
 ``` r
+
 # Find genes that start with "RPS" or "RPL"
 ribo_genes <- grep("^RP[SL]", gene_symbols, value = TRUE)
 length(ribo_genes)
@@ -435,6 +457,7 @@ length(ribo_genes)
     ## [1] 103
 
 ``` r
+
 head(ribo_genes, 20)
 ```
 
@@ -452,6 +475,7 @@ function to calculate the percentage of counts from a specified set of
 genes.
 
 ``` r
+
 # Calculate the percentage of counts from mitochondrial genes
 # pattern = "^MT-" matches gene names starting with "MT-"
 seu[["percent.mt"]] <- PercentageFeatureSet(seu, pattern = "^MT-")
@@ -492,6 +516,7 @@ and identify any systematic issues. Violin plots show the distribution
 of values, with the width indicating the density of cells at each value.
 
 ``` r
+
 # Create violin plots for each QC metric, grouped by sample
 VlnPlot(
     seu,
@@ -522,6 +547,7 @@ Here, we examine whether there are systematic differences between
 developmental stages:
 
 ``` r
+
 VlnPlot(
     seu,
     features = c("nCount_RNA", "nFeature_RNA", "percent.mt", "percent.ribo"),
@@ -546,6 +572,7 @@ outlier cells. We expect a positive correlation between library size and
 gene count: cells with more total counts should detect more genes.
 
 ``` r
+
 # Scatter plot: Library size vs Gene count
 p1 <- FeatureScatter(
     seu,
@@ -591,6 +618,7 @@ Based on our QC visualisations and established guidelines for snRNA-seq
 data, we define the following filtering thresholds:
 
 ``` r
+
 # Define filtering thresholds
 min_genes <- 500       # Minimum genes detected per cell
 min_counts <- 2500     # Minimum UMI counts per cell
@@ -616,6 +644,7 @@ Before applying filters, it is helpful to visualise where the thresholds
 fall relative to the data distribution:
 
 ``` r
+
 # Create histograms with threshold lines
 p1 <- ggplot(seu@meta.data, aes(x = nFeature_RNA)) +
     geom_histogram(bins = 50, fill = "steelblue", colour = "white", alpha = 0.8) +
@@ -656,6 +685,7 @@ a “min” threshold or to the right of a “max” threshold will be removed.
 Now we apply all filtering criteria simultaneously:
 
 ``` r
+
 # Record the number of cells before filtering
 cells_before <- ncol(seu)
 
@@ -678,24 +708,28 @@ cat("Filtering results:\n")
     ## Filtering results:
 
 ``` r
+
 cat("- Cells before:", cells_before, "\n")
 ```
 
     ## - Cells before: 54135
 
 ``` r
+
 cat("- Cells after:", cells_after, "\n")
 ```
 
     ## - Cells after: 47405
 
 ``` r
+
 cat("- Cells removed:", cells_before - cells_after, "\n")
 ```
 
     ## - Cells removed: 6730
 
 ``` r
+
 cat("- Retention:", round(cells_after / cells_before * 100, 1), "%\n")
 ```
 
@@ -708,6 +742,7 @@ affect certain samples, which could indicate sample-specific quality
 issues:
 
 ``` r
+
 # Calculate cells per sample before and after filtering
 before_counts <- table(seu$sample)
 after_counts <- table(seu_filtered$sample)
@@ -744,6 +779,7 @@ filter_summary
     ## 9     y3   6984  4745    2239          67.9  young
 
 ``` r
+
 # Visualise filtering effect
 filter_long <- filter_summary %>%
     tidyr::pivot_longer(
@@ -793,6 +829,7 @@ Finally, we verify that our filtered dataset shows improved QC
 characteristics:
 
 ``` r
+
 VlnPlot(
     seu_filtered,
     features = c("nCount_RNA", "nFeature_RNA", "percent.mt", "percent.ribo"),
@@ -857,6 +894,7 @@ prevents confounding.
 ### Identify Genes for Removal
 
 ``` r
+
 # Get gene annotation for filtered object
 gene_symbols_filt <- rownames(seu_filtered)
 ann_filt <- ann[match(gene_symbols_filt, ann$SYMBOL), ]
@@ -871,12 +909,14 @@ cat("Mitochondrial genes (MT- prefix):", length(mt_prefix_idx), "\n")
     ## Mitochondrial genes (MT- prefix): 13
 
 ``` r
+
 cat("Mitochondrial genes (nuclear-encoded):", length(mt_nuclear_idx), "\n")
 ```
 
     ## Mitochondrial genes (nuclear-encoded): 209
 
 ``` r
+
 # 2. Ribosomal genes: both RP[SL] prefixed and by gene name
 rp_prefix_idx <- grep("^RP[SL][0-9]", gene_symbols_filt)
 rp_genename_idx <- grep("ribosomal", ann_filt$GENENAME, ignore.case = TRUE)
@@ -887,12 +927,14 @@ cat("Ribosomal genes (RP[SL] prefix):", length(rp_prefix_idx), "\n")
     ## Ribosomal genes (RP[SL] prefix): 99
 
 ``` r
+
 cat("Ribosomal genes (by gene name):", length(rp_genename_idx), "\n")
 ```
 
     ## Ribosomal genes (by gene name): 191
 
 ``` r
+
 # 3. Genes without Entrez IDs
 no_entrez_idx <- which(is.na(ann_filt$ENTREZID))
 cat("Genes without Entrez ID:", length(no_entrez_idx), "\n")
@@ -901,6 +943,7 @@ cat("Genes without Entrez ID:", length(no_entrez_idx), "\n")
     ## Genes without Entrez ID: 9252
 
 ``` r
+
 # 4. Sex chromosome genes
 x_genes <- which(ann_filt$CHR == "X")
 y_genes <- which(ann_filt$CHR == "Y")
@@ -911,6 +954,7 @@ cat("X chromosome genes:", length(x_genes), "\n")
     ## X chromosome genes: 750
 
 ``` r
+
 cat("Y chromosome genes:", length(y_genes), "\n")
 ```
 
@@ -919,6 +963,7 @@ cat("Y chromosome genes:", length(y_genes), "\n")
 ### Apply Gene Filtering
 
 ``` r
+
 # Combine all genes to remove (some may overlap between categories)
 genes_remove_idx <- unique(c(mito_idx, ribo_idx, no_entrez_idx, sex_chr_idx))
 genes_remove <- gene_symbols_filt[genes_remove_idx]
@@ -930,18 +975,21 @@ cat("\nGene filtering summary:\n")
     ## Gene filtering summary:
 
 ``` r
+
 cat("- Genes before filtering:", length(gene_symbols_filt), "\n")
 ```
 
     ## - Genes before filtering: 29323
 
 ``` r
+
 cat("- Genes to remove:", length(genes_remove), "\n")
 ```
 
     ## - Genes to remove: 10370
 
 ``` r
+
 # Subset Seurat object to keep only desired genes
 genes_keep <- setdiff(gene_symbols_filt, genes_remove)
 seu_filtered <- subset(seu_filtered, features = genes_keep)
@@ -952,6 +1000,7 @@ cat("- Genes after filtering:", nrow(seu_filtered), "\n")
     ## - Genes after filtering: 18953
 
 ``` r
+
 cat("- Retention rate:", round(nrow(seu_filtered) / length(gene_symbols_filt) * 100, 1), "%\n")
 ```
 
@@ -978,6 +1027,7 @@ This approach uses techniques from traditional bulk RNA-seq analysis,
 which are well-established and robust.
 
 ``` r
+
 # Aggregate counts by sample
 # This sums all counts for each gene across all cells in each sample
 pseudobulk <- AggregateExpression(
@@ -998,6 +1048,7 @@ We use *edgeR*’s DGEList object to store the pseudobulk data and perform
 filtering:
 
 ``` r
+
 # Create DGEList object
 dge <- DGEList(counts = pseudobulk)
 
@@ -1032,6 +1083,7 @@ similar in their overall gene expression profiles appear closer together
 in the plot.
 
 ``` r
+
 # Calculate MDS coordinates
 mds <- plotMDS(dge, plot = FALSE)
 
@@ -1106,6 +1158,7 @@ We save the filtered Seurat object so it can be loaded in subsequent
 modules:
 
 ``` r
+
 # Create output directory if it doesn't exist
 output_dir <- "../data/processed"
 if (!dir.exists(output_dir)) {
@@ -1144,12 +1197,13 @@ For reproducibility, we record the R session information, including
 package versions:
 
 ``` r
+
 sessionInfo()
 ```
 
     ## R version 4.5.2 (2025-10-31)
     ## Platform: x86_64-pc-linux-gnu
-    ## Running under: Ubuntu 24.04.3 LTS
+    ## Running under: Ubuntu 24.04.4 LTS
     ## 
     ## Matrix products: default
     ## BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
@@ -1193,7 +1247,7 @@ sessionInfo()
     ##  [43] labeling_0.4.3         progressr_0.18.0       spatstat.sparse_3.1-0 
     ##  [46] mgcv_1.9-4             httr_1.4.7             polyclip_1.10-7       
     ##  [49] abind_1.4-8            compiler_4.5.2         bit64_4.6.0-1         
-    ##  [52] withr_3.0.2            S7_0.2.1               DBI_1.2.3             
+    ##  [52] withr_3.0.2            S7_0.2.1-1             DBI_1.2.3             
     ##  [55] fastDummies_1.7.5      MASS_7.3-65            tools_4.5.2           
     ##  [58] vipor_0.4.7            lmtest_0.9-40          otel_0.2.0            
     ##  [61] beeswarm_0.4.0         httpuv_1.6.16          future.apply_1.20.1   
@@ -1214,7 +1268,7 @@ sessionInfo()
     ## [106] yaml_2.3.12            evaluate_1.0.5         codetools_0.2-20      
     ## [109] tibble_3.3.1           BiocManager_1.30.27    cli_3.6.5             
     ## [112] uwot_0.2.4             xtable_1.8-4           reticulate_1.44.1     
-    ## [115] systemfonts_1.3.1      jquerylib_0.1.4        Rcpp_1.1.1            
+    ## [115] systemfonts_1.3.1      jquerylib_0.1.4        Rcpp_1.1.1-1          
     ## [118] globals_0.18.0         spatstat.random_3.4-3  png_0.1-8             
     ## [121] ggrastr_1.0.2          spatstat.univar_3.1-5  parallel_4.5.2        
     ## [124] blob_1.2.4             pkgdown_2.2.0          dotCall64_1.2         

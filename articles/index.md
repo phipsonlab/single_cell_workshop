@@ -12,6 +12,12 @@
   Annotation](https://phipsonlab.github.io/single_cell_workshop/articles/03_cell_type_annotation.md):
 - [Module 4: Differential Expression
   Analysis](https://phipsonlab.github.io/single_cell_workshop/articles/04_differential_expression.md):
+- [Module 5: Continuous Phenotyping with
+  Φ-Space](https://phipsonlab.github.io/single_cell_workshop/articles/05_phispace_annotation.md):
+- [Module 6: Pseudotime Trajectory
+  Analysis](https://phipsonlab.github.io/single_cell_workshop/articles/06_pseudotime.md):
+- [Module 7: Cell-specific Co-expression Networks
+  (NeighbourNet)](https://phipsonlab.github.io/single_cell_workshop/articles/07_nnet.md):
 
 ### Additional Resources
 

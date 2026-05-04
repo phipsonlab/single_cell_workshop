@@ -38,6 +38,9 @@
     <li><a class="dropdown-item" href="../articles/02_integration_clustering.html">Module 2: Integration &amp; Clustering</a></li>
     <li><a class="dropdown-item" href="../articles/03_cell_type_annotation.html">Module 3: Cell Type Annotation</a></li>
     <li><a class="dropdown-item" href="../articles/04_differential_expression.html">Module 4: Differential Expression</a></li>
+    <li><a class="dropdown-item" href="../articles/05_phispace_annotation.html">Module 5: Continuous Phenotyping with Φ-Space</a></li>
+    <li><a class="dropdown-item" href="../articles/06_pseudotime.html">Module 6: Pseudotime Trajectory Analysis</a></li>
+    <li><a class="dropdown-item" href="../articles/07_nnet.html">Module 7: Cell-specific Co-expression Networks</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../articles/resources.html">Resources</a></li>
@@ -65,7 +68,7 @@
                         <h4 data-toc-skip class="author">Single Cell
 Workshop</h4>
             
-            <h4 data-toc-skip class="date">2026-01-15</h4>
+            <h4 data-toc-skip class="date">2026-05-04</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/phipsonlab/single_cell_workshop/blob/main/vignettes/00_setup.Rmd" class="external-link"><code>vignettes/00_setup.Rmd</code></a></small>
       <div class="d-none name"><code>00_setup.Rmd</code></div>
@@ -88,11 +91,23 @@ your internet connection.</p>
 </h3>
 <ol style="list-style-type: decimal">
 <li>
-<strong>R packages</strong> using <code>renv</code> for
-reproducibility</li>
+<strong>System build tools</strong> so packages with C/C++ code can
+compile</li>
+<li>
+<strong>All R packages</strong> the workshop needs, in one combined
+install step</li>
 <li>
 <strong>Workshop data</strong> downloaded from Zenodo (~420 MB)</li>
 </ol>
+</div>
+<div class="section level3">
+<h3 id="supported-platforms">Supported Platforms<a class="anchor" aria-label="anchor" href="#supported-platforms"></a>
+</h3>
+<p>The workshop has been tested on <strong>Windows 10/11</strong>,
+<strong>macOS 12+ (Intel and Apple Silicon)</strong>, and <strong>Ubuntu
+22.04+ / equivalent Linux</strong>. Each platform needs a one-time
+toolchain install (Step 2 below); after that the same
+<code>renv.lock</code> is used everywhere.</p>
 </div>
 <div class="section level3">
 <h3 id="system-requirements">System Requirements<a class="anchor" aria-label="anchor" href="#system-requirements"></a>
@@ -149,106 +164,275 @@ reproducibility</li>
 <li>Extract the ZIP file</li>
 </ol>
 <p>Then open <code>single_cell_workshop.Rproj</code> in RStudio.</p>
+<blockquote>
+<p><strong>Windows users — work from a short path.</strong> Long Windows
+paths (deeply nested under
+<code>C:\Users\&lt;name&gt;\OneDrive\Documents\…</code>) can hit the
+legacy 260-character <code>MAX_PATH</code> limit when <code>renv</code>
+installs packages with deep internal directory trees, producing cryptic
+<code>cannot rename file</code> errors. If you can, clone to something
+like <code>C:\workshop\single_cell_workshop</code>. If you can’t, enable
+<a href="https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation?tabs=registry" class="external-link">Long
+Paths in Windows</a>.</p>
+</blockquote>
 </div>
 <div class="section level2">
-<h2 id="step-2-install-packages-with-renv">Step 2: Install Packages with renv<a class="anchor" aria-label="anchor" href="#step-2-install-packages-with-renv"></a>
+<h2 id="step-2-install-system-build-tools">Step 2: Install System Build Tools<a class="anchor" aria-label="anchor" href="#step-2-install-system-build-tools"></a>
 </h2>
-<p>This workshop uses <strong>renv</strong> for reproducible package
-management. All package versions are locked in <code>renv.lock</code>,
-ensuring everyone has identical environments.</p>
+<p>Several workshop packages contain C / C++ code that R must compile
+during installation (<code>destiny</code>, <code>harmony</code>,
+<code>PhiSpace</code>, <code>NeighbourNet</code>, …). Each operating
+system has its own one-line install for the required toolchain.</p>
+<p><strong>Windows — install Rtools45</strong></p>
+<p>R 4.5.x on Windows needs <strong>Rtools45</strong>:</p>
+<ol style="list-style-type: decimal">
+<li>Download the installer from <a href="https://cran.r-project.org/bin/windows/Rtools/rtools45/rtools.html" class="external-link uri">https://cran.r-project.org/bin/windows/Rtools/rtools45/rtools.html</a>.</li>
+<li>Run the installer with the default options (it adds itself to
+<code>PATH</code>).</li>
+<li>Restart R.</li>
+</ol>
+<p>You can verify Rtools is detected from R:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Run only on Windows; on macOS / Linux this returns "" or NA.</span></span>
+<span><span class="kw">if</span> <span class="op">(</span><span class="va">.Platform</span><span class="op">$</span><span class="va">OS.type</span> <span class="op">==</span> <span class="st">"windows"</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Rtools detected:"</span>, <span class="fu">pkgbuild</span><span class="fu">::</span><span class="fu">has_build_tools</span><span class="op">(</span>debug <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="op">}</span></span></code></pre></div>
+<p>If <code>pkgbuild</code> is not yet installed, run
+<code>install.packages("pkgbuild")</code> first. A <code>FALSE</code>
+result means Rtools is missing or not on <code>PATH</code> — re-run the
+installer or restart R / RStudio.</p>
+<p><strong>macOS — install the Xcode Command Line Tools</strong></p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="ex">xcode-select</span> <span class="at">--install</span></span></code></pre></div>
+<p>Click “Install” in the pop-up dialog. This is needed on both Intel
+and Apple Silicon Macs. If you already use Homebrew or have Xcode
+itself, you already have the toolchain.</p>
+<p><strong>Linux (Ubuntu / Debian) — install the build essentials and a
+few dev headers</strong></p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">sudo</span> apt-get update</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="fu">sudo</span> apt-get install <span class="at">-y</span> <span class="dt">\</span></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>    build-essential <span class="dt">\</span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>    libcurl4-openssl-dev <span class="dt">\</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>    libssl-dev <span class="dt">\</span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>    libxml2-dev <span class="dt">\</span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>    libfontconfig1-dev <span class="dt">\</span></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>    libfreetype6-dev <span class="dt">\</span></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>    libpng-dev <span class="dt">\</span></span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a>    libtiff5-dev <span class="dt">\</span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a>    libjpeg-dev <span class="dt">\</span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a>    libharfbuzz-dev <span class="dt">\</span></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a>    libfribidi-dev <span class="dt">\</span></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a>    libgit2-dev <span class="dt">\</span></span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a>    libglpk-dev <span class="dt">\</span></span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a>    libgmp3-dev <span class="dt">\</span></span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a>    libhdf5-dev</span></code></pre></div>
+<p>(On Fedora / RHEL the equivalent is
+<code>dnf groupinstall "Development Tools"</code> plus the
+<code>*-devel</code> versions of the libraries above.)</p>
+</div>
+<div class="section level2">
+<h2 id="step-3-install-r-packages">Step 3: Install R Packages<a class="anchor" aria-label="anchor" href="#step-3-install-r-packages"></a>
+</h2>
+<p>This workshop uses <strong>renv</strong> for the core packages and
+<code>BiocManager</code> / <code>remotes</code> for a handful of
+Bioconductor and GitHub-only extras that are not yet captured in
+<code>renv.lock</code>. The chunks below install everything needed for
+the whole workshop in one pass — run them in order.</p>
 <p>When you open the project in RStudio, renv should automatically
 bootstrap itself. If prompted to install renv, select “Yes”.</p>
-<p>Then run:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Install all packages with exact versions from renv.lock</span></span>
-<span><span class="co"># This may take 10-15 minutes on first run</span></span>
+<div class="section level3">
+<h3 id="a--restore-the-locked-package-set">3a. Restore the locked package set<a class="anchor" aria-label="anchor" href="#a--restore-the-locked-package-set"></a>
+</h3>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Install all packages with exact versions from renv.lock.</span></span>
+<span><span class="co"># This may take 10-15 minutes on first run.</span></span>
 <span><span class="fu">renv</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/renv/reference/restore.html" class="external-link">restore</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>When prompted “Do you want to proceed?”, type <code>y</code> and
 press Enter.</p>
+<p><code><a href="https://rstudio.github.io/renv/reference/restore.html" class="external-link">renv::restore()</a></code> installs packages into a
+project-specific library (not your global R library) at the exact
+versions recorded in <code>renv.lock</code>, so everyone in the workshop
+ends up with the same environment.</p>
+</div>
 <div class="section level3">
-<h3 id="what-renv-does">What renv Does<a class="anchor" aria-label="anchor" href="#what-renv-does"></a>
+<h3 id="b--install-the-extras-φ-space-pseudotime-neighbournet">3b. Install the extras (Φ-Space, pseudotime, NeighbourNet)<a class="anchor" aria-label="anchor" href="#b--install-the-extras-%CF%86-space-pseudotime-neighbournet"></a>
 </h3>
-<ul>
-<li>Installs packages to a project-specific library (not your global R
-library)</li>
-<li>Uses exact package versions from <code>renv.lock</code>
-</li>
-<li>Ensures reproducibility across different machines</li>
-</ul>
+<p>A few packages used in the later modules are not yet in
+<code>renv.lock</code>: <code>ComplexHeatmap</code>,
+<code>slingshot</code>, <code>destiny</code>, <code>scater</code> from
+Bioconductor, plus <code>PhiSpace</code> and <code>NeighbourNet</code>
+from GitHub. The two GitHub packages ship as source and must compile,
+which is why Step 2 (build tools) had to come first.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># 1. Sanity check that the build toolchain is available. On Windows this</span></span>
+<span><span class="co">#    looks for Rtools; on macOS / Linux it returns TRUE when the system</span></span>
+<span><span class="co">#    gcc / clang toolchain is present.</span></span>
+<span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"pkgbuild"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"pkgbuild"</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu">pkgbuild</span><span class="fu">::</span><span class="fu">has_build_tools</span><span class="op">(</span>debug <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="kw"><a href="https://rdrr.io/r/base/stop.html" class="external-link">stop</a></span><span class="op">(</span></span>
+<span>        <span class="st">"No build tools detected. Re-run Step 2 of this notebook to "</span>,</span>
+<span>        <span class="st">"install the right toolchain for your operating system, then "</span>,</span>
+<span>        <span class="st">"restart R and try again."</span></span>
+<span>    <span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span></span>
+<span><span class="co"># 2. Bioconductor extras (binary on Windows / macOS, source on Linux).</span></span>
+<span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"BiocManager"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"BiocManager"</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"remotes"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"remotes"</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span></span>
+<span><span class="co"># `smoother` is a transitive dependency of `destiny` that was archived</span></span>
+<span><span class="co"># from CRAN on 2025-12-19. BiocManager / install.packages can no longer</span></span>
+<span><span class="co"># resolve it, so install the last archived version directly before</span></span>
+<span><span class="co"># pulling destiny.</span></span>
+<span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"smoother"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_version.html" class="external-link">install_version</a></span><span class="op">(</span></span>
+<span>        <span class="st">"smoother"</span>, version <span class="op">=</span> <span class="st">"1.3"</span>,</span>
+<span>        repos <span class="op">=</span> <span class="st">"https://cloud.r-project.org"</span>,</span>
+<span>        upgrade <span class="op">=</span> <span class="st">"never"</span></span>
+<span>    <span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span></span>
+<span><span class="fu">BiocManager</span><span class="fu">::</span><span class="fu"><a href="https://bioconductor.github.io/BiocManager/reference/install.html" class="external-link">install</a></span><span class="op">(</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ComplexHeatmap"</span>,   <span class="co"># Module 5 heatmap</span></span>
+<span>      <span class="st">"slingshot"</span>,        <span class="co"># Module 6 principal-curve pseudotime</span></span>
+<span>      <span class="st">"destiny"</span>,          <span class="co"># Module 6 diffusion pseudotime (DPT)</span></span>
+<span>      <span class="st">"scater"</span><span class="op">)</span>,          <span class="co"># Module 6 SCE helpers / plotting</span></span>
+<span>    update <span class="op">=</span> <span class="cn">FALSE</span>, ask <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># 3. GitHub-only packages — source-only, will trigger compilation.</span></span>
+<span><span class="co">#    We use `pak` rather than `remotes::install_github` because newer</span></span>
+<span><span class="co">#    versions of remotes raise "can't convert package edgeR with</span></span>
+<span><span class="co">#    RemoteType 'bioconductor' to remote" when a Bioconductor-installed</span></span>
+<span><span class="co">#    package (like edgeR) is on the library path. pak handles</span></span>
+<span><span class="co">#    Bioconductor remotes correctly.</span></span>
+<span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"pak"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"pak"</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pkg_install.html" class="external-link">pkg_install</a></span><span class="op">(</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"github::jiadongm/PhiSpace/pkg"</span>,</span>
+<span>      <span class="st">"github::meiosis97/NeighbourNet"</span><span class="op">)</span>,</span>
+<span>    ask <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>    upgrade <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="c--verify-every-package-loaded-successfully">3c. Verify every package loaded successfully<a class="anchor" aria-label="anchor" href="#c--verify-every-package-loaded-successfully"></a>
+</h3>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">packages</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>    <span class="co"># Core (from renv.lock)</span></span>
+<span>    <span class="st">"Seurat"</span>, <span class="st">"harmony"</span>, <span class="st">"glmGamPoi"</span>, <span class="st">"edgeR"</span>, <span class="st">"limma"</span>, <span class="st">"speckle"</span>,</span>
+<span>    <span class="co"># Extras (Bioconductor + GitHub)</span></span>
+<span>    <span class="st">"ComplexHeatmap"</span>, <span class="st">"slingshot"</span>, <span class="st">"destiny"</span>, <span class="st">"scater"</span>,</span>
+<span>    <span class="st">"PhiSpace"</span>, <span class="st">"NeighbourNet"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">check</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">packages</span>, <span class="va">requireNamespace</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## Warning: replacing previous import 'S4Arrays::makeNindexFromArrayViewport' by</span></span>
+<span><span class="co">## 'DelayedArray::makeNindexFromArrayViewport' when loading 'SummarizedExperiment'</span></span></code></pre>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">missing</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">check</span><span class="op">)</span><span class="op">[</span><span class="op">!</span><span class="va">check</span><span class="op">]</span></span>
+<span></span>
+<span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">missing</span><span class="op">)</span> <span class="op">==</span> <span class="fl">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">message</a></span><span class="op">(</span><span class="st">"All workshop packages installed successfully!"</span><span class="op">)</span></span>
+<span><span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">message</a></span><span class="op">(</span><span class="st">"WARNING: Missing packages: "</span>, <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="va">missing</span>, collapse <span class="op">=</span> <span class="st">", "</span><span class="op">)</span><span class="op">)</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">message</a></span><span class="op">(</span><span class="st">"Re-run the relevant chunk above (3a for the locked set, "</span>,</span>
+<span>            <span class="st">"3b for the extras), then verify again."</span><span class="op">)</span></span>
+<span><span class="op">}</span></span></code></pre></div>
+<pre><code><span><span class="co">## All workshop packages installed successfully!</span></span></code></pre>
 </div>
 <div class="section level3">
 <h3 id="key-packages-installed">Key Packages Installed<a class="anchor" aria-label="anchor" href="#key-packages-installed"></a>
 </h3>
 <table class="table">
+<colgroup>
+<col width="34%">
+<col width="30%">
+<col width="34%">
+</colgroup>
 <thead><tr class="header">
 <th>Package</th>
-<th>Version</th>
+<th>Source</th>
 <th>Purpose</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
 <td>Seurat</td>
-<td>5.4.0</td>
+<td>renv.lock</td>
 <td>Core single cell analysis</td>
 </tr>
 <tr class="even">
 <td>harmony</td>
-<td>1.2.4</td>
+<td>renv.lock</td>
 <td>Batch correction</td>
 </tr>
 <tr class="odd">
 <td>glmGamPoi</td>
-<td>1.22.0</td>
-<td>Fast SCTransform (critical)</td>
+<td>renv.lock</td>
+<td>Fast SCTransform (critical for reproducibility)</td>
 </tr>
 <tr class="even">
-<td>edgeR</td>
-<td>4.8.2</td>
+<td>edgeR / limma</td>
+<td>renv.lock</td>
 <td>Differential expression</td>
 </tr>
 <tr class="odd">
-<td>limma</td>
-<td>3.66.0</td>
-<td>Linear models</td>
+<td>speckle</td>
+<td>renv.lock</td>
+<td>Composition analysis</td>
 </tr>
 <tr class="even">
-<td>speckle</td>
-<td>1.10.0</td>
-<td>Composition analysis</td>
+<td>ComplexHeatmap</td>
+<td>Bioconductor</td>
+<td>Module 5 heatmap</td>
+</tr>
+<tr class="odd">
+<td>slingshot</td>
+<td>Bioconductor</td>
+<td>Module 6 principal-curve pseudotime</td>
+</tr>
+<tr class="even">
+<td>destiny</td>
+<td>Bioconductor</td>
+<td>Module 6 diffusion pseudotime (DPT)</td>
+</tr>
+<tr class="odd">
+<td>scater</td>
+<td>Bioconductor</td>
+<td>Module 6 SCE helpers / plotting</td>
+</tr>
+<tr class="even">
+<td>PhiSpace</td>
+<td>GitHub</td>
+<td>Module 5 continuous phenotyping</td>
+</tr>
+<tr class="odd">
+<td>NeighbourNet</td>
+<td>GitHub</td>
+<td>Module 7 cell-specific co-expression networks</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
 <div class="section level2">
-<h2 id="step-3-verify-package-installation">Step 3: Verify Package Installation<a class="anchor" aria-label="anchor" href="#step-3-verify-package-installation"></a>
-</h2>
-<p>After <code><a href="https://rstudio.github.io/renv/reference/restore.html" class="external-link">renv::restore()</a></code> completes, verify that all
-critical packages are installed:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">packages</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Seurat"</span>, <span class="st">"harmony"</span>, <span class="st">"glmGamPoi"</span>, <span class="st">"edgeR"</span>, <span class="st">"limma"</span>, <span class="st">"speckle"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">check</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">packages</span>, <span class="va">requireNamespace</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Warning: replacing previous import 'S4Arrays::makeNindexFromArrayViewport' by</span></span>
-<span><span class="co">## 'DelayedArray::makeNindexFromArrayViewport' when loading 'SummarizedExperiment'</span></span></code></pre>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">missing</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">check</span><span class="op">)</span><span class="op">[</span><span class="op">!</span><span class="va">check</span><span class="op">]</span></span>
-<span></span>
-<span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">missing</span><span class="op">)</span> <span class="op">==</span> <span class="fl">0</span><span class="op">)</span> <span class="op">{</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">message</a></span><span class="op">(</span><span class="st">"All critical packages installed successfully!"</span><span class="op">)</span></span>
-<span><span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">message</a></span><span class="op">(</span><span class="st">"WARNING: Missing packages: "</span>, <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="va">missing</span>, collapse <span class="op">=</span> <span class="st">", "</span><span class="op">)</span><span class="op">)</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">message</a></span><span class="op">(</span><span class="st">"Try running renv::restore() again."</span><span class="op">)</span></span>
-<span><span class="op">}</span></span></code></pre></div>
-<pre><code><span><span class="co">## All critical packages installed successfully!</span></span></code></pre>
-</div>
-<div class="section level2">
 <h2 id="step-4-download-workshop-data">Step 4: Download Workshop Data<a class="anchor" aria-label="anchor" href="#step-4-download-workshop-data"></a>
 </h2>
 <p>The workshop data files are hosted on Zenodo. Run the following code
 to download them:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Zenodo record for workshop data</span></span>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># R's default download.file() timeout is 60 seconds, which is shorter than</span></span>
+<span><span class="co"># the time it takes to fetch a 420 MB file on most home connections. Bump</span></span>
+<span><span class="co"># it to 1 hour for the duration of the download.</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>timeout <span class="op">=</span> <span class="fl">3600</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Zenodo record for workshop data</span></span>
 <span><span class="va">zenodo_url</span> <span class="op">&lt;-</span> <span class="st">"https://zenodo.org/records/18237749/files/"</span></span>
 <span><span class="va">files</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"heart-counts.Rds"</span>, <span class="st">"cellinfo_updated.Rds"</span><span class="op">)</span></span>
 <span></span>
@@ -272,40 +456,160 @@ to download them:</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">message</a></span><span class="op">(</span><span class="st">"Download complete!"</span><span class="op">)</span></span></code></pre></div>
 <p><strong>Note:</strong> Total download size is approximately 420
 MB.</p>
+<div class="section level3">
+<h3 id="optional-backup-checkpoints">Optional: Backup Checkpoints<a class="anchor" aria-label="anchor" href="#optional-backup-checkpoints"></a>
+</h3>
+<p>If you want to skip a module — for example, to start Session 2
+without running Session 1, or to focus on a single technique — you can
+download pre-computed checkpoints from a separate Zenodo record. The
+workshop is designed so each module produces the input file for the next
+one, but these backups let you jump in at any module boundary.</p>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr class="header">
+<th>File</th>
+<th>When to use it</th>
+<th>Replaces output of</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>01_qc_filtered.rds</code></td>
+<td>Skip Module 1</td>
+<td>Module 1</td>
+</tr>
+<tr class="even">
+<td><code>02_integrated_clustered.rds</code></td>
+<td>Skip Modules 1 + 2</td>
+<td>Module 2</td>
+</tr>
+<tr class="odd">
+<td><code>03_annotated.rds</code></td>
+<td>Skip Modules 1 + 2 + 3</td>
+<td>Module 3</td>
+</tr>
+<tr class="even">
+<td><code>afternoonSession.zip</code></td>
+<td>Skip Session 1 entirely and start at Module 5</td>
+<td>Modules 1–4 plus the Module 5/6/7 input and intermediate caches</td>
+</tr>
+</tbody>
+</table>
+<p><code>afternoonSession.zip</code> contains the Session 2 (Module 5,
+6, 7) input and intermediate results. Download, unzip, and the files
+land in <code>data/</code> and <code>results/</code> automatically (the
+chunk below handles the unzip).</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Replace with the backup record's URL once the new Zenodo DOI is</span></span>
+<span><span class="co"># assigned. Until then the variable below points at a placeholder.</span></span>
+<span><span class="va">backup_url</span> <span class="op">&lt;-</span> <span class="st">"https://zenodo.org/records/&lt;NEW_RECORD_ID&gt;/files/"</span></span>
+<span></span>
+<span><span class="co"># Pick whichever subset you need; comment out the others.</span></span>
+<span><span class="va">backup_files</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>    <span class="st">"01_qc_filtered.rds"</span>,            <span class="co"># → goes to data/processed/</span></span>
+<span>    <span class="st">"02_integrated_clustered.rds"</span>,   <span class="co"># → goes to data/processed/</span></span>
+<span>    <span class="st">"03_annotated.rds"</span>,              <span class="co"># → goes to data/processed/</span></span>
+<span>    <span class="st">"afternoonSession.zip"</span>           <span class="co"># → unzip at repo root, populates data/ and results/</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="st">"data/processed"</span>, recursive <span class="op">=</span> <span class="cn">TRUE</span>, showWarnings <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="kw">for</span> <span class="op">(</span><span class="va">f</span> <span class="kw">in</span> <span class="va">backup_files</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="kw">if</span> <span class="op">(</span><span class="va">f</span> <span class="op">==</span> <span class="st">"afternoonSession.zip"</span><span class="op">)</span> <span class="op">{</span></span>
+<span>        <span class="va">dest</span> <span class="op">&lt;-</span> <span class="va">f</span></span>
+<span>    <span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
+<span>        <span class="va">dest</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="st">"data"</span>, <span class="st">"processed"</span>, <span class="va">f</span><span class="op">)</span></span>
+<span>    <span class="op">}</span></span>
+<span>    <span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.exists</a></span><span class="op">(</span><span class="va">dest</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>        <span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">message</a></span><span class="op">(</span><span class="va">f</span>, <span class="st">" already exists, skipping"</span><span class="op">)</span></span>
+<span>        <span class="kw">next</span></span>
+<span>    <span class="op">}</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">message</a></span><span class="op">(</span><span class="st">"Downloading "</span>, <span class="va">f</span>, <span class="st">"..."</span><span class="op">)</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/utils/download.file.html" class="external-link">download.file</a></span><span class="op">(</span></span>
+<span>        url <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="va">backup_url</span>, <span class="va">f</span>, <span class="st">"?download=1"</span><span class="op">)</span>,</span>
+<span>        destfile <span class="op">=</span> <span class="va">dest</span>,</span>
+<span>        mode <span class="op">=</span> <span class="st">"wb"</span></span>
+<span>    <span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span></span>
+<span><span class="co"># Unzip the afternoon-session archive at the repo root if you grabbed it.</span></span>
+<span><span class="co"># Files inside the archive are paths like "data/afternoon_mvp.rds" and</span></span>
+<span><span class="co"># "results/05_phispace_query.rds", so this extraction populates both</span></span>
+<span><span class="co"># folders directly.</span></span>
+<span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.exists</a></span><span class="op">(</span><span class="st">"afternoonSession.zip"</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/utils/unzip.html" class="external-link">unzip</a></span><span class="op">(</span><span class="st">"afternoonSession.zip"</span><span class="op">)</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">message</a></span><span class="op">(</span><span class="st">"afternoonSession.zip unpacked"</span><span class="op">)</span></span>
+<span><span class="op">}</span></span></code></pre></div>
+<p>After download, verify file integrity (digests are listed on the
+Zenodo record’s main page and below):</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># macOS / Linux — paste the expected SHA-256s from the Zenodo record</span></span>
+<span><span class="co"># into a small lookup and check each downloaded file:</span></span>
+<span><span class="va">expected</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>    <span class="st">"01_qc_filtered.rds"</span>          <span class="op">=</span> <span class="st">"43fbb351519f6972fb61e9ac45375a29bb7d78f41949ee41f86a81afc63c1ed5"</span>,</span>
+<span>    <span class="st">"02_integrated_clustered.rds"</span> <span class="op">=</span> <span class="st">"1c69b2ef5475567b9412d8f6e08b2aa18d98dcfbbf4c0726c2f60b1ef587f000"</span>,</span>
+<span>    <span class="st">"03_annotated.rds"</span>            <span class="op">=</span> <span class="st">"fcc7cfbd0f57c96c89d6cb745e82eef21789c22014015be431a4852ec43f0d51"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="kw">for</span> <span class="op">(</span><span class="va">f</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">expected</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="va">path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="st">"data"</span>, <span class="st">"processed"</span>, <span class="va">f</span><span class="op">)</span></span>
+<span>    <span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.exists</a></span><span class="op">(</span><span class="va">path</span><span class="op">)</span><span class="op">)</span> <span class="kw">next</span></span>
+<span>    <span class="va">got</span> <span class="op">&lt;-</span> <span class="fu">tools</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/r/tools/md5sum.html" class="external-link">md5sum</a></span>  <span class="co"># for SHA-256 use openssl::sha256(file(path)) or system shasum</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="va">f</span>, <span class="st">":"</span>, <span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.exists</a></span><span class="op">(</span><span class="va">path</span><span class="op">)</span><span class="op">)</span> <span class="st">"downloaded"</span> <span class="kw">else</span> <span class="st">"missing"</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="op">}</span></span></code></pre></div>
+</div>
 </div>
 <div class="section level2">
 <h2 id="step-5-final-verification">Step 5: Final Verification<a class="anchor" aria-label="anchor" href="#step-5-final-verification"></a>
 </h2>
 <p>Run this final check to ensure everything is ready:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"=== Workshop Setup Verification ===\n\n"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## === Workshop Setup Verification ===</span></span></code></pre>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Check R version</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"R Version:"</span>, <span class="va">R.version.string</span>, <span class="st">"\n\n"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## R Version: R version 4.5.2 (2025-10-31)</span></span></code></pre>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Check critical packages</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Package Status:\n"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Package Status:</span></span></code></pre>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">packages</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Seurat"</span>, <span class="st">"harmony"</span>, <span class="st">"glmGamPoi"</span>, <span class="st">"edgeR"</span>, <span class="st">"limma"</span>, <span class="st">"speckle"</span><span class="op">)</span></span>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Platform + R version</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Platform:  "</span>, <span class="va">R.version</span><span class="op">$</span><span class="va">platform</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## Platform:   x86_64-pc-linux-gnu</span></span></code></pre>
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"OS:        "</span>, <span class="fu"><a href="https://rdrr.io/r/base/Sys.info.html" class="external-link">Sys.info</a></span><span class="op">(</span><span class="op">)</span><span class="op">[[</span><span class="st">"sysname"</span><span class="op">]</span><span class="op">]</span>, <span class="fu"><a href="https://rdrr.io/r/base/Sys.info.html" class="external-link">Sys.info</a></span><span class="op">(</span><span class="op">)</span><span class="op">[[</span><span class="st">"release"</span><span class="op">]</span><span class="op">]</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## OS:         Linux 6.17.0-1010-azure</span></span></code></pre>
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"R Version: "</span>, <span class="va">R.version.string</span>, <span class="st">"\n\n"</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## R Version:  R version 4.5.2 (2025-10-31)</span></span></code></pre>
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># All workshop packages</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Packages:\n"</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## Packages:</span></span></code></pre>
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">packages</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>    <span class="st">"Seurat"</span>, <span class="st">"harmony"</span>, <span class="st">"glmGamPoi"</span>, <span class="st">"edgeR"</span>, <span class="st">"limma"</span>, <span class="st">"speckle"</span>,</span>
+<span>    <span class="st">"ComplexHeatmap"</span>, <span class="st">"slingshot"</span>, <span class="st">"destiny"</span>, <span class="st">"scater"</span>,</span>
+<span>    <span class="st">"PhiSpace"</span>, <span class="st">"NeighbourNet"</span></span>
+<span><span class="op">)</span></span>
 <span><span class="kw">for</span> <span class="op">(</span><span class="va">pkg</span> <span class="kw">in</span> <span class="va">packages</span><span class="op">)</span> <span class="op">{</span></span>
 <span>    <span class="va">status</span> <span class="op">&lt;-</span> <span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="va">pkg</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="st">"OK"</span> <span class="kw">else</span> <span class="st">"MISSING"</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"  %-12s %s\n"</span>, <span class="va">pkg</span>, <span class="va">status</span><span class="op">)</span><span class="op">)</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"  %-15s %s\n"</span>, <span class="va">pkg</span>, <span class="va">status</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">}</span></span></code></pre></div>
-<pre><code><span><span class="co">##   Seurat       OK</span></span>
-<span><span class="co">##   harmony      OK</span></span>
-<span><span class="co">##   glmGamPoi    OK</span></span>
-<span><span class="co">##   edgeR        OK</span></span>
-<span><span class="co">##   limma        OK</span></span>
-<span><span class="co">##   speckle      OK</span></span></code></pre>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Check data files</span></span>
+<pre><code><span><span class="co">##   Seurat          OK</span></span>
+<span><span class="co">##   harmony         OK</span></span>
+<span><span class="co">##   glmGamPoi       OK</span></span>
+<span><span class="co">##   edgeR           OK</span></span>
+<span><span class="co">##   limma           OK</span></span>
+<span><span class="co">##   speckle         OK</span></span>
+<span><span class="co">##   ComplexHeatmap  OK</span></span>
+<span><span class="co">##   slingshot       OK</span></span>
+<span><span class="co">##   destiny         OK</span></span>
+<span><span class="co">##   scater          OK</span></span>
+<span><span class="co">##   PhiSpace        OK</span></span>
+<span><span class="co">##   NeighbourNet    OK</span></span></code></pre>
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Workshop data</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"\nData Files:\n"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">## Data Files:</span></span></code></pre>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">data_dir</span> <span class="op">&lt;-</span> <span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.exists</a></span><span class="op">(</span><span class="st">"data"</span><span class="op">)</span><span class="op">)</span> <span class="st">"data"</span> <span class="kw">else</span> <span class="st">"../data"</span></span>
 <span><span class="kw">for</span> <span class="op">(</span><span class="va">f</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"heart-counts.Rds"</span>, <span class="st">"cellinfo_updated.Rds"</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
 <span>    <span class="va">path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">data_dir</span>, <span class="va">f</span><span class="op">)</span></span>
@@ -314,7 +618,7 @@ MB.</p>
 <span><span class="op">}</span></span></code></pre></div>
 <pre><code><span><span class="co">##   heart-counts.Rds          FOUND</span></span>
 <span><span class="co">##   cellinfo_updated.Rds      FOUND</span></span></code></pre>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"\n================================\n"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">## ================================</span></span></code></pre>
@@ -346,16 +650,41 @@ MB.</p>
 </ol>
 </div>
 <div class="section level3">
-<h3 id="macos-compilation-errors">macOS compilation errors<a class="anchor" aria-label="anchor" href="#macos-compilation-errors"></a>
+<h3 id="compilation-errors-compilation-failed-for-package">Compilation errors (“compilation failed for package …”)<a class="anchor" aria-label="anchor" href="#compilation-errors-compilation-failed-for-package"></a>
 </h3>
-<p>Install Xcode Command Line Tools:</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb24-1"><a href="#cb24-1" tabindex="-1"></a><span class="ex">xcode-select</span> <span class="at">--install</span></span></code></pre></div>
+<p>Almost always means the system toolchain from Step 2 is missing or
+out of date. Re-check it:</p>
+<ul>
+<li>
+<strong>Windows</strong> — open R and run
+<code>pkgbuild::has_build_tools(debug = TRUE)</code>. If it returns
+<code>FALSE</code>, reinstall <a href="https://cran.r-project.org/bin/windows/Rtools/rtools45/rtools.html" class="external-link">Rtools45</a>
+and restart R / RStudio.</li>
+<li>
+<strong>macOS</strong> — run <code>xcode-select --install</code> in
+a terminal and click “Install” in the dialog.</li>
+<li>
+<strong>Linux</strong> — re-run the <code>apt-get install</code>
+block from Step 2; if a specific header file is named in the error
+(e.g. <code>hdf5.h</code>), install the matching <code>*-dev</code>
+package.</li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="windows-cannot-rename-file-very-long-install-paths">Windows: “cannot rename file” / very long install paths<a class="anchor" aria-label="anchor" href="#windows-cannot-rename-file-very-long-install-paths"></a>
+</h3>
+<p>Windows still enforces a 260-character path limit on many APIs. If
+you cloned the repo deep under <code>OneDrive</code> or a long username,
+move it to a short path
+(e.g. <code>C:\workshop\single_cell_workshop</code>) and re-run
+<code><a href="https://rstudio.github.io/renv/reference/restore.html" class="external-link">renv::restore()</a></code>. Alternatively, enable <a href="https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation?tabs=registry" class="external-link">Long
+Paths in Windows</a>.</p>
 </div>
 <div class="section level3">
 <h3 id="package-conflicts">Package conflicts<a class="anchor" aria-label="anchor" href="#package-conflicts"></a>
 </h3>
 <p>If you have existing packages causing conflicts:</p>
-<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Use a clean renv library</span></span>
 <span><span class="fu">renv</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/renv/reference/rebuild.html" class="external-link">rebuild</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -373,11 +702,11 @@ MB.</p>
 <div class="section level2">
 <h2 id="session-information">Session Information<a class="anchor" aria-label="anchor" href="#session-information"></a>
 </h2>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## R version 4.5.2 (2025-10-31)</span></span>
 <span><span class="co">## Platform: x86_64-pc-linux-gnu</span></span>
-<span><span class="co">## Running under: Ubuntu 24.04.3 LTS</span></span>
+<span><span class="co">## Running under: Ubuntu 24.04.4 LTS</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## Matrix products: default</span></span>
 <span><span class="co">## BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 </span></span>
@@ -396,78 +725,114 @@ MB.</p>
 <span><span class="co">## [1] stats     graphics  grDevices datasets  utils     methods   base     </span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## loaded via a namespace (and not attached):</span></span>
-<span><span class="co">##   [1] RColorBrewer_1.1-3          jsonlite_2.0.0             </span></span>
-<span><span class="co">##   [3] magrittr_2.0.4              spatstat.utils_3.2-1       </span></span>
-<span><span class="co">##   [5] farver_2.1.2                rmarkdown_2.30             </span></span>
-<span><span class="co">##   [7] fs_1.6.6                    ragg_1.5.0                 </span></span>
-<span><span class="co">##   [9] vctrs_0.6.5                 ROCR_1.0-11                </span></span>
-<span><span class="co">##  [11] spatstat.explore_3.6-0      S4Arrays_1.10.1            </span></span>
-<span><span class="co">##  [13] htmltools_0.5.9             SparseArray_1.10.8         </span></span>
-<span><span class="co">##  [15] sass_0.4.10                 sctransform_0.4.3          </span></span>
-<span><span class="co">##  [17] parallelly_1.46.1           KernSmooth_2.23-26         </span></span>
-<span><span class="co">##  [19] bslib_0.9.0                 htmlwidgets_1.6.4          </span></span>
-<span><span class="co">##  [21] desc_1.4.3                  ica_1.0-3                  </span></span>
-<span><span class="co">##  [23] plyr_1.8.9                  speckle_1.10.0             </span></span>
-<span><span class="co">##  [25] plotly_4.11.0               zoo_1.8-15                 </span></span>
-<span><span class="co">##  [27] cachem_1.1.0                igraph_2.2.1               </span></span>
-<span><span class="co">##  [29] mime_0.13                   lifecycle_1.0.5            </span></span>
-<span><span class="co">##  [31] pkgconfig_2.0.3             Matrix_1.7-4               </span></span>
-<span><span class="co">##  [33] R6_2.6.1                    fastmap_1.2.0              </span></span>
-<span><span class="co">##  [35] MatrixGenerics_1.22.0       fitdistrplus_1.2-4         </span></span>
-<span><span class="co">##  [37] future_1.68.0               shiny_1.12.1               </span></span>
-<span><span class="co">##  [39] digest_0.6.39               patchwork_1.3.2            </span></span>
-<span><span class="co">##  [41] S4Vectors_0.48.0            Seurat_5.4.0               </span></span>
-<span><span class="co">##  [43] tensor_1.5.1                RSpectra_0.16-2            </span></span>
-<span><span class="co">##  [45] irlba_2.3.5.1               GenomicRanges_1.62.1       </span></span>
-<span><span class="co">##  [47] textshaping_1.0.4           beachmat_2.26.0            </span></span>
-<span><span class="co">##  [49] progressr_0.18.0            spatstat.sparse_3.1-0      </span></span>
-<span><span class="co">##  [51] httr_1.4.7                  polyclip_1.10-7            </span></span>
-<span><span class="co">##  [53] abind_1.4-8                 compiler_4.5.2             </span></span>
-<span><span class="co">##  [55] S7_0.2.1                    fastDummies_1.7.5          </span></span>
-<span><span class="co">##  [57] MASS_7.3-65                 DelayedArray_0.36.0        </span></span>
-<span><span class="co">##  [59] tools_4.5.2                 lmtest_0.9-40              </span></span>
-<span><span class="co">##  [61] otel_0.2.0                  httpuv_1.6.16              </span></span>
-<span><span class="co">##  [63] future.apply_1.20.1         goftest_1.2-3              </span></span>
-<span><span class="co">##  [65] glmGamPoi_1.22.0            glue_1.8.0                 </span></span>
-<span><span class="co">##  [67] nlme_3.1-168                promises_1.5.0             </span></span>
-<span><span class="co">##  [69] grid_4.5.2                  Rtsne_0.17                 </span></span>
-<span><span class="co">##  [71] cluster_2.1.8.1             reshape2_1.4.5             </span></span>
-<span><span class="co">##  [73] generics_0.1.4              gtable_0.3.6               </span></span>
-<span><span class="co">##  [75] spatstat.data_3.1-9         tidyr_1.3.2                </span></span>
-<span><span class="co">##  [77] data.table_1.18.0           XVector_0.50.0             </span></span>
-<span><span class="co">##  [79] sp_2.2-0                    BiocGenerics_0.56.0        </span></span>
-<span><span class="co">##  [81] spatstat.geom_3.6-1         RcppAnnoy_0.0.23           </span></span>
-<span><span class="co">##  [83] ggrepel_0.9.6               RANN_2.6.2                 </span></span>
-<span><span class="co">##  [85] pillar_1.11.1               stringr_1.6.0              </span></span>
-<span><span class="co">##  [87] limma_3.66.0                spam_2.11-3                </span></span>
-<span><span class="co">##  [89] RcppHNSW_0.6.0              later_1.4.5                </span></span>
-<span><span class="co">##  [91] splines_4.5.2               dplyr_1.1.4                </span></span>
-<span><span class="co">##  [93] lattice_0.22-7              renv_1.1.5                 </span></span>
-<span><span class="co">##  [95] survival_3.8-3              deldir_2.0-4               </span></span>
-<span><span class="co">##  [97] tidyselect_1.2.1            SingleCellExperiment_1.32.0</span></span>
-<span><span class="co">##  [99] locfit_1.5-9.12             miniUI_0.1.2               </span></span>
-<span><span class="co">## [101] pbapply_1.7-4               knitr_1.51                 </span></span>
-<span><span class="co">## [103] gridExtra_2.3               Seqinfo_1.0.0              </span></span>
-<span><span class="co">## [105] IRanges_2.44.0              edgeR_4.8.2                </span></span>
-<span><span class="co">## [107] SummarizedExperiment_1.40.0 scattermore_1.2            </span></span>
-<span><span class="co">## [109] stats4_4.5.2                xfun_0.55                  </span></span>
-<span><span class="co">## [111] Biobase_2.70.0              statmod_1.5.1              </span></span>
-<span><span class="co">## [113] matrixStats_1.5.0           stringi_1.8.7              </span></span>
-<span><span class="co">## [115] lazyeval_0.2.2              yaml_2.3.12                </span></span>
-<span><span class="co">## [117] evaluate_1.0.5              codetools_0.2-20           </span></span>
-<span><span class="co">## [119] tibble_3.3.1                BiocManager_1.30.27        </span></span>
-<span><span class="co">## [121] cli_3.6.5                   uwot_0.2.4                 </span></span>
-<span><span class="co">## [123] xtable_1.8-4                reticulate_1.44.1          </span></span>
-<span><span class="co">## [125] systemfonts_1.3.1           jquerylib_0.1.4            </span></span>
-<span><span class="co">## [127] harmony_1.2.4               Rcpp_1.1.1                 </span></span>
-<span><span class="co">## [129] globals_0.18.0              spatstat.random_3.4-3      </span></span>
-<span><span class="co">## [131] png_0.1-8                   spatstat.univar_3.1-5      </span></span>
-<span><span class="co">## [133] parallel_4.5.2              pkgdown_2.2.0              </span></span>
-<span><span class="co">## [135] ggplot2_4.0.1               dotCall64_1.2              </span></span>
-<span><span class="co">## [137] listenv_0.10.0              viridisLite_0.4.2          </span></span>
-<span><span class="co">## [139] scales_1.4.0                ggridges_0.5.7             </span></span>
-<span><span class="co">## [141] SeuratObject_5.3.0          purrr_1.2.1                </span></span>
-<span><span class="co">## [143] rlang_1.1.7                 cowplot_1.2.0</span></span></code></pre>
+<span><span class="co">##   [1] fs_1.6.6                    destiny_3.24.0             </span></span>
+<span><span class="co">##   [3] matrixStats_1.5.0           spatstat.sparse_3.1-0      </span></span>
+<span><span class="co">##   [5] httr_1.4.7                  RColorBrewer_1.1-3         </span></span>
+<span><span class="co">##   [7] doParallel_1.0.17           tools_4.5.2                </span></span>
+<span><span class="co">##   [9] mlr3learners_0.14.0         sctransform_0.4.3          </span></span>
+<span><span class="co">##  [11] backports_1.5.0             R6_2.6.1                   </span></span>
+<span><span class="co">##  [13] lazyeval_0.2.2              uwot_0.2.4                 </span></span>
+<span><span class="co">##  [15] GetoptLong_1.1.1            sp_2.2-0                   </span></span>
+<span><span class="co">##  [17] gridExtra_2.3               progressr_0.18.0           </span></span>
+<span><span class="co">##  [19] PhiSpace_1.1.0              cli_3.6.5                  </span></span>
+<span><span class="co">##  [21] Biobase_2.70.0              textshaping_1.0.4          </span></span>
+<span><span class="co">##  [23] spatstat.explore_3.6-0      fastDummies_1.7.5          </span></span>
+<span><span class="co">##  [25] TSP_1.2.7                   sass_0.4.10                </span></span>
+<span><span class="co">##  [27] Seurat_5.4.0                S7_0.2.1-1                 </span></span>
+<span><span class="co">##  [29] robustbase_0.99-7           spatstat.data_3.1-9        </span></span>
+<span><span class="co">##  [31] proxy_0.4-29                ggridges_0.5.7             </span></span>
+<span><span class="co">##  [33] pbapply_1.7-4               pkgdown_2.2.0              </span></span>
+<span><span class="co">##  [35] slingshot_2.18.0            mlr3tuning_1.6.0           </span></span>
+<span><span class="co">##  [37] systemfonts_1.3.1           paradox_1.0.1              </span></span>
+<span><span class="co">##  [39] harmony_1.2.4               scater_1.38.1              </span></span>
+<span><span class="co">##  [41] parallelly_1.46.1           limma_3.66.0               </span></span>
+<span><span class="co">##  [43] TTR_0.24.4                  generics_0.1.4             </span></span>
+<span><span class="co">##  [45] shape_1.4.6.1               ica_1.0-3                  </span></span>
+<span><span class="co">##  [47] spatstat.random_3.4-3       car_3.1-5                  </span></span>
+<span><span class="co">##  [49] dplyr_1.1.4                 Matrix_1.7-4               </span></span>
+<span><span class="co">##  [51] ggbeeswarm_0.7.3            S4Vectors_0.48.0           </span></span>
+<span><span class="co">##  [53] abind_1.4-8                 lifecycle_1.0.5            </span></span>
+<span><span class="co">##  [55] scatterplot3d_0.3-45        yaml_2.3.12                </span></span>
+<span><span class="co">##  [57] edgeR_4.8.2                 carData_3.0-6              </span></span>
+<span><span class="co">##  [59] SummarizedExperiment_1.40.0 SparseArray_1.10.8         </span></span>
+<span><span class="co">##  [61] Rtsne_0.17                  glmGamPoi_1.22.0           </span></span>
+<span><span class="co">##  [63] grid_4.5.2                  promises_1.5.0             </span></span>
+<span><span class="co">##  [65] crayon_1.5.3                miniUI_0.1.2               </span></span>
+<span><span class="co">##  [67] speckle_1.10.0              lattice_0.22-7             </span></span>
+<span><span class="co">##  [69] beachmat_2.26.0             cowplot_1.2.0              </span></span>
+<span><span class="co">##  [71] magick_2.9.1                pillar_1.11.1              </span></span>
+<span><span class="co">##  [73] knitr_1.51                  ComplexHeatmap_2.26.1      </span></span>
+<span><span class="co">##  [75] GenomicRanges_1.62.1        rjson_0.2.23               </span></span>
+<span><span class="co">##  [77] boot_1.3-32                 future.apply_1.20.1        </span></span>
+<span><span class="co">##  [79] codetools_0.2-20            glue_1.8.0                 </span></span>
+<span><span class="co">##  [81] spatstat.univar_3.1-5       pcaMethods_2.2.0           </span></span>
+<span><span class="co">##  [83] data.table_1.18.0           vcd_1.4-13                 </span></span>
+<span><span class="co">##  [85] vctrs_0.6.5                 png_0.1-8                  </span></span>
+<span><span class="co">##  [87] spam_2.11-3                 gtable_0.3.6               </span></span>
+<span><span class="co">##  [89] cachem_1.1.0                xfun_0.55                  </span></span>
+<span><span class="co">##  [91] princurve_2.1.6             S4Arrays_1.10.1            </span></span>
+<span><span class="co">##  [93] mime_0.13                   RcppEigen_0.3.4.0.2        </span></span>
+<span><span class="co">##  [95] Seqinfo_1.0.0               survival_3.8-3             </span></span>
+<span><span class="co">##  [97] seriation_1.5.8             SingleCellExperiment_1.32.0</span></span>
+<span><span class="co">##  [99] iterators_1.0.14            statmod_1.5.1              </span></span>
+<span><span class="co">## [101] fitdistrplus_1.2-4          ROCR_1.0-11                </span></span>
+<span><span class="co">## [103] nlme_3.1-168                xts_0.14.2                 </span></span>
+<span><span class="co">## [105] bbotk_1.10.0                RcppAnnoy_0.0.23           </span></span>
+<span><span class="co">## [107] mlr3pipelines_0.11.0        bslib_0.9.0                </span></span>
+<span><span class="co">## [109] mlr3_1.6.0                  irlba_2.3.5.1              </span></span>
+<span><span class="co">## [111] vipor_0.4.7                 KernSmooth_2.23-26         </span></span>
+<span><span class="co">## [113] otel_0.2.0                  colorspace_2.1-2           </span></span>
+<span><span class="co">## [115] BiocGenerics_0.56.0         nnet_7.3-20                </span></span>
+<span><span class="co">## [117] mlr3misc_0.21.0             smoother_1.3               </span></span>
+<span><span class="co">## [119] tidyselect_1.2.1            curl_7.0.0                 </span></span>
+<span><span class="co">## [121] compiler_4.5.2              BiocNeighbors_2.4.0        </span></span>
+<span><span class="co">## [123] lgr_0.5.2                   desc_1.4.3                 </span></span>
+<span><span class="co">## [125] DelayedArray_0.36.0         plotly_4.11.0              </span></span>
+<span><span class="co">## [127] checkmate_2.3.3             scales_1.4.0               </span></span>
+<span><span class="co">## [129] DEoptimR_1.1-4              lmtest_0.9-40              </span></span>
+<span><span class="co">## [131] hexbin_1.28.5               palmerpenguins_0.1.1       </span></span>
+<span><span class="co">## [133] SpatialExperiment_1.20.0    stringr_1.6.0              </span></span>
+<span><span class="co">## [135] digest_0.6.39               goftest_1.2-3              </span></span>
+<span><span class="co">## [137] spatstat.utils_3.2-1        rmarkdown_2.30             </span></span>
+<span><span class="co">## [139] ca_0.71.1                   XVector_0.50.0             </span></span>
+<span><span class="co">## [141] htmltools_0.5.9             pkgconfig_2.0.3            </span></span>
+<span><span class="co">## [143] MatrixGenerics_1.22.0       fastmap_1.2.0              </span></span>
+<span><span class="co">## [145] rlang_1.1.7                 GlobalOptions_0.1.4        </span></span>
+<span><span class="co">## [147] htmlwidgets_1.6.4           ggthemes_5.2.0             </span></span>
+<span><span class="co">## [149] shiny_1.12.1                farver_2.1.2               </span></span>
+<span><span class="co">## [151] jquerylib_0.1.4             zoo_1.8-15                 </span></span>
+<span><span class="co">## [153] jsonlite_2.0.0              BiocParallel_1.44.0        </span></span>
+<span><span class="co">## [155] BiocSingular_1.26.1         magrittr_2.0.4             </span></span>
+<span><span class="co">## [157] scuttle_1.20.0              Formula_1.2-5              </span></span>
+<span><span class="co">## [159] dotCall64_1.2               patchwork_1.3.2            </span></span>
+<span><span class="co">## [161] Rcpp_1.1.1-1                viridis_0.6.5              </span></span>
+<span><span class="co">## [163] reticulate_1.44.1           TrajectoryUtils_1.18.0     </span></span>
+<span><span class="co">## [165] stringi_1.8.7               MASS_7.3-65                </span></span>
+<span><span class="co">## [167] plyr_1.8.9                  parallel_4.5.2             </span></span>
+<span><span class="co">## [169] listenv_0.10.0              ggrepel_0.9.6              </span></span>
+<span><span class="co">## [171] deldir_2.0-4                splines_4.5.2              </span></span>
+<span><span class="co">## [173] tensor_1.5.1                circlize_0.4.18            </span></span>
+<span><span class="co">## [175] locfit_1.5-9.12             igraph_2.2.1               </span></span>
+<span><span class="co">## [177] uuid_1.2-2                  ranger_0.18.0              </span></span>
+<span><span class="co">## [179] vizOmics_0.1.0              spatstat.geom_3.6-1        </span></span>
+<span><span class="co">## [181] RcppHNSW_0.6.0              ScaledMatrix_1.18.0        </span></span>
+<span><span class="co">## [183] reshape2_1.4.5              stats4_4.5.2               </span></span>
+<span><span class="co">## [185] evaluate_1.0.5              SeuratObject_5.3.0         </span></span>
+<span><span class="co">## [187] NeighbourNet_1.0.0          renv_1.1.5                 </span></span>
+<span><span class="co">## [189] BiocManager_1.30.27         laeken_0.5.3               </span></span>
+<span><span class="co">## [191] foreach_1.5.2               httpuv_1.6.16              </span></span>
+<span><span class="co">## [193] VIM_7.0.0                   RANN_2.6.2                 </span></span>
+<span><span class="co">## [195] tidyr_1.3.2                 purrr_1.2.1                </span></span>
+<span><span class="co">## [197] polyclip_1.10-7             future_1.68.0              </span></span>
+<span><span class="co">## [199] clue_0.3-68                 scattermore_1.2            </span></span>
+<span><span class="co">## [201] ggplot2_4.0.1               rsvd_1.0.5                 </span></span>
+<span><span class="co">## [203] xtable_1.8-4                e1071_1.7-17               </span></span>
+<span><span class="co">## [205] RSpectra_0.16-2             later_1.4.5                </span></span>
+<span><span class="co">## [207] viridisLite_0.4.2           class_7.3-23               </span></span>
+<span><span class="co">## [209] ragg_1.5.0                  tibble_3.3.1               </span></span>
+<span><span class="co">## [211] registry_0.5-1              beeswarm_0.4.0             </span></span>
+<span><span class="co">## [213] IRanges_2.44.0              cluster_2.1.8.1            </span></span>
+<span><span class="co">## [215] ggplot.multistats_1.0.1     globals_0.18.0</span></span></code></pre>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

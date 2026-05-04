@@ -103,6 +103,7 @@ By the end of this module, you will be able to:
 ## Load Libraries
 
 ``` r
+
 library(Seurat)
 library(edgeR)
 library(limma)
@@ -126,6 +127,7 @@ assay. Cell type labels come from the original study annotations in
 `cellinfo_updated.Rds`.
 
 ``` r
+
 data_dir <- "../data"
 
 # Load QC-filtered Seurat object from Module 1
@@ -140,18 +142,27 @@ cellinfo <- readRDS(file.path(data_dir, "cellinfo_updated.Rds"))
 # Match cellinfo to QC-filtered cells
 cellinfo <- cellinfo[match(colnames(seu), cellinfo$CellID), ]
 
+# Attach the cell-type and sample columns we will pseudobulk on directly
+# to the Seurat object's metadata. edgeR::Seurat2PB() reads these column
+# names from `seu@meta.data`, so they need to live there rather than in
+# the separate cellinfo data frame.
+seu$Celltype <- cellinfo$Celltype
+seu$Sample   <- cellinfo$Sample
+
 cat("QC-filtered dataset:\n")
 ```
 
     ## QC-filtered dataset:
 
 ``` r
+
 cat("- Genes:", format(nrow(counts), big.mark = ","), "\n")
 ```
 
     ## - Genes: 18,953
 
 ``` r
+
 cat("- Cells:", format(ncol(counts), big.mark = ","), "\n")
 ```
 
@@ -164,6 +175,7 @@ study. We use the `Celltype` column which provides broad cell type
 classifications:
 
 ``` r
+
 # Cell type distribution in QC-filtered data
 cat("Cell type distribution:\n")
 ```
@@ -171,6 +183,7 @@ cat("Cell type distribution:\n")
     ## Cell type distribution:
 
 ``` r
+
 print(table(cellinfo$Celltype))
 ```
 
@@ -181,6 +194,7 @@ print(table(cellinfo$Celltype))
     ##                9160                3145                 818                 425
 
 ``` r
+
 # Cell type by developmental stage
 cat("\nCell type by developmental stage:\n")
 ```
@@ -189,6 +203,7 @@ cat("\nCell type by developmental stage:\n")
     ## Cell type by developmental stage:
 
 ``` r
+
 print(table(cellinfo$Celltype, cellinfo$Group))
 ```
 
@@ -206,6 +221,7 @@ print(table(cellinfo$Celltype, cellinfo$Group))
 ### Define Colour Palettes
 
 ``` r
+
 # Developmental group colours
 group_colors <- c(
     "fetal" = "#E64B35",
@@ -233,6 +249,7 @@ output tables). Note that gene filtering was already performed in Module
 1.
 
 ``` r
+
 # Get gene annotation for output tables
 gene_symbols <- rownames(counts)
 
@@ -263,6 +280,7 @@ Erythroid cells represent a small population that may be contaminants.
 We exclude them from DE analysis:
 
 ``` r
+
 # Check for erythroid cells
 n_erythroid <- sum(cellinfo$Celltype == "Erythroid", na.rm = TRUE)
 cat("Erythroid cells found:", n_erythroid, "\n")
@@ -271,11 +289,15 @@ cat("Erythroid cells found:", n_erythroid, "\n")
     ## Erythroid cells found: 56
 
 ``` r
+
 # Remove erythroid cells if present
 if (n_erythroid > 0) {
   cells_keep <- cellinfo$Celltype != "Erythroid"
   cellinfo_filtered <- cellinfo[cells_keep, ]
   counts_filtered <- counts[, cells_keep]
+  # Mirror the filter on the Seurat object so the Seurat2PB call below
+  # operates on the same cells as the count / metadata tables.
+  seu <- seu[, cells_keep]
 } else {
   cellinfo_filtered <- cellinfo
   counts_filtered <- counts
@@ -287,6 +309,7 @@ cat("Cells for DE analysis:", ncol(counts_filtered), "\n")
     ## Cells for DE analysis: 47349
 
 ``` r
+
 cat("\nCell type distribution:\n")
 ```
 
@@ -294,6 +317,7 @@ cat("\nCell type distribution:\n")
     ## Cell type distribution:
 
 ``` r
+
 print(table(cellinfo_filtered$Celltype))
 ```
 
@@ -348,6 +372,7 @@ function addresses this by:
 ### Calculate Cell Type Proportions
 
 ``` r
+
 # Calculate cell counts per sample and cell type
 composition_data <- cellinfo_filtered %>%
   group_by(Sample, Group, Celltype) %>%
@@ -366,6 +391,7 @@ cat("Cells per sample:\n")
     ## Cells per sample:
 
 ``` r
+
 composition_data %>%
   select(Sample, Group, total_cells) %>%
   distinct() %>%
@@ -388,6 +414,7 @@ composition_data %>%
 ### Visualise Composition Changes
 
 ``` r
+
 # Stacked bar plot of cell type proportions
 ggplot(composition_data, aes(x = Sample, y = proportion, fill = Celltype)) +
   geom_bar(stat = "identity", colour = "white", linewidth = 0.2) +
@@ -411,6 +438,7 @@ ggplot(composition_data, aes(x = Sample, y = proportion, fill = Celltype)) +
 ![](04_differential_expression_files/figure-html/composition-barplot-1.png)
 
 ``` r
+
 # Boxplot of cell type proportions by developmental stage
 ggplot(composition_data, aes(x = Group, y = proportion, fill = Group)) +
   geom_boxplot(outlier.shape = NA, alpha = 0.7) +
@@ -446,6 +474,7 @@ function tests for differences in cell type proportions between groups
 while properly handling the compositional nature of the data:
 
 ``` r
+
 # Prepare data for propeller
 # Need vectors of: clusters (cell types), samples, and groups
 clusters <- cellinfo_filtered$Celltype
@@ -473,12 +502,14 @@ cat("Propeller Test Results: Cell Type Composition Changes\n")
     ## Propeller Test Results: Cell Type Composition Changes
 
 ``` r
+
 cat("======================================================\n\n")
 ```
 
     ## ======================================================
 
 ``` r
+
 print(propeller_results)
 ```
 
@@ -500,6 +531,7 @@ print(propeller_results)
     ## Smooth muscle cells  0.5677644 0.5757903786 0.575790379
 
 ``` r
+
 # Identify significant changes
 sig_celltypes <- propeller_results %>%
   filter(FDR < 0.05)
@@ -559,94 +591,28 @@ approach allows us to perform differential expression within each cell
 type, accounting for the fact that different cell types may respond
 differently to developmental changes.
 
-``` r
-# Create factor for cell type
-celltype <- factor(cellinfo_filtered$Celltype)
+### Aggregate Counts with `Seurat2PB`
 
-# Create factor for sample with explicit level ordering
-sample_factor <- factor(
-    cellinfo_filtered$Sample,
-    levels = c("f1", "f2", "f3", "y1", "y2", "y3", "a1", "a2", "a3")
+*edgeR* provides
+[`Seurat2PB()`](https://rdrr.io/pkg/edgeR/man/Seurat2PB.html), a
+one-call helper that takes a `Seurat` object plus the names of its
+sample and cluster metadata columns and returns a `DGEList` whose
+columns are the cell-type × sample pseudobulks. Internally it does
+exactly what a manual `model.matrix(~ 0 + group)` followed by a sparse
+matrix multiplication would do — sum the raw counts within every
+(cluster, sample) combination — but without the bookkeeping around
+column names and factor levels.
+
+``` r
+
+# Aggregate raw counts by (Celltype, Sample) into a DGEList. The Seurat
+# object already carries Celltype and Sample in @meta.data (added during
+# data loading above), so this is a single call.
+dge <- edgeR::Seurat2PB(
+    seu,
+    sample  = "Sample",
+    cluster = "Celltype"
 )
-
-# Create combined grouping variable (celltype.sample)
-pseudobulk_group <- paste(celltype, sample_factor, sep = ".")
-pseudobulk_group <- factor(pseudobulk_group)
-
-cat("Number of pseudobulk samples:", length(levels(pseudobulk_group)), "\n")
-```
-
-    ## Number of pseudobulk samples: 63
-
-``` r
-cat("\nCells per pseudobulk sample:\n")
-```
-
-    ## 
-    ## Cells per pseudobulk sample:
-
-``` r
-print(table(pseudobulk_group))
-```
-
-    ## pseudobulk_group
-    ##      Cardiomyocytes.a1      Cardiomyocytes.a2      Cardiomyocytes.a3 
-    ##                   1661                    308                    160 
-    ##      Cardiomyocytes.f1      Cardiomyocytes.f2      Cardiomyocytes.f3 
-    ##                   5436                   8448                   5073 
-    ##      Cardiomyocytes.y1      Cardiomyocytes.y2      Cardiomyocytes.y3 
-    ##                   1045                   1920                   2626 
-    ##   Endothelial cells.a1   Endothelial cells.a2   Endothelial cells.a3 
-    ##                    590                    415                    126 
-    ##   Endothelial cells.f1   Endothelial cells.f2   Endothelial cells.f3 
-    ##                    474                    371                    405 
-    ##   Endothelial cells.y1   Endothelial cells.y2   Endothelial cells.y3 
-    ##                    502                    387                    457 
-    ##    Epicardial cells.a1    Epicardial cells.a2    Epicardial cells.a3 
-    ##                    338                    482                     85 
-    ##    Epicardial cells.f1    Epicardial cells.f2    Epicardial cells.f3 
-    ##                    562                    423                    396 
-    ##    Epicardial cells.y1    Epicardial cells.y2    Epicardial cells.y3 
-    ##                    605                    267                    239 
-    ##          Fibroblast.a1          Fibroblast.a2          Fibroblast.a3 
-    ##                    966                    971                    424 
-    ##          Fibroblast.f1          Fibroblast.f2          Fibroblast.f3 
-    ##                   1027                    752                   1195 
-    ##          Fibroblast.y1          Fibroblast.y2          Fibroblast.y3 
-    ##                   1576                   1522                    727 
-    ##        Immune cells.a1        Immune cells.a2        Immune cells.a3 
-    ##                    366                    343                    405 
-    ##        Immune cells.f1        Immune cells.f2        Immune cells.f3 
-    ##                    273                    227                    162 
-    ##        Immune cells.y1        Immune cells.y2        Immune cells.y3 
-    ##                    315                    514                    540 
-    ##             Neurons.a1             Neurons.a2             Neurons.a3 
-    ##                     56                     38                     13 
-    ##             Neurons.f1             Neurons.f2             Neurons.f3 
-    ##                    109                    128                    104 
-    ##             Neurons.y1             Neurons.y2             Neurons.y3 
-    ##                    204                     57                    109 
-    ## Smooth muscle cells.a1 Smooth muscle cells.a2 Smooth muscle cells.a3 
-    ##                     21                     48                     13 
-    ## Smooth muscle cells.f1 Smooth muscle cells.f2 Smooth muscle cells.f3 
-    ##                     54                     20                    135 
-    ## Smooth muscle cells.y1 Smooth muscle cells.y2 Smooth muscle cells.y3 
-    ##                     59                     28                     47
-
-### Aggregate Counts
-
-We use matrix multiplication with a design matrix to efficiently
-aggregate counts. This is equivalent to summing counts across all cells
-within each pseudobulk group:
-
-``` r
-# Create design matrix for aggregation
-design_agg <- model.matrix(~ 0 + pseudobulk_group)
-colnames(design_agg) <- levels(pseudobulk_group)
-
-# Aggregate counts by matrix multiplication
-# Each column of the result is the sum of counts for all cells in that group
-pb_counts <- as.matrix(counts_filtered) %*% design_agg
 
 cat("Pseudobulk matrix dimensions:\n")
 ```
@@ -654,75 +620,89 @@ cat("Pseudobulk matrix dimensions:\n")
     ## Pseudobulk matrix dimensions:
 
 ``` r
-cat("- Genes:", nrow(pb_counts), "\n")
+
+cat("- Genes:  ", format(nrow(dge), big.mark = ","), "\n")
 ```
 
-    ## - Genes: 18953
+    ## - Genes:   18,953
 
 ``` r
-cat("- Samples:", ncol(pb_counts), "\n")
+
+cat("- Samples:", ncol(dge), "\n")
 ```
 
     ## - Samples: 63
 
-### Create DGEList Object
+``` r
 
-The `DGEList` object from *edgeR* is the standard container for count
-data in the limma-voom pipeline. It stores counts, library sizes, and
-sample information:
+cat("\nCells per pseudobulk sample (first 10):\n")
+```
+
+    ## 
+    ## Cells per pseudobulk sample (first 10):
 
 ``` r
-# Create DGEList
-dge <- DGEList(counts = pb_counts)
 
-# Parse sample information from column names
-sample_info <- data.frame(
-    pseudobulk_id = colnames(dge),
-    stringsAsFactors = FALSE
+print(head(table(paste(seu$Celltype, seu$Sample, sep = ".")), 10))
+```
+
+    ## 
+    ##    Cardiomyocytes.a1    Cardiomyocytes.a2    Cardiomyocytes.a3 
+    ##                 1661                  308                  160 
+    ##    Cardiomyocytes.f1    Cardiomyocytes.f2    Cardiomyocytes.f3 
+    ##                 5436                 8448                 5073 
+    ##    Cardiomyocytes.y1    Cardiomyocytes.y2    Cardiomyocytes.y3 
+    ##                 1045                 1920                 2626 
+    ## Endothelial cells.a1 
+    ##                  590
+
+### Augment the DGEList with Sample-Level Metadata
+
+[`Seurat2PB()`](https://rdrr.io/pkg/edgeR/man/Seurat2PB.html) populates
+`dge$samples` with `cluster`, `sample`, `lib.size`, and `norm.factors`.
+We expose those under the names the rest of the module uses (`celltype`,
+`sample`), and add the developmental `group` and `sex` columns we will
+need for the design matrix and the MDS plots.
+
+``` r
+
+# Rename for downstream readability
+dge$samples$celltype <- as.character(dge$samples$cluster)
+dge$samples$sample   <- as.character(dge$samples$sample)
+
+# Developmental group derived from sample-name prefix
+dge$samples$group <- case_when(
+    grepl("^f", dge$samples$sample) ~ "fetal",
+    grepl("^y", dge$samples$sample) ~ "young",
+    grepl("^a", dge$samples$sample) ~ "adult"
 )
 
-# Extract cell type and sample from the combined name
-parsed <- strsplit(sample_info$pseudobulk_id, "\\.")
-sample_info$celltype <- sapply(parsed, `[`, 1)
-sample_info$sample <- sapply(parsed, `[`, 2)
-
-# Add developmental group (keep as character to avoid factor level issues)
-sample_info$group <- case_when(
-    grepl("^f", sample_info$sample) ~ "fetal",
-    grepl("^y", sample_info$sample) ~ "young",
-    grepl("^a", sample_info$sample) ~ "adult"
-)
-
-# Add sex information from cellinfo (matches actual data)
+# Sex per sample, looked up from the original cell-level metadata
 sex_by_sample <- cellinfo_filtered %>%
     distinct(Sample, Sex) %>%
     { setNames(.$Sex, .$Sample) }
-sample_info$sex <- sex_by_sample[sample_info$sample]
+dge$samples$sex <- sex_by_sample[dge$samples$sample]
 
-# Add gene annotation to DGEList (for output tables)
+# Attach gene annotation for output tables
 dge$genes <- ann
-
-# Store sample information
-# Note: DGEList creates a default 'group' column (all 1s), so we remove it first
-dge$samples <- cbind(dge$samples[, c("lib.size", "norm.factors")], sample_info)
 
 head(dge$samples)
 ```
 
-    ##                   lib.size norm.factors     pseudobulk_id       celltype sample
-    ## Cardiomyocytes.a1 32392120            1 Cardiomyocytes.a1 Cardiomyocytes     a1
-    ## Cardiomyocytes.a2  7280354            1 Cardiomyocytes.a2 Cardiomyocytes     a2
-    ## Cardiomyocytes.a3  2715798            1 Cardiomyocytes.a3 Cardiomyocytes     a3
-    ## Cardiomyocytes.f1 59294709            1 Cardiomyocytes.f1 Cardiomyocytes     f1
-    ## Cardiomyocytes.f2 82244242            1 Cardiomyocytes.f2 Cardiomyocytes     f2
-    ## Cardiomyocytes.f3 72452381            1 Cardiomyocytes.f3 Cardiomyocytes     f3
-    ##                   group sex
-    ## Cardiomyocytes.a1 adult   f
-    ## Cardiomyocytes.a2 adult   m
-    ## Cardiomyocytes.a3 adult   m
-    ## Cardiomyocytes.f1 fetal   m
-    ## Cardiomyocytes.f2 fetal   m
-    ## Cardiomyocytes.f3 fetal   f
+    ##                             group lib.size norm.factors sample
+    ## a1_clusterCardiomyocytes    adult 32392120            1     a1
+    ## a1_clusterEndothelial cells adult  4127506            1     a1
+    ## a1_clusterEpicardial cells  adult  1859175            1     a1
+    ## a1_clusterFibroblast        adult  7754220            1     a1
+    ## a1_clusterImmune cells      adult  2870300            1     a1
+    ## a1_clusterNeurons           adult   328128            1     a1
+    ##                                       cluster          celltype sex
+    ## a1_clusterCardiomyocytes       Cardiomyocytes    Cardiomyocytes   f
+    ## a1_clusterEndothelial cells Endothelial cells Endothelial cells   f
+    ## a1_clusterEpicardial cells   Epicardial cells  Epicardial cells   f
+    ## a1_clusterFibroblast               Fibroblast        Fibroblast   f
+    ## a1_clusterImmune cells           Immune cells      Immune cells   f
+    ## a1_clusterNeurons                     Neurons           Neurons   f
 
 ## Exploratory Data Analysis
 
@@ -734,6 +714,7 @@ dataset.
 ### MDS Plot Overview
 
 ``` r
+
 # Calculate MDS for all samples
 mds <- plotMDS(dge, plot = FALSE, gene.selection = "common")
 
@@ -794,6 +775,7 @@ To better visualise developmental differences, we examine MDS plots for
 each major cell type separately:
 
 ``` r
+
 # Function to create MDS plot for a specific cell type
 plot_mds_celltype <- function(celltype_name) {
     # Subset to this cell type
@@ -881,6 +863,7 @@ parameterisation (no intercept) where each column represents a unique
 combination of cell type, developmental group, and sex:
 
 ``` r
+
 # Create short cell type labels for cleaner coefficient names
 celltype_short <- dge$samples$celltype
 celltype_short <- gsub(" cells", "", celltype_short)
@@ -901,6 +884,7 @@ cat("Design matrix dimensions:", nrow(design), "x", ncol(design), "\n")
     ## Design matrix dimensions: 63 x 42
 
 ``` r
+
 cat("\nDesign matrix coefficients:\n")
 ```
 
@@ -908,6 +892,7 @@ cat("\nDesign matrix coefficients:\n")
     ## Design matrix coefficients:
 
 ``` r
+
 print(colnames(design))
 ```
 
@@ -929,6 +914,7 @@ print(colnames(design))
 ### Filtering and Normalisation
 
 ``` r
+
 # Filter genes with low expression using edgeR's filterByExpr
 # This removes genes that are not expressed at a biologically meaningful level
 keep <- filterByExpr(dge, design = design)
@@ -940,12 +926,14 @@ cat("Genes before filtering:", nrow(dge), "\n")
     ## Genes before filtering: 18953
 
 ``` r
+
 cat("Genes after filtering:", nrow(dge_filtered), "\n")
 ```
 
     ## Genes after filtering: 16085
 
 ``` r
+
 # Apply TMM normalisation
 dge_filtered <- calcNormFactors(dge_filtered, method = "TMM")
 
@@ -956,73 +944,74 @@ cat("\nLibrary sizes and normalisation factors:\n")
     ## Library sizes and normalisation factors:
 
 ``` r
+
 print(dge_filtered$samples[, c("lib.size", "norm.factors")])
 ```
 
-    ##                        lib.size norm.factors
-    ## Cardiomyocytes.a1      32379510    0.6062195
-    ## Cardiomyocytes.a2       7277544    0.6871822
-    ## Cardiomyocytes.a3       2714040    0.8796562
-    ## Cardiomyocytes.f1      59267741    0.8122854
-    ## Cardiomyocytes.f2      82215178    0.7780581
-    ## Cardiomyocytes.f3      72428402    0.7224807
-    ## Cardiomyocytes.y1      13418896    0.6523640
-    ## Cardiomyocytes.y2      31912809    0.6315278
-    ## Cardiomyocytes.y3      19313451    0.9023738
-    ## Endothelial cells.a1    4125389    1.0507578
-    ## Endothelial cells.a2    2778450    1.0091423
-    ## Endothelial cells.a3     838838    1.1131212
-    ## Endothelial cells.f1    4334507    1.1422059
-    ## Endothelial cells.f2    3826307    1.1090792
-    ## Endothelial cells.f3    5304616    1.0560309
-    ## Endothelial cells.y1    3618850    1.0725650
-    ## Endothelial cells.y2    2958916    0.9896856
-    ## Endothelial cells.y3    2738058    0.9695908
-    ## Epicardial cells.a1     1858312    1.0385323
-    ## Epicardial cells.a2     3758676    0.8723308
-    ## Epicardial cells.a3      637172    1.0710208
-    ## Epicardial cells.f1     5473502    1.1198427
-    ## Epicardial cells.f2     4725334    1.0363738
-    ## Epicardial cells.f3     5804650    0.9882715
-    ## Epicardial cells.y1     3799209    0.9767808
-    ## Epicardial cells.y2     1717993    0.9644361
-    ## Epicardial cells.y3     1343036    0.9462232
-    ## Fibroblast.a1           7750305    1.0867079
-    ## Fibroblast.a2           8812958    0.9867011
-    ## Fibroblast.a3           4052897    1.0859247
-    ## Fibroblast.f1           7830817    1.0555564
-    ## Fibroblast.f2           5476825    1.0310459
-    ## Fibroblast.f3          11550623    1.0052905
-    ## Fibroblast.y1          13480942    0.9618096
-    ## Fibroblast.y2          12218557    0.9621212
-    ## Fibroblast.y3           5870367    0.9887452
-    ## Immune cells.a1         2869009    1.0391055
-    ## Immune cells.a2         2276808    1.0725683
-    ## Immune cells.a3         3192409    1.1483534
-    ## Immune cells.f1         1960762    1.1266492
-    ## Immune cells.f2         1675070    1.1731315
-    ## Immune cells.f3         1580118    1.0676369
-    ## Immune cells.y1         2529505    1.1267478
-    ## Immune cells.y2         3734520    1.0432559
-    ## Immune cells.y3         3091938    1.0305902
-    ## Neurons.a1               328005    1.1719423
-    ## Neurons.a2               218624    1.0640886
-    ## Neurons.a3                74057    1.3408405
-    ## Neurons.f1               769716    1.1090986
-    ## Neurons.f2              1053894    1.0953821
-    ## Neurons.f3               955923    1.0477880
-    ## Neurons.y1              1098075    1.0945203
-    ## Neurons.y2               209762    1.0747981
-    ## Neurons.y3               443229    1.0579727
-    ## Smooth muscle cells.a1   119000    1.1801528
-    ## Smooth muscle cells.a2   389758    0.9537409
-    ## Smooth muscle cells.a3    96593    1.1759140
-    ## Smooth muscle cells.f1   471111    1.0362309
-    ## Smooth muscle cells.f2   145848    1.1343509
-    ## Smooth muscle cells.f3  1682502    0.9653342
-    ## Smooth muscle cells.y1   376185    1.0336519
-    ## Smooth muscle cells.y2   164171    0.9875187
-    ## Smooth muscle cells.y3   305519    0.9628307
+    ##                               lib.size norm.factors
+    ## a1_clusterCardiomyocytes      32379510    0.6062195
+    ## a1_clusterEndothelial cells    4125389    1.0507578
+    ## a1_clusterEpicardial cells     1858312    1.0385323
+    ## a1_clusterFibroblast           7750305    1.0867079
+    ## a1_clusterImmune cells         2869009    1.0391055
+    ## a1_clusterNeurons               328005    1.1719423
+    ## a1_clusterSmooth muscle cells   119000    1.1801528
+    ## a2_clusterCardiomyocytes       7277544    0.6871822
+    ## a2_clusterEndothelial cells    2778450    1.0091423
+    ## a2_clusterEpicardial cells     3758676    0.8723308
+    ## a2_clusterFibroblast           8812958    0.9867011
+    ## a2_clusterImmune cells         2276808    1.0725683
+    ## a2_clusterNeurons               218624    1.0640886
+    ## a2_clusterSmooth muscle cells   389758    0.9537409
+    ## a3_clusterCardiomyocytes       2714040    0.8796562
+    ## a3_clusterEndothelial cells     838838    1.1131212
+    ## a3_clusterEpicardial cells      637172    1.0710208
+    ## a3_clusterFibroblast           4052897    1.0859247
+    ## a3_clusterImmune cells         3192409    1.1483534
+    ## a3_clusterNeurons                74057    1.3408405
+    ## a3_clusterSmooth muscle cells    96593    1.1759140
+    ## f1_clusterCardiomyocytes      59267741    0.8122854
+    ## f1_clusterEndothelial cells    4334507    1.1422059
+    ## f1_clusterEpicardial cells     5473502    1.1198427
+    ## f1_clusterFibroblast           7830817    1.0555564
+    ## f1_clusterImmune cells         1960762    1.1266492
+    ## f1_clusterNeurons               769716    1.1090986
+    ## f1_clusterSmooth muscle cells   471111    1.0362309
+    ## f2_clusterCardiomyocytes      82215178    0.7780581
+    ## f2_clusterEndothelial cells    3826307    1.1090792
+    ## f2_clusterEpicardial cells     4725334    1.0363738
+    ## f2_clusterFibroblast           5476825    1.0310459
+    ## f2_clusterImmune cells         1675070    1.1731315
+    ## f2_clusterNeurons              1053894    1.0953821
+    ## f2_clusterSmooth muscle cells   145848    1.1343509
+    ## f3_clusterCardiomyocytes      72428402    0.7224807
+    ## f3_clusterEndothelial cells    5304616    1.0560309
+    ## f3_clusterEpicardial cells     5804650    0.9882715
+    ## f3_clusterFibroblast          11550623    1.0052905
+    ## f3_clusterImmune cells         1580118    1.0676369
+    ## f3_clusterNeurons               955923    1.0477880
+    ## f3_clusterSmooth muscle cells  1682502    0.9653342
+    ## y1_clusterCardiomyocytes      13418896    0.6523640
+    ## y1_clusterEndothelial cells    3618850    1.0725650
+    ## y1_clusterEpicardial cells     3799209    0.9767808
+    ## y1_clusterFibroblast          13480942    0.9618096
+    ## y1_clusterImmune cells         2529505    1.1267478
+    ## y1_clusterNeurons              1098075    1.0945203
+    ## y1_clusterSmooth muscle cells   376185    1.0336519
+    ## y2_clusterCardiomyocytes      31912809    0.6315278
+    ## y2_clusterEndothelial cells    2958916    0.9896856
+    ## y2_clusterEpicardial cells     1717993    0.9644361
+    ## y2_clusterFibroblast          12218557    0.9621212
+    ## y2_clusterImmune cells         3734520    1.0432559
+    ## y2_clusterNeurons               209762    1.0747981
+    ## y2_clusterSmooth muscle cells   164171    0.9875187
+    ## y3_clusterCardiomyocytes      19313451    0.9023738
+    ## y3_clusterEndothelial cells    2738058    0.9695908
+    ## y3_clusterEpicardial cells     1343036    0.9462232
+    ## y3_clusterFibroblast           5870367    0.9887452
+    ## y3_clusterImmune cells         3091938    1.0305902
+    ## y3_clusterNeurons               443229    1.0579727
+    ## y3_clusterSmooth muscle cells   305519    0.9628307
 
 ### Voom Transformation
 
@@ -1031,6 +1020,7 @@ data and assigns precision weights to each observation. This is critical
 for proper statistical inference:
 
 ``` r
+
 # Apply voom with cyclic loess normalisation
 v <- voom(dge_filtered, design, plot = TRUE, normalize.method = "cyclicloess")
 ```
@@ -1045,6 +1035,7 @@ Unusual patterns may indicate quality issues or batch effects.
 ### Fit Linear Model
 
 ``` r
+
 # Fit linear model
 fit <- lmFit(v, design)
 
@@ -1071,6 +1062,7 @@ For each cell type, we define three contrasts:
 We average over sex to obtain marginal developmental effects:
 
 ``` r
+
 # Function to create contrasts for a cell type
 create_celltype_contrasts <- function(ct_short, design) {
     # Get coefficient names containing this cell type
@@ -1127,6 +1119,7 @@ were characterised by:
   female cardiomyocytes, the majority of which were autosomal genes
 
 ``` r
+
 # Create contrasts for cardiomyocytes
 cont_cardio <- create_celltype_contrasts("cardiomyocytes", design)
 
@@ -1145,12 +1138,14 @@ cat("Cardiomyocytes: Differential Expression Summary\n")
     ## Cardiomyocytes: Differential Expression Summary
 
 ``` r
+
 cat("(FDR < 0.05, |logFC| > 0.5)\n\n")
 ```
 
     ## (FDR < 0.05, |logFC| > 0.5)
 
 ``` r
+
 dt_cardio <- decideTests(treat_cardio)
 summary(dt_cardio)
 ```
@@ -1161,6 +1156,7 @@ summary(dt_cardio)
     ## Up      1157  1110    17
 
 ``` r
+
 # MD plots for each contrast
 par(mfrow = c(1, 3))
 for (i in 1:3) {
@@ -1181,6 +1177,7 @@ reflecting the substantial transcriptional remodelling that occurs
 during cardiac maturation.
 
 ``` r
+
 # Display top differentially expressed genes for Adult vs Fetal
 cat("Top 20 DE genes: Adult vs Fetal Cardiomyocytes\n")
 ```
@@ -1188,6 +1185,7 @@ cat("Top 20 DE genes: Adult vs Fetal Cardiomyocytes\n")
     ## Top 20 DE genes: Adult vs Fetal Cardiomyocytes
 
 ``` r
+
 topTreat(treat_cardio, coef = "AvF", n = 20)[, c("SYMBOL", "GENENAME", "logFC", "P.Value", "adj.P.Val")]
 ```
 
@@ -1268,6 +1266,7 @@ postnatal development, consistent with the increasing structural
 complexity of the maturing heart.
 
 ``` r
+
 # Create contrasts for fibroblasts
 cont_fibro <- create_celltype_contrasts("fibroblast", design)
 
@@ -1285,12 +1284,14 @@ cat("Fibroblasts: Differential Expression Summary\n")
     ## Fibroblasts: Differential Expression Summary
 
 ``` r
+
 cat("(FDR < 0.05, |logFC| > 0.5)\n\n")
 ```
 
     ## (FDR < 0.05, |logFC| > 0.5)
 
 ``` r
+
 dt_fibro <- decideTests(treat_fibro)
 summary(dt_fibro)
 ```
@@ -1301,6 +1302,7 @@ summary(dt_fibro)
     ## Up       642   522     7
 
 ``` r
+
 # Top DE genes
 cat("\nTop 20 DE genes: Adult vs Fetal Fibroblasts\n")
 ```
@@ -1309,6 +1311,7 @@ cat("\nTop 20 DE genes: Adult vs Fetal Fibroblasts\n")
     ## Top 20 DE genes: Adult vs Fetal Fibroblasts
 
 ``` r
+
 topTreat(treat_fibro, coef = "AvF", n = 20)[, c("SYMBOL", "GENENAME", "logFC", "P.Value", "adj.P.Val")]
 ```
 
@@ -1386,6 +1389,7 @@ contributed substantially to the total number of differentially
 expressed genes during cardiac maturation (Figure 1E in the paper).
 
 ``` r
+
 # Create contrasts for endothelial cells
 cont_endo <- create_celltype_contrasts("endothelial", design)
 
@@ -1403,12 +1407,14 @@ cat("Endothelial Cells: Differential Expression Summary\n")
     ## Endothelial Cells: Differential Expression Summary
 
 ``` r
+
 cat("(FDR < 0.05, |logFC| > 0.5)\n\n")
 ```
 
     ## (FDR < 0.05, |logFC| > 0.5)
 
 ``` r
+
 dt_endo <- decideTests(treat_endo)
 summary(dt_endo)
 ```
@@ -1430,6 +1436,7 @@ we may detect fewer DE genes in immune cells compared to the more
 abundant cardiomyocytes and fibroblasts.
 
 ``` r
+
 # Create contrasts for immune cells
 cont_immune <- create_celltype_contrasts("immune", design)
 
@@ -1447,12 +1454,14 @@ cat("Immune Cells: Differential Expression Summary\n")
     ## Immune Cells: Differential Expression Summary
 
 ``` r
+
 cat("(FDR < 0.05, |logFC| > 0.5)\n\n")
 ```
 
     ## (FDR < 0.05, |logFC| > 0.5)
 
 ``` r
+
 dt_immune <- decideTests(treat_immune)
 summary(dt_immune)
 ```
@@ -1467,6 +1476,7 @@ summary(dt_immune)
 ### Summary Across Cell Types
 
 ``` r
+
 # Compile summary statistics
 de_summary <- data.frame(
     celltype = rep(c("Cardiomyocytes", "Fibroblasts", "Endothelial", "Immune"), each = 3),
@@ -1547,6 +1557,7 @@ significance and effect size, helping identify genes that are both
 significant and biologically meaningful:
 
 ``` r
+
 # Function to create volcano plot
 create_volcano <- function(fit_obj, coef_name, title) {
     results <- topTreat(fit_obj, coef = coef_name, n = Inf)
@@ -1601,6 +1612,7 @@ showing progressive changes (consistent direction across development)
 appear in the upper-right or lower-left quadrants:
 
 ``` r
+
 # Get results for cardiomyocytes
 results_yvf <- topTreat(treat_cardio, coef = "YvF", n = Inf)
 results_avf <- topTreat(treat_cardio, coef = "AvF", n = Inf)
@@ -1659,6 +1671,7 @@ developmental patterns that may warrant further investigation.
 ## Export Results
 
 ``` r
+
 # Create results directory
 results_dir <- "../results"
 if (!dir.exists(results_dir)) {
@@ -1689,6 +1702,7 @@ cat("Results exported to:", results_dir, "\n")
     ## Results exported to: ../results
 
 ``` r
+
 list.files(results_dir, pattern = "DE_")
 ```
 
@@ -1821,12 +1835,13 @@ Maturation by the Progesterone Receptor. *Circulation*.
 ## Session Information
 
 ``` r
+
 sessionInfo()
 ```
 
     ## R version 4.5.2 (2025-10-31)
     ## Platform: x86_64-pc-linux-gnu
-    ## Running under: Ubuntu 24.04.3 LTS
+    ## Running under: Ubuntu 24.04.4 LTS
     ## 
     ## Matrix products: default
     ## BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
@@ -1882,7 +1897,7 @@ sessionInfo()
     ##  [49] ggridges_0.5.7              survival_3.8-3             
     ##  [51] systemfonts_1.3.1           tools_4.5.2                
     ##  [53] ragg_1.5.0                  ica_1.0-3                  
-    ##  [55] Rcpp_1.1.1                  glue_1.8.0                 
+    ##  [55] Rcpp_1.1.1-1                glue_1.8.0                 
     ##  [57] gridExtra_2.3               SparseArray_1.10.8         
     ##  [59] xfun_0.55                   MatrixGenerics_1.22.0      
     ##  [61] withr_3.0.2                 BiocManager_1.30.27        
@@ -1896,7 +1911,7 @@ sessionInfo()
     ##  [77] S4Arrays_1.10.1             uwot_0.2.4                 
     ##  [79] pkgconfig_2.0.3             gtable_0.3.6               
     ##  [81] blob_1.2.4                  lmtest_0.9-40              
-    ##  [83] S7_0.2.1                    SingleCellExperiment_1.32.0
+    ##  [83] S7_0.2.1-1                  SingleCellExperiment_1.32.0
     ##  [85] XVector_0.50.0              htmltools_0.5.9            
     ##  [87] dotCall64_1.2               scales_1.4.0               
     ##  [89] png_0.1-8                   spatstat.univar_3.1-5      

@@ -1,11 +1,15 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://phipsonlab.github.io/single_cell_workshop/404.html</loc></url>
 <url><loc>https://phipsonlab.github.io/single_cell_workshop/LICENSE-text.html</loc></url>
+<url><loc>https://phipsonlab.github.io/single_cell_workshop/afternoonPresentation.html</loc></url>
 <url><loc>https://phipsonlab.github.io/single_cell_workshop/articles/00_setup.html</loc></url>
 <url><loc>https://phipsonlab.github.io/single_cell_workshop/articles/01_quality_control.html</loc></url>
 <url><loc>https://phipsonlab.github.io/single_cell_workshop/articles/02_integration_clustering.html</loc></url>
 <url><loc>https://phipsonlab.github.io/single_cell_workshop/articles/03_cell_type_annotation.html</loc></url>
 <url><loc>https://phipsonlab.github.io/single_cell_workshop/articles/04_differential_expression.html</loc></url>
+<url><loc>https://phipsonlab.github.io/single_cell_workshop/articles/05_phispace_annotation.html</loc></url>
+<url><loc>https://phipsonlab.github.io/single_cell_workshop/articles/06_pseudotime.html</loc></url>
+<url><loc>https://phipsonlab.github.io/single_cell_workshop/articles/07_nnet.html</loc></url>
 <url><loc>https://phipsonlab.github.io/single_cell_workshop/articles/index.html</loc></url>
 <url><loc>https://phipsonlab.github.io/single_cell_workshop/articles/resources.html</loc></url>
 <url><loc>https://phipsonlab.github.io/single_cell_workshop/authors.html</loc></url>

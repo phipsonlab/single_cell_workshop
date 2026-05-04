@@ -65,6 +65,7 @@ By the end of this module, you will be able to:
 ### Setup: Loading Required Libraries
 
 ``` r
+
 library(Seurat)
 library(harmony)
 library(ggplot2)
@@ -81,6 +82,7 @@ library(RColorBrewer)
 We use a consistent colour scheme throughout the workshop:
 
 ``` r
+
 # Developmental group colours (lowercase to match data)
 group_colors <- c(
     "fetal" = "#E64B35",
@@ -101,6 +103,7 @@ sample_colors <- c(
 We begin by loading the quality-controlled data from Module 1:
 
 ``` r
+
 # Load the QC-filtered Seurat object
 data_dir <- "../data"
 seu <- readRDS(file.path(data_dir, "processed/01_qc_filtered.rds"))
@@ -114,6 +117,7 @@ dim(seu)
 Let us verify the cell counts per sample:
 
 ``` r
+
 table(seu$sample)
 ```
 
@@ -133,6 +137,7 @@ are represented proportionally. This preserves the relative contribution
 of each sample to the final dataset.
 
 ``` r
+
 set.seed(42)  # For reproducibility
 
 # Target number of cells
@@ -178,6 +183,7 @@ cells_per_sample
 Now we sample cells from each group:
 
 ``` r
+
 # Sample cells from each sample
 set.seed(42)
 
@@ -201,18 +207,21 @@ cat("Downsampling complete:\n")
     ## Downsampling complete:
 
 ``` r
+
 cat("- Total cells:", ncol(seu), "\n")
 ```
 
     ## - Total cells: 10000
 
 ``` r
+
 cat("- Samples represented:", length(unique(seu$sample)), "\n")
 ```
 
     ## - Samples represented: 9
 
 ``` r
+
 # Cells per sample after downsampling
 table(seu$sample)
 ```
@@ -251,6 +260,7 @@ Satija, 2022) that:
 - Provides more stable results on large datasets
 
 ``` r
+
 # Run SCTransform normalisation
 # This may take 1-2 minutes
 set.seed(42)  # For reproducibility
@@ -266,6 +276,7 @@ SCTransform automatically identifies highly variable genes. Let us
 examine the top variable features:
 
 ``` r
+
 # Get the top 10 variable features
 top_features <- head(VariableFeatures(seu), 10)
 top_features
@@ -277,6 +288,7 @@ top_features
 We can visualise the mean-variance relationship:
 
 ``` r
+
 # Plot variable features
 VariableFeaturePlot(seu) +
     ggtitle("Variable Features (SCTransform)") +
@@ -316,6 +328,7 @@ After PCA, we typically use only the first 20-50 PCs, which capture most
 of the biological signal while discarding noise in higher components.
 
 ``` r
+
 # Run PCA on the SCTransform-normalised data
 # By default, this uses the variable features identified by SCTransform
 set.seed(42)
@@ -328,6 +341,7 @@ Let us examine the top genes contributing to the first two principal
 components:
 
 ``` r
+
 # Visualise genes contributing to PC1 and PC2
 VizDimLoadings(seu, dims = 1:2, reduction = "pca")
 ```
@@ -337,6 +351,7 @@ VizDimLoadings(seu, dims = 1:2, reduction = "pca")
 We can plot cells in PCA space, coloured by sample:
 
 ``` r
+
 # PCA plot coloured by sample
 DimPlot(
     seu,
@@ -361,6 +376,7 @@ analysis. The elbow occurs where adding more PCs provides diminishing
 returns:
 
 ``` r
+
 ElbowPlot(seu, ndims = 30) +
     ggtitle("PCA Elbow Plot") +
     theme_minimal()
@@ -374,6 +390,7 @@ suggesting that the first 20 dimensions capture most of the meaningful
 biological variation:
 
 ``` r
+
 n_dims <- 20
 ```
 
@@ -413,6 +430,7 @@ Important considerations:
   while removing technical artefacts.
 
 ``` r
+
 # Run Harmony integration
 # group.by.vars specifies which variable contains batch information
 # Here we integrate by sample to remove sample-specific technical effects
@@ -431,6 +449,7 @@ seu <- RunHarmony(
 Let us compare the embeddings before and after Harmony:
 
 ``` r
+
 # Before integration (PCA)
 p1 <- DimPlot(
     seu,
@@ -497,6 +516,7 @@ We run UMAP on the Harmony-corrected embeddings to ensure batch effects
 do not distort the visualisation:
 
 ``` r
+
 set.seed(42)  # UMAP is stochastic - seed ensures reproducible embeddings
 seu <- RunUMAP(
     seu,
@@ -510,6 +530,7 @@ seu <- RunUMAP(
 ### UMAP by Sample and Group
 
 ``` r
+
 # UMAP coloured by sample
 p1 <- DimPlot(
     seu,
@@ -599,6 +620,7 @@ share, not just whether they are neighbours. This makes clustering more
 robust to noise.
 
 ``` r
+
 seu <- FindNeighbors(
     seu,
     reduction = "harmony",
@@ -628,6 +650,7 @@ We test a range of resolutions from 0.1 to 1.0 to understand how
 clusters behave across the resolution spectrum:
 
 ``` r
+
 # Test resolutions from 0.1 to 1.0 in steps of 0.1
 resolutions <- seq(0.1, 1.0, by = 0.1)
 
@@ -651,6 +674,7 @@ grep("SCT_snn_res", colnames(seu@meta.data), value = TRUE)
 Let us see how many clusters each resolution produces:
 
 ``` r
+
 # Count clusters at each resolution
 cat("Number of clusters at each resolution:\n")
 ```
@@ -658,6 +682,7 @@ cat("Number of clusters at each resolution:\n")
     ## Number of clusters at each resolution:
 
 ``` r
+
 for (res in resolutions) {
     col_name <- paste0("SCT_snn_res.", res)
     n_clusters <- length(unique(seu@meta.data[[col_name]]))
@@ -684,6 +709,7 @@ a cluster at a given resolution, and edges show how cells flow between
 clusters.
 
 ``` r
+
 clustree(seu, prefix = "SCT_snn_res.")
 ```
 
@@ -739,6 +765,7 @@ representing shared cell types like fibroblasts, endothelial cells, and
 immune cells that are present throughout development:
 
 ``` r
+
 # Set the active identity to our chosen resolution
 selected_res <- 0.4
 Idents(seu) <- paste0("SCT_snn_res.", selected_res)
@@ -753,12 +780,14 @@ cat("Clustering results:\n")
     ## Clustering results:
 
 ``` r
+
 cat("- Resolution:", selected_res, "\n")
 ```
 
     ## - Resolution: 0.4
 
 ``` r
+
 cat("- Number of clusters:", length(unique(seu$seurat_clusters)), "\n")
 ```
 
@@ -771,6 +800,7 @@ number (0, 1, 2, …) rather than a biological label—we will assign cell
 type names in the next module.
 
 ``` r
+
 DimPlot(
     seu,
     reduction = "umap",
@@ -795,6 +825,7 @@ multiple samples. If a cluster is dominated by a single sample, it may
 represent a technical artefact rather than a true cell type.
 
 ``` r
+
 # Calculate composition
 composition <- seu@meta.data %>%
     group_by(seurat_clusters, sample) %>%
@@ -823,6 +854,7 @@ multiple samples (mixed colours).
 ### Cluster Composition by Group
 
 ``` r
+
 # Calculate composition by group
 composition_group <- seu@meta.data %>%
     group_by(seurat_clusters, group) %>%
@@ -853,6 +885,7 @@ reflecting biological differences in cell type composition.
 We save the integrated and clustered object for use in the next module:
 
 ``` r
+
 # Create output directory if needed
 output_dir <- "../data/processed"
 if (!dir.exists(output_dir)) {
@@ -882,12 +915,13 @@ The clustered object is now ready for cell type annotation in Module 3.
 ## Session Information
 
 ``` r
+
 sessionInfo()
 ```
 
     ## R version 4.5.2 (2025-10-31)
     ## Platform: x86_64-pc-linux-gnu
-    ## Running under: Ubuntu 24.04.3 LTS
+    ## Running under: Ubuntu 24.04.4 LTS
     ## 
     ## Matrix products: default
     ## BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
@@ -908,7 +942,7 @@ sessionInfo()
     ## other attached packages:
     ##  [1] future_1.68.0      RColorBrewer_1.1-3 clustree_0.5.1     ggraph_2.2.2      
     ##  [5] tibble_3.3.1       tidyr_1.3.2        dplyr_1.1.4        patchwork_1.3.2   
-    ##  [9] ggplot2_4.0.1      harmony_1.2.4      Rcpp_1.1.1         Seurat_5.4.0      
+    ##  [9] ggplot2_4.0.1      harmony_1.2.4      Rcpp_1.1.1-1       Seurat_5.4.0      
     ## [13] SeuratObject_5.3.0 sp_2.2-0          
     ## 
     ## loaded via a namespace (and not attached):
@@ -939,7 +973,7 @@ sessionInfo()
     ##  [49] httr_1.4.7                  polyclip_1.10-7            
     ##  [51] abind_1.4-8                 compiler_4.5.2             
     ##  [53] withr_3.0.2                 backports_1.5.0            
-    ##  [55] S7_0.2.1                    viridis_0.6.5              
+    ##  [55] S7_0.2.1-1                  viridis_0.6.5              
     ##  [57] fastDummies_1.7.5           ggforce_0.5.0              
     ##  [59] MASS_7.3-65                 DelayedArray_0.36.0        
     ##  [61] tools_4.5.2                 lmtest_0.9-40              

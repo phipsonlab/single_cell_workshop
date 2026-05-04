@@ -34,6 +34,7 @@ fundamental concepts. The human heart contains several major cell types:
 ## Load Libraries and Data
 
 ``` r
+
 library(Seurat)
 library(ggplot2)
 library(dplyr)
@@ -47,6 +48,7 @@ library(future)
 We load the integrated and clustered Seurat object from Module 2.
 
 ``` r
+
 # Load the clustered data
 seu <- readRDS("../data/processed/02_integrated_clustered.rds")
 
@@ -57,18 +59,21 @@ cat("Loaded Seurat object:\n")
     ## Loaded Seurat object:
 
 ``` r
+
 cat("- Cells:", ncol(seu), "\n")
 ```
 
     ## - Cells: 10000
 
 ``` r
+
 cat("- Genes:", nrow(seu), "\n")
 ```
 
     ## - Genes: 17726
 
 ``` r
+
 cat("- Clusters:", length(unique(seu$seurat_clusters)), "\n")
 ```
 
@@ -78,6 +83,7 @@ Let us first examine the cluster distribution to understand what we are
 annotating.
 
 ``` r
+
 # Cluster sizes
 cluster_sizes <- table(seu$seurat_clusters)
 
@@ -87,6 +93,7 @@ cat("Cluster sizes:\n")
     ## Cluster sizes:
 
 ``` r
+
 for (i in seq_along(cluster_sizes)) {
     cat(sprintf("  Cluster %s: %d cells\n", names(cluster_sizes)[i], cluster_sizes[i]))
 }
@@ -115,6 +122,7 @@ for (i in seq_along(cluster_sizes)) {
 We maintain consistent colours throughout our analysis.
 
 ``` r
+
 # Group colours (developmental stage - lowercase to match data)
 group_colors <- c(
     "fetal" = "#E64B35",
@@ -134,6 +142,7 @@ Before annotation, let us examine the clusters and their composition by
 developmental stage.
 
 ``` r
+
 # UMAP coloured by cluster and by group
 p1 <- DimPlot(seu, group.by = "seurat_clusters", label = TRUE,
               label.size = 4, repel = TRUE, cols = cluster_colors) +
@@ -152,6 +161,7 @@ Understanding the developmental composition of each cluster provides
 important context for annotation.
 
 ``` r
+
 # Calculate cluster composition by group
 comp_data <- seu@meta.data %>%
     group_by(seurat_clusters, group) %>%
@@ -187,6 +197,7 @@ to identify genes that distinguish each cluster from all other cells.
 This is the foundation of marker-based annotation.
 
 ``` r
+
 # Set memory limits for large datasets
 options(future.globals.maxSize = 8000 * 1024^2)
 
@@ -220,6 +231,7 @@ cat("Found", nrow(markers), "marker genes across all clusters\n")
 Let us examine the top markers for each cluster.
 
 ``` r
+
 # Get top 5 markers per cluster
 top_markers <- markers %>%
     group_by(cluster) %>%
@@ -367,6 +379,7 @@ each cluster. This provides an unbiased view of what distinguishes each
 cluster before we examine the cell type markers from the original study.
 
 ``` r
+
 # Get top 5 unique markers per cluster, ordered by cluster
 top5_genes <- top_markers %>%
     arrange(cluster, desc(avg_log2FC)) %>%
@@ -390,6 +403,7 @@ A heatmap of these top markers provides a comprehensive view of the
 expression patterns across clusters.
 
 ``` r
+
 # Get top 3 markers per cluster for heatmap
 top3_markers <- markers %>%
     group_by(cluster) %>%
@@ -438,6 +452,7 @@ of cells expressing a gene (dot size) and the average expression level
 (colour intensity).
 
 ``` r
+
 # Define markers and cell types from Sim et al. 2021
 marker_info <- data.frame(
     gene = c(
@@ -574,6 +589,7 @@ FeaturePlots show the spatial distribution of marker expression on the
 UMAP, helping us understand the relationship between clusters.
 
 ``` r
+
 # Cardiomyocyte markers
 FeaturePlot(seu,
             features = c("TNNT2", "TTN", "MYH7", "MYH6"),
@@ -591,6 +607,7 @@ clusters 0, 7, 10, and 14 (fetal ventricular CM populations). This
 suggests we can distinguish atrial from ventricular cardiomyocytes.
 
 ``` r
+
 # Stromal cell markers
 FeaturePlot(seu,
             features = c("DCN", "PECAM1", "KCNJ8", "ACTA2"),
@@ -602,6 +619,7 @@ FeaturePlot(seu,
 ![](03_cell_type_annotation_files/figure-html/featureplot-stromal-1.png)
 
 ``` r
+
 # Immune and other markers
 FeaturePlot(seu,
             features = c("PTPRC", "F13A1", "NRXN1", "MKI67"),
@@ -625,27 +643,28 @@ rare populations or finer subclusters.
 The table below summarises our annotations with the supporting marker
 evidence:
 
-| Cluster | Cell Type            | Key Markers                 | Notes                                         |
-|---------|----------------------|-----------------------------|-----------------------------------------------|
-| 0       | Fetal CM             | TNNT2+, TTN+, MYH7+         | Fetal ventricular cardiomyocytes (100% fetal) |
-| 1       | Fibroblasts          | DCN+, COL1A1+, SCARA5+      | Present across all developmental stages       |
-| 2       | Atrial CM            | TTN+, MYH6++, ADRB1+        | Mature atrial CM (62% young, 37% adult)       |
-| 3       | Epicardial           | KCNJ8+, EGFLAM+, UPK3B+     | Epicardial/pericyte population                |
-| 4       | Activated CM         | HLA-DRA+, HLA-DQB1+, TNNT2+ | CM with MHC class II expression (75% young)   |
-| 5       | Endothelial          | PECAM1+, NOTCH4+, CA4+      | Main endothelial population                   |
-| 6       | Macrophages          | F13A1+, MARCO+, CD68+       | Tissue-resident macrophages                   |
-| 7       | Fetal CM             | TNNT2+, TTN+, CSMD1+        | Fetal cardiomyocytes (100% fetal)             |
-| 8       | Proliferating        | TOP2A+, MKI67+, KIF18B+     | Proliferating cells (96% fetal)               |
-| 9       | Fetal Atrial CM      | TTN+, MYH6+, KCNJ3+         | Fetal atrial cardiomyocytes (100% fetal)      |
-| 10      | Fetal CM (stress)    | TNNT2+, ATF3+, FOSB+        | Stress-response CM (100% fetal)               |
-| 11      | Endothelial          | PECAM1+, PKHD1L1+, SMOC1+   | Vascular endothelial subset                   |
-| 12      | Neurons              | NRXN1++, XKR4+, TFAP2A+     | Neural cells                                  |
-| 13      | Cycling CM           | E2F1+, CDC45+, DTL+         | S-phase cycling CM (99% fetal)                |
-| 14      | Fetal Ventricular CM | MYH7++, TNNI1+, DHFR+       | Fetal ventricular CM (98% fetal)              |
-| 15      | Mixed/Transitional   | XIRP2+, GCLM+               | Mixed epicardial/CM (50% fetal)               |
-| 16      | T cells              | CD2+, SKAP1+, THEMIS+       | T lymphocytes                                 |
+| Cluster | Cell Type | Key Markers | Notes |
+|----|----|----|----|
+| 0 | Fetal CM | TNNT2+, TTN+, MYH7+ | Fetal ventricular cardiomyocytes (100% fetal) |
+| 1 | Fibroblasts | DCN+, COL1A1+, SCARA5+ | Present across all developmental stages |
+| 2 | Atrial CM | TTN+, MYH6++, ADRB1+ | Mature atrial CM (62% young, 37% adult) |
+| 3 | Epicardial | KCNJ8+, EGFLAM+, UPK3B+ | Epicardial/pericyte population |
+| 4 | Activated CM | HLA-DRA+, HLA-DQB1+, TNNT2+ | CM with MHC class II expression (75% young) |
+| 5 | Endothelial | PECAM1+, NOTCH4+, CA4+ | Main endothelial population |
+| 6 | Macrophages | F13A1+, MARCO+, CD68+ | Tissue-resident macrophages |
+| 7 | Fetal CM | TNNT2+, TTN+, CSMD1+ | Fetal cardiomyocytes (100% fetal) |
+| 8 | Proliferating | TOP2A+, MKI67+, KIF18B+ | Proliferating cells (96% fetal) |
+| 9 | Fetal Atrial CM | TTN+, MYH6+, KCNJ3+ | Fetal atrial cardiomyocytes (100% fetal) |
+| 10 | Fetal CM (stress) | TNNT2+, ATF3+, FOSB+ | Stress-response CM (100% fetal) |
+| 11 | Endothelial | PECAM1+, PKHD1L1+, SMOC1+ | Vascular endothelial subset |
+| 12 | Neurons | NRXN1++, XKR4+, TFAP2A+ | Neural cells |
+| 13 | Cycling CM | E2F1+, CDC45+, DTL+ | S-phase cycling CM (99% fetal) |
+| 14 | Fetal Ventricular CM | MYH7++, TNNI1+, DHFR+ | Fetal ventricular CM (98% fetal) |
+| 15 | Mixed/Transitional | XIRP2+, GCLM+ | Mixed epicardial/CM (50% fetal) |
+| 16 | T cells | CD2+, SKAP1+, THEMIS+ | T lymphocytes |
 
 ``` r
+
 # Define cell type annotations for all 17 clusters
 cluster_annotations <- c(
   "0" = "Fetal CM",
@@ -715,6 +734,7 @@ our annotation workflow. We show both detailed annotations
 ventricular) and broad categories.
 
 ``` r
+
 # Define colours for cell types (13 unique detailed types for 17 clusters)
 celltype_colors <- c(
     "Fetal CM" = "#E64B35",
@@ -778,6 +798,7 @@ to each cluster. This helps interpret whether observed patterns reflect
 genuine biology or sampling effects.
 
 ``` r
+
 # Cluster sizes with cell type labels
 cluster_size_data <- seu@meta.data %>%
     group_by(seurat_clusters, cell_type) %>%
@@ -807,6 +828,7 @@ are stage-specific versus shared across development? This stacked bar
 chart shows the fetal/young/adult breakdown within each cluster.
 
 ``` r
+
 # Calculate developmental composition per cluster
 cluster_dev_comp <- seu@meta.data %>%
     group_by(seurat_clusters, group) %>%
@@ -849,6 +871,7 @@ We can also view this relationship from the opposite perspective: what
 is the cellular composition within each developmental stage?
 
 ``` r
+
 # Calculate composition
 stage_comp <- seu@meta.data %>%
     group_by(group, cell_type_broad) %>%
@@ -882,6 +905,7 @@ which cell types are present at each time point. This view clearly shows
 how the cellular landscape changes from fetal to adult heart.
 
 ``` r
+
 DimPlot(seu, group.by = "cell_type", split.by = "group",
         label = FALSE, cols = celltype_colors) +
   ggtitle("Cell Types by Developmental Stage") +
@@ -905,6 +929,7 @@ The split view highlights several key observations:
 ## Save Annotated Object
 
 ``` r
+
 # Create results directory if it doesn't exist
 dir.create("../results", recursive = TRUE, showWarnings = FALSE)
 
@@ -939,12 +964,13 @@ composition analysis in Module 4.
 ## Session Information
 
 ``` r
+
 sessionInfo()
 ```
 
     ## R version 4.5.2 (2025-10-31)
     ## Platform: x86_64-pc-linux-gnu
-    ## Running under: Ubuntu 24.04.3 LTS
+    ## Running under: Ubuntu 24.04.4 LTS
     ## 
     ## Matrix products: default
     ## BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
@@ -982,7 +1008,7 @@ sessionInfo()
     ##  [34] ica_1.0-3              spatstat.data_3.1-9    stringi_1.8.7         
     ##  [37] bslib_0.9.0            limma_3.66.0           reticulate_1.44.1     
     ##  [40] spatstat.univar_3.1-5  parallelly_1.46.1      lmtest_0.9-40         
-    ##  [43] jquerylib_0.1.4        scattermore_1.2        Rcpp_1.1.1            
+    ##  [43] jquerylib_0.1.4        scattermore_1.2        Rcpp_1.1.1-1          
     ##  [46] knitr_1.51             tensor_1.5.1           future.apply_1.20.1   
     ##  [49] zoo_1.8-15             sctransform_0.4.3      httpuv_1.6.16         
     ##  [52] Matrix_1.7-4           splines_4.5.2          igraph_2.2.1          
@@ -990,7 +1016,7 @@ sessionInfo()
     ##  [58] spatstat.random_3.4-3  spatstat.explore_3.6-0 codetools_0.2-20      
     ##  [61] miniUI_0.1.2           listenv_0.10.0         plyr_1.8.9            
     ##  [64] lattice_0.22-7         tibble_3.3.1           withr_3.0.2           
-    ##  [67] shiny_1.12.1           S7_0.2.1               ROCR_1.0-11           
+    ##  [67] shiny_1.12.1           S7_0.2.1-1             ROCR_1.0-11           
     ##  [70] evaluate_1.0.5         Rtsne_0.17             fastDummies_1.7.5     
     ##  [73] desc_1.4.3             survival_3.8-3         polyclip_1.10-7       
     ##  [76] fitdistrplus_1.2-4     pillar_1.11.1          BiocManager_1.30.27   

@@ -38,6 +38,9 @@
     <li><a class="dropdown-item" href="../articles/02_integration_clustering.html">Module 2: Integration &amp; Clustering</a></li>
     <li><a class="dropdown-item" href="../articles/03_cell_type_annotation.html">Module 3: Cell Type Annotation</a></li>
     <li><a class="dropdown-item" href="../articles/04_differential_expression.html">Module 4: Differential Expression</a></li>
+    <li><a class="dropdown-item" href="../articles/05_phispace_annotation.html">Module 5: Continuous Phenotyping with Φ-Space</a></li>
+    <li><a class="dropdown-item" href="../articles/06_pseudotime.html">Module 6: Pseudotime Trajectory Analysis</a></li>
+    <li><a class="dropdown-item" href="../articles/07_nnet.html">Module 7: Cell-specific Co-expression Networks</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../articles/resources.html">Resources</a></li>
@@ -65,7 +68,7 @@
                         <h4 data-toc-skip class="author">Single Cell
 Workshop</h4>
             
-            <h4 data-toc-skip class="date">2026-01-15</h4>
+            <h4 data-toc-skip class="date">2026-05-04</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/phipsonlab/single_cell_workshop/blob/main/vignettes/01_quality_control.Rmd" class="external-link"><code>vignettes/01_quality_control.Rmd</code></a></small>
       <div class="d-none name"><code>01_quality_control.Rmd</code></div>
@@ -367,8 +370,8 @@ statistical analyses.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/rm.html" class="external-link">rm</a></span><span class="op">(</span><span class="va">counts</span>, <span class="va">cellinfo</span>, <span class="va">cellinfo_matched</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/gc.html" class="external-link">gc</a></span><span class="op">(</span><span class="op">)</span>  <span class="co"># Garbage collection to release memory</span></span></code></pre></div>
 <pre><code><span><span class="co">##             used   (Mb) gc trigger   (Mb)   max used   (Mb)</span></span>
-<span><span class="co">## Ncells   7679266  410.2   14374837  767.7   12637155  674.9</span></span>
-<span><span class="co">## Vcells 281865092 2150.5 1210275588 9233.7 1179995766 9002.7</span></span></code></pre>
+<span><span class="co">## Ncells   7682881  410.4   13937455  744.4   12640770  675.1</span></span>
+<span><span class="co">## Vcells 281892878 2150.7 1210321682 9234.1 1180023552 9002.9</span></span></code></pre>
 </div>
 <div class="section level3">
 <h3 id="examining-the-seurat-object">Examining the Seurat Object<a class="anchor" aria-label="anchor" href="#examining-the-seurat-object"></a>
@@ -1136,7 +1139,7 @@ package versions:</p>
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## R version 4.5.2 (2025-10-31)</span></span>
 <span><span class="co">## Platform: x86_64-pc-linux-gnu</span></span>
-<span><span class="co">## Running under: Ubuntu 24.04.3 LTS</span></span>
+<span><span class="co">## Running under: Ubuntu 24.04.4 LTS</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## Matrix products: default</span></span>
 <span><span class="co">## BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 </span></span>
@@ -1180,7 +1183,7 @@ package versions:</p>
 <span><span class="co">##  [43] labeling_0.4.3         progressr_0.18.0       spatstat.sparse_3.1-0 </span></span>
 <span><span class="co">##  [46] mgcv_1.9-4             httr_1.4.7             polyclip_1.10-7       </span></span>
 <span><span class="co">##  [49] abind_1.4-8            compiler_4.5.2         bit64_4.6.0-1         </span></span>
-<span><span class="co">##  [52] withr_3.0.2            S7_0.2.1               DBI_1.2.3             </span></span>
+<span><span class="co">##  [52] withr_3.0.2            S7_0.2.1-1             DBI_1.2.3             </span></span>
 <span><span class="co">##  [55] fastDummies_1.7.5      MASS_7.3-65            tools_4.5.2           </span></span>
 <span><span class="co">##  [58] vipor_0.4.7            lmtest_0.9-40          otel_0.2.0            </span></span>
 <span><span class="co">##  [61] beeswarm_0.4.0         httpuv_1.6.16          future.apply_1.20.1   </span></span>
@@ -1201,7 +1204,7 @@ package versions:</p>
 <span><span class="co">## [106] yaml_2.3.12            evaluate_1.0.5         codetools_0.2-20      </span></span>
 <span><span class="co">## [109] tibble_3.3.1           BiocManager_1.30.27    cli_3.6.5             </span></span>
 <span><span class="co">## [112] uwot_0.2.4             xtable_1.8-4           reticulate_1.44.1     </span></span>
-<span><span class="co">## [115] systemfonts_1.3.1      jquerylib_0.1.4        Rcpp_1.1.1            </span></span>
+<span><span class="co">## [115] systemfonts_1.3.1      jquerylib_0.1.4        Rcpp_1.1.1-1          </span></span>
 <span><span class="co">## [118] globals_0.18.0         spatstat.random_3.4-3  png_0.1-8             </span></span>
 <span><span class="co">## [121] ggrastr_1.0.2          spatstat.univar_3.1-5  parallel_4.5.2        </span></span>
 <span><span class="co">## [124] blob_1.2.4             pkgdown_2.2.0          dotCall64_1.2         </span></span>

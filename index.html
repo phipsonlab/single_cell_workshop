@@ -42,6 +42,9 @@
     <li><a class="dropdown-item" href="articles/02_integration_clustering.html">Module 2: Integration &amp; Clustering</a></li>
     <li><a class="dropdown-item" href="articles/03_cell_type_annotation.html">Module 3: Cell Type Annotation</a></li>
     <li><a class="dropdown-item" href="articles/04_differential_expression.html">Module 4: Differential Expression</a></li>
+    <li><a class="dropdown-item" href="articles/05_phispace_annotation.html">Module 5: Continuous Phenotyping with Φ-Space</a></li>
+    <li><a class="dropdown-item" href="articles/06_pseudotime.html">Module 6: Pseudotime Trajectory Analysis</a></li>
+    <li><a class="dropdown-item" href="articles/07_nnet.html">Module 7: Cell-specific Co-expression Networks</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="articles/resources.html">Resources</a></li>
@@ -85,34 +88,35 @@
 <h2 id="system-requirements">System Requirements<a class="anchor" aria-label="anchor" href="#system-requirements"></a>
 </h2>
 <table class="table">
-<thead><tr class="header">
+<thead><tr>
 <th>Resource</th>
 <th>Minimum</th>
 <th>Recommended</th>
 </tr></thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td>RAM</td>
 <td>8 GB</td>
 <td>16 GB</td>
 </tr>
-<tr class="even">
+<tr>
 <td>Disk space</td>
 <td>5 GB free</td>
 <td>10 GB free</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>R version</td>
 <td>4.3+</td>
 <td>4.5.2</td>
 </tr>
-<tr class="even">
+<tr>
 <td>RStudio</td>
 <td>2023.06+</td>
 <td>Latest</td>
 </tr>
 </tbody>
 </table>
+<p><strong>Supported platforms:</strong> Windows 10/11, macOS 12+ (Intel and Apple Silicon), Ubuntu 22.04+ / equivalent Linux. A C/C++ build toolchain is required on each platform — Module 0 walks through the install (Rtools45 on Windows, Xcode Command Line Tools on macOS, <code>build-essential</code> + dev headers on Linux).</p>
 </div>
 <div class="section level2">
 <h2 id="workshop-outline">Workshop Outline<a class="anchor" aria-label="anchor" href="#workshop-outline"></a>
@@ -121,43 +125,43 @@
 <h3 id="session-1-core-single-cell-analysis-morning-3-hours">Session 1: Core Single Cell Analysis (Morning, ~3 hours)<a class="anchor" aria-label="anchor" href="#session-1-core-single-cell-analysis-morning-3-hours"></a>
 </h3>
 <table class="table">
-<thead><tr class="header">
+<thead><tr>
 <th>Module</th>
 <th>Topic</th>
 <th>Duration</th>
 </tr></thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td><strong>Module 1</strong></td>
 <td>Quality Control</td>
 <td>45 min</td>
 </tr>
-<tr class="even">
+<tr>
 <td></td>
 <td><em>Break</em></td>
 <td>10 min</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><strong>Module 2</strong></td>
 <td>Normalisation &amp; Integration</td>
 <td>50 min</td>
 </tr>
-<tr class="even">
+<tr>
 <td></td>
 <td><em>Break</em></td>
 <td>10 min</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><strong>Module 3</strong></td>
 <td>Cell Type Annotation</td>
 <td>20 min</td>
 </tr>
-<tr class="even">
+<tr>
 <td><strong>Module 4</strong></td>
 <td>Differential Expression</td>
 <td>55 min</td>
 </tr>
-<tr class="odd">
+<tr>
 <td></td>
 <td>Wrap-up &amp; Q&amp;A</td>
 <td>10 min</td>
@@ -166,9 +170,37 @@
 </table>
 </div>
 <div class="section level3">
-<h3 id="session-2-downstream-analysis-afternoon-3-hours">Session 2: Downstream Analysis (Afternoon, ~3 hours)<a class="anchor" aria-label="anchor" href="#session-2-downstream-analysis-afternoon-3-hours"></a>
+<h3 id="session-2-trajectory-and-gene-regulation-afternoon-3-hours">Session 2: Trajectory and Gene Regulation (Afternoon, ~3 hours)<a class="anchor" aria-label="anchor" href="#session-2-trajectory-and-gene-regulation-afternoon-3-hours"></a>
 </h3>
-<p><em>Coming soon</em> - Additional downstream analyses using the same heart development dataset.</p>
+<table class="table">
+<colgroup>
+<col width="32%">
+<col width="28%">
+<col width="40%">
+</colgroup>
+<thead><tr>
+<th>Module</th>
+<th>Topic</th>
+<th>Duration</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><strong>Module 5</strong></td>
+<td>Continuous Phenotyping with Φ-Space</td>
+<td>45 min</td>
+</tr>
+<tr>
+<td><strong>Module 6</strong></td>
+<td>Pseudotime Trajectory Analysis</td>
+<td>45 min</td>
+</tr>
+<tr>
+<td><strong>Module 7</strong></td>
+<td>Cell-specific Co-expression Networks (NeighbourNet)</td>
+<td>45 min</td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 <div class="section level2">
@@ -185,6 +217,9 @@
 <li>Understand the pseudoreplication problem in single-cell differential expression</li>
 <li>Perform statistically rigorous differential expression analysis using pseudobulk methods</li>
 <li>Analyse cell type composition changes using propeller</li>
+<li>Replace hard cell-type labels with continuous Φ-Space phenotype scores</li>
+<li>Fit and compare pseudotime trajectories (slingshot, DPT) on multiple embeddings</li>
+<li>Build cell-specific co-expression meta-networks with NeighbourNet</li>
 </ul>
 </div>
 <div class="section level2">
@@ -192,26 +227,26 @@
 </h2>
 <p>The workshop uses snRNA-seq data from human heart tissue (Sim et al., 2021):</p>
 <table class="table">
-<thead><tr class="header">
+<thead><tr>
 <th>Group</th>
 <th>Samples</th>
 <th>Age Range</th>
 <th>Description</th>
 </tr></thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td>Foetal</td>
 <td>3</td>
 <td>19-20 weeks</td>
 <td>Developing heart</td>
 </tr>
-<tr class="even">
+<tr>
 <td>Young</td>
 <td>3</td>
 <td>4-14 years</td>
 <td>Postnatal maturation</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>Adult</td>
 <td>3</td>
 <td>35-42 years</td>
@@ -225,51 +260,71 @@
 <h2 id="methods-covered">Methods Covered<a class="anchor" aria-label="anchor" href="#methods-covered"></a>
 </h2>
 <table class="table">
-<thead><tr class="header">
+<colgroup>
+<col width="45%">
+<col width="25%">
+<col width="29%">
+</colgroup>
+<thead><tr>
 <th>Analysis Step</th>
 <th>Method</th>
 <th>Package</th>
 </tr></thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td>Quality control</td>
 <td>Per-cell metrics, filtering</td>
 <td>Seurat</td>
 </tr>
-<tr class="even">
+<tr>
 <td>Normalisation</td>
 <td>SCTransform v2</td>
 <td>Seurat, glmGamPoi</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>Batch correction</td>
 <td>Harmony</td>
 <td>harmony</td>
 </tr>
-<tr class="even">
+<tr>
 <td>Dimensionality reduction</td>
 <td>PCA, UMAP</td>
 <td>Seurat</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>Clustering</td>
 <td>Louvain algorithm</td>
 <td>Seurat</td>
 </tr>
-<tr class="even">
+<tr>
 <td>Cell type annotation</td>
 <td>Marker-based (manual)</td>
 <td>Seurat</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>Differential expression</td>
 <td>Pseudobulk + limma-voom</td>
 <td>edgeR, limma</td>
 </tr>
-<tr class="even">
+<tr>
 <td>Composition analysis</td>
 <td>propeller</td>
 <td>speckle</td>
+</tr>
+<tr>
+<td>Soft annotation</td>
+<td>PLS on reference atlas</td>
+<td>PhiSpace</td>
+</tr>
+<tr>
+<td>Pseudotime</td>
+<td>Principal curves + diffusion pseudotime</td>
+<td>slingshot, destiny</td>
+</tr>
+<tr>
+<td>Co-expression networks</td>
+<td>Cell-specific networks + meta-networks</td>
+<td>NeighbourNet</td>
 </tr>
 </tbody>
 </table>
@@ -280,55 +335,119 @@
 <p><strong>Please complete setup at least one day before the workshop.</strong></p>
 <ol style="list-style-type: decimal">
 <li>
-<strong>Clone or download</strong> this repository</li>
+<strong>Clone or download</strong> this repository (Windows users: clone to a short path like <code>C:\workshop\</code> to avoid the 260-character path limit).</li>
 <li>
-<strong>Open</strong> <code>single_cell_workshop.Rproj</code> in RStudio</li>
+<strong>Open</strong> <code>single_cell_workshop.Rproj</code> in RStudio.</li>
 <li>
-<strong>Follow</strong> <a href="https://phipsonlab.github.io/single_cell_workshop/articles/00_setup.html">Module 0: Setup</a> for detailed instructions</li>
+<strong>Follow</strong> <a href="https://phipsonlab.github.io/single_cell_workshop/articles/00_setup.html">Module 0: Setup</a> from start to finish.</li>
 </ol>
-<p>The setup involves: - Installing packages with <code><a href="https://rstudio.github.io/renv/reference/restore.html" class="external-link">renv::restore()</a></code> (~10-15 minutes) - Downloading data from Zenodo (~420 MB, ~5 minutes)</p>
+<p>The setup runs as a single unified flow that covers both sessions:</p>
+<ul>
+<li>
+<strong>Step 2 — System build tools</strong> (Rtools45 on Windows, Xcode CLT on macOS, <code>build-essential</code> on Linux). Required because a few packages compile from source.</li>
+<li>
+<strong>Step 3 — R packages</strong>: <code><a href="https://rstudio.github.io/renv/reference/restore.html" class="external-link">renv::restore()</a></code> for the locked core, then <code>BiocManager::install(...)</code> + <code>remotes::install_github(...)</code> for the extras (<code>PhiSpace</code>, <code>NeighbourNet</code>, <code>slingshot</code>, <code>destiny</code>, <code>scater</code>, <code>ComplexHeatmap</code>).</li>
+<li>
+<strong>Step 4 — Workshop data</strong> from Zenodo (~420 MB).</li>
+</ul>
+<p>Total time: roughly 20–40 minutes depending on whether the GitHub-only packages need to compile from source.</p>
+<div class="section level3">
+<h3 id="optional-backup-checkpoints">Optional: Backup checkpoints<a class="anchor" aria-label="anchor" href="#optional-backup-checkpoints"></a>
+</h3>
+<p>A separate Zenodo record hosts pre-computed checkpoints so you can start at any module boundary — useful for skipping straight to a particular technique, or for starting Session 2 without first running Session 1. Each file replaces the output of one or more upstream modules:</p>
+<table class="table">
+<thead><tr>
+<th>File</th>
+<th>Lets you skip</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>01_qc_filtered.rds</code></td>
+<td>Module 1</td>
+</tr>
+<tr>
+<td><code>02_integrated_clustered.rds</code></td>
+<td>Modules 1 + 2</td>
+</tr>
+<tr>
+<td><code>03_annotated.rds</code></td>
+<td>Modules 1 + 2 + 3</td>
+</tr>
+<tr>
+<td><code>afternoonSession.zip</code></td>
+<td>All of Session 1 — start at Module 5</td>
+</tr>
+</tbody>
+</table>
+<p><code>afternoonSession.zip</code> contains the Session 2 (Module 5, 6, 7) input and intermediate results. Download, unzip, and the files land in <code>data/</code> and <code>results/</code> per the instructions in Module 0.</p>
+<p>The download chunk lives in <a href="https://phipsonlab.github.io/single_cell_workshop/articles/00_setup.html">Module 0, “Optional: Backup Checkpoints”</a>.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="key-package-versions">Key Package Versions<a class="anchor" aria-label="anchor" href="#key-package-versions"></a>
 </h2>
-<p>This workshop uses pinned package versions for reproducibility:</p>
+<p>The core packages are pinned in <code>renv.lock</code> for reproducibility. The afternoon-session extras are installed at the latest Bioconductor 3.22 / GitHub <code>HEAD</code> versions (see Module 0 Step 3b).</p>
 <table class="table">
-<thead><tr class="header">
+<colgroup>
+<col width="26%">
+<col width="23%">
+<col width="26%">
+<col width="23%">
+</colgroup>
+<thead><tr>
 <th>Package</th>
-<th>Version</th>
+<th>Source</th>
 <th>Package</th>
-<th>Version</th>
+<th>Source</th>
 </tr></thead>
 <tbody>
-<tr class="odd">
-<td>R</td>
-<td>4.5.2</td>
+<tr>
+<td>R 4.5.2</td>
+<td>renv.lock</td>
+<td>Bioconductor 3.22</td>
+<td>renv.lock</td>
+</tr>
+<tr>
+<td>Seurat 5.4.0</td>
+<td>renv.lock</td>
+<td>edgeR 4.8.2</td>
+<td>renv.lock</td>
+</tr>
+<tr>
+<td>SeuratObject 5.3.0</td>
+<td>renv.lock</td>
+<td>limma 3.66.0</td>
+<td>renv.lock</td>
+</tr>
+<tr>
+<td>harmony 1.2.4</td>
+<td>renv.lock</td>
+<td>speckle 1.10.0</td>
+<td>renv.lock</td>
+</tr>
+<tr>
+<td>glmGamPoi 1.22.0</td>
+<td>renv.lock</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>ComplexHeatmap</td>
 <td>Bioconductor</td>
-<td>3.22</td>
+<td>slingshot</td>
+<td>Bioconductor</td>
 </tr>
-<tr class="even">
-<td>Seurat</td>
-<td>5.4.0</td>
-<td>edgeR</td>
-<td>4.8.2</td>
+<tr>
+<td>destiny</td>
+<td>Bioconductor</td>
+<td>scater</td>
+<td>Bioconductor</td>
 </tr>
-<tr class="odd">
-<td>SeuratObject</td>
-<td>5.3.0</td>
-<td>limma</td>
-<td>3.66.0</td>
-</tr>
-<tr class="even">
-<td>harmony</td>
-<td>1.2.4</td>
-<td>speckle</td>
-<td>1.10.0</td>
-</tr>
-<tr class="odd">
-<td>glmGamPoi</td>
-<td>1.22.0</td>
-<td></td>
-<td></td>
+<tr>
+<td>PhiSpace</td>
+<td>GitHub (<code>jiadongm/PhiSpace</code>)</td>
+<td>NeighbourNet</td>
+<td>GitHub (<code>meiosis97/NeighbourNet</code>)</td>
 </tr>
 </tbody>
 </table>
@@ -345,33 +464,33 @@
 <col width="25%">
 <col width="46%">
 </colgroup>
-<thead><tr class="header">
+<thead><tr>
 <th>Module</th>
 <th>Topic</th>
 <th>Description</th>
 </tr></thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td><a href="https://phipsonlab.github.io/single_cell_workshop/articles/00_setup.html">Module 0</a></td>
 <td>Setup</td>
 <td>Environment setup and data download</td>
 </tr>
-<tr class="even">
+<tr>
 <td><a href="https://phipsonlab.github.io/single_cell_workshop/articles/01_quality_control.html">Module 1</a></td>
 <td>Quality Control</td>
 <td>QC metrics, cell filtering</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><a href="https://phipsonlab.github.io/single_cell_workshop/articles/02_integration_clustering.html">Module 2</a></td>
 <td>Integration</td>
 <td>Normalisation, batch correction, clustering</td>
 </tr>
-<tr class="even">
+<tr>
 <td><a href="https://phipsonlab.github.io/single_cell_workshop/articles/03_cell_type_annotation.html">Module 3</a></td>
 <td>Annotation</td>
 <td>Marker genes and cell type assignment</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><a href="https://phipsonlab.github.io/single_cell_workshop/articles/04_differential_expression.html">Module 4</a></td>
 <td>DE Analysis</td>
 <td>Pseudobulk DE and composition analysis</td>
@@ -380,15 +499,37 @@
 </table>
 </div>
 <div class="section level3">
-<h3 id="session-2-downstream-analysis">Session 2: Downstream Analysis<a class="anchor" aria-label="anchor" href="#session-2-downstream-analysis"></a>
+<h3 id="session-2-trajectory-and-gene-regulation">Session 2: Trajectory and Gene Regulation<a class="anchor" aria-label="anchor" href="#session-2-trajectory-and-gene-regulation"></a>
 </h3>
-<p><em>Coming soon</em> - Additional downstream analyses using the same heart development dataset.</p>
-<!-- TODO: Add Session 2 modules here when ready
-| Module | Topic | Description |
-|--------|-------|-------------|
-| Module 5 | TBD | TBD |
-| Module 6 | TBD | TBD |
--->
+<table class="table">
+<colgroup>
+<col width="28%">
+<col width="25%">
+<col width="46%">
+</colgroup>
+<thead><tr>
+<th>Module</th>
+<th>Topic</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><a href="https://phipsonlab.github.io/single_cell_workshop/articles/05_phispace_annotation.html">Module 5</a></td>
+<td>Continuous Phenotyping with Φ-Space</td>
+<td>Soft cell-type + stage scores via PLS on a reference atlas</td>
+</tr>
+<tr>
+<td><a href="https://phipsonlab.github.io/single_cell_workshop/articles/06_pseudotime.html">Module 6</a></td>
+<td>Pseudotime Trajectory Analysis</td>
+<td>Slingshot and DPT on PCA and Φ-Space embeddings</td>
+</tr>
+<tr>
+<td><a href="https://phipsonlab.github.io/single_cell_workshop/articles/07_nnet.html">Module 7</a></td>
+<td>Cell-specific Co-expression Networks</td>
+<td>NeighbourNet meta-networks from maturation-associated targets</td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 <div class="section level2">

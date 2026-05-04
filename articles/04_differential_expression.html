@@ -38,6 +38,9 @@
     <li><a class="dropdown-item" href="../articles/02_integration_clustering.html">Module 2: Integration &amp; Clustering</a></li>
     <li><a class="dropdown-item" href="../articles/03_cell_type_annotation.html">Module 3: Cell Type Annotation</a></li>
     <li><a class="dropdown-item" href="../articles/04_differential_expression.html">Module 4: Differential Expression</a></li>
+    <li><a class="dropdown-item" href="../articles/05_phispace_annotation.html">Module 5: Continuous Phenotyping with Φ-Space</a></li>
+    <li><a class="dropdown-item" href="../articles/06_pseudotime.html">Module 6: Pseudotime Trajectory Analysis</a></li>
+    <li><a class="dropdown-item" href="../articles/07_nnet.html">Module 7: Cell-specific Co-expression Networks</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../articles/resources.html">Resources</a></li>
@@ -65,7 +68,7 @@
                         <h4 data-toc-skip class="author">Single Cell
 Workshop</h4>
             
-            <h4 data-toc-skip class="date">2026-01-15</h4>
+            <h4 data-toc-skip class="date">2026-05-04</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/phipsonlab/single_cell_workshop/blob/main/vignettes/04_differential_expression.Rmd" class="external-link"><code>vignettes/04_differential_expression.Rmd</code></a></small>
       <div class="d-none name"><code>04_differential_expression.Rmd</code></div>
@@ -248,6 +251,13 @@ assay. Cell type labels come from the original study annotations in
 <span><span class="co"># Match cellinfo to QC-filtered cells</span></span>
 <span><span class="va">cellinfo</span> <span class="op">&lt;-</span> <span class="va">cellinfo</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/match.html" class="external-link">match</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/row_colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">seu</span><span class="op">)</span>, <span class="va">cellinfo</span><span class="op">$</span><span class="va">CellID</span><span class="op">)</span>, <span class="op">]</span></span>
 <span></span>
+<span><span class="co"># Attach the cell-type and sample columns we will pseudobulk on directly</span></span>
+<span><span class="co"># to the Seurat object's metadata. edgeR::Seurat2PB() reads these column</span></span>
+<span><span class="co"># names from `seu@meta.data`, so they need to live there rather than in</span></span>
+<span><span class="co"># the separate cellinfo data frame.</span></span>
+<span><span class="va">seu</span><span class="op">$</span><span class="va">Celltype</span> <span class="op">&lt;-</span> <span class="va">cellinfo</span><span class="op">$</span><span class="va">Celltype</span></span>
+<span><span class="va">seu</span><span class="op">$</span><span class="va">Sample</span>   <span class="op">&lt;-</span> <span class="va">cellinfo</span><span class="op">$</span><span class="va">Sample</span></span>
+<span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"QC-filtered dataset:\n"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## QC-filtered dataset:</span></span></code></pre>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
@@ -361,6 +371,9 @@ contaminants. We exclude them from DE analysis:</p>
 <span>  <span class="va">cells_keep</span> <span class="op">&lt;-</span> <span class="va">cellinfo</span><span class="op">$</span><span class="va">Celltype</span> <span class="op">!=</span> <span class="st">"Erythroid"</span></span>
 <span>  <span class="va">cellinfo_filtered</span> <span class="op">&lt;-</span> <span class="va">cellinfo</span><span class="op">[</span><span class="va">cells_keep</span>, <span class="op">]</span></span>
 <span>  <span class="va">counts_filtered</span> <span class="op">&lt;-</span> <span class="va">counts</span><span class="op">[</span>, <span class="va">cells_keep</span><span class="op">]</span></span>
+<span>  <span class="co"># Mirror the filter on the Seurat object so the Seurat2PB call below</span></span>
+<span>  <span class="co"># operates on the same cells as the count / metadata tables.</span></span>
+<span>  <span class="va">seu</span> <span class="op">&lt;-</span> <span class="va">seu</span><span class="op">[</span>, <span class="va">cells_keep</span><span class="op">]</span></span>
 <span><span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
 <span>  <span class="va">cellinfo_filtered</span> <span class="op">&lt;-</span> <span class="va">cellinfo</span></span>
 <span>  <span class="va">counts_filtered</span> <span class="op">&lt;-</span> <span class="va">counts</span></span>
@@ -625,152 +638,97 @@ pseudobulk profile for each cell type in each sample. This stratified
 approach allows us to perform differential expression within each cell
 type, accounting for the fact that different cell types may respond
 differently to developmental changes.</p>
-<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Create factor for cell type</span></span>
-<span><span class="va">celltype</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">cellinfo_filtered</span><span class="op">$</span><span class="va">Celltype</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Create factor for sample with explicit level ordering</span></span>
-<span><span class="va">sample_factor</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span></span>
-<span>    <span class="va">cellinfo_filtered</span><span class="op">$</span><span class="va">Sample</span>,</span>
-<span>    levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"f1"</span>, <span class="st">"f2"</span>, <span class="st">"f3"</span>, <span class="st">"y1"</span>, <span class="st">"y2"</span>, <span class="st">"y3"</span>, <span class="st">"a1"</span>, <span class="st">"a2"</span>, <span class="st">"a3"</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Create combined grouping variable (celltype.sample)</span></span>
-<span><span class="va">pseudobulk_group</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="va">celltype</span>, <span class="va">sample_factor</span>, sep <span class="op">=</span> <span class="st">"."</span><span class="op">)</span></span>
-<span><span class="va">pseudobulk_group</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">pseudobulk_group</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Number of pseudobulk samples:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/levels.html" class="external-link">levels</a></span><span class="op">(</span><span class="va">pseudobulk_group</span><span class="op">)</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Number of pseudobulk samples: 63</span></span></code></pre>
-<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"\nCells per pseudobulk sample:\n"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## </span></span>
-<span><span class="co">## Cells per pseudobulk sample:</span></span></code></pre>
-<div class="sourceCode" id="cb45"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">pseudobulk_group</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## pseudobulk_group</span></span>
-<span><span class="co">##      Cardiomyocytes.a1      Cardiomyocytes.a2      Cardiomyocytes.a3 </span></span>
-<span><span class="co">##                   1661                    308                    160 </span></span>
-<span><span class="co">##      Cardiomyocytes.f1      Cardiomyocytes.f2      Cardiomyocytes.f3 </span></span>
-<span><span class="co">##                   5436                   8448                   5073 </span></span>
-<span><span class="co">##      Cardiomyocytes.y1      Cardiomyocytes.y2      Cardiomyocytes.y3 </span></span>
-<span><span class="co">##                   1045                   1920                   2626 </span></span>
-<span><span class="co">##   Endothelial cells.a1   Endothelial cells.a2   Endothelial cells.a3 </span></span>
-<span><span class="co">##                    590                    415                    126 </span></span>
-<span><span class="co">##   Endothelial cells.f1   Endothelial cells.f2   Endothelial cells.f3 </span></span>
-<span><span class="co">##                    474                    371                    405 </span></span>
-<span><span class="co">##   Endothelial cells.y1   Endothelial cells.y2   Endothelial cells.y3 </span></span>
-<span><span class="co">##                    502                    387                    457 </span></span>
-<span><span class="co">##    Epicardial cells.a1    Epicardial cells.a2    Epicardial cells.a3 </span></span>
-<span><span class="co">##                    338                    482                     85 </span></span>
-<span><span class="co">##    Epicardial cells.f1    Epicardial cells.f2    Epicardial cells.f3 </span></span>
-<span><span class="co">##                    562                    423                    396 </span></span>
-<span><span class="co">##    Epicardial cells.y1    Epicardial cells.y2    Epicardial cells.y3 </span></span>
-<span><span class="co">##                    605                    267                    239 </span></span>
-<span><span class="co">##          Fibroblast.a1          Fibroblast.a2          Fibroblast.a3 </span></span>
-<span><span class="co">##                    966                    971                    424 </span></span>
-<span><span class="co">##          Fibroblast.f1          Fibroblast.f2          Fibroblast.f3 </span></span>
-<span><span class="co">##                   1027                    752                   1195 </span></span>
-<span><span class="co">##          Fibroblast.y1          Fibroblast.y2          Fibroblast.y3 </span></span>
-<span><span class="co">##                   1576                   1522                    727 </span></span>
-<span><span class="co">##        Immune cells.a1        Immune cells.a2        Immune cells.a3 </span></span>
-<span><span class="co">##                    366                    343                    405 </span></span>
-<span><span class="co">##        Immune cells.f1        Immune cells.f2        Immune cells.f3 </span></span>
-<span><span class="co">##                    273                    227                    162 </span></span>
-<span><span class="co">##        Immune cells.y1        Immune cells.y2        Immune cells.y3 </span></span>
-<span><span class="co">##                    315                    514                    540 </span></span>
-<span><span class="co">##             Neurons.a1             Neurons.a2             Neurons.a3 </span></span>
-<span><span class="co">##                     56                     38                     13 </span></span>
-<span><span class="co">##             Neurons.f1             Neurons.f2             Neurons.f3 </span></span>
-<span><span class="co">##                    109                    128                    104 </span></span>
-<span><span class="co">##             Neurons.y1             Neurons.y2             Neurons.y3 </span></span>
-<span><span class="co">##                    204                     57                    109 </span></span>
-<span><span class="co">## Smooth muscle cells.a1 Smooth muscle cells.a2 Smooth muscle cells.a3 </span></span>
-<span><span class="co">##                     21                     48                     13 </span></span>
-<span><span class="co">## Smooth muscle cells.f1 Smooth muscle cells.f2 Smooth muscle cells.f3 </span></span>
-<span><span class="co">##                     54                     20                    135 </span></span>
-<span><span class="co">## Smooth muscle cells.y1 Smooth muscle cells.y2 Smooth muscle cells.y3 </span></span>
-<span><span class="co">##                     59                     28                     47</span></span></code></pre>
 </div>
 <div class="section level3">
-<h3 id="aggregate-counts">Aggregate Counts<a class="anchor" aria-label="anchor" href="#aggregate-counts"></a>
+<h3 id="aggregate-counts-with-seurat2pb">Aggregate Counts with <code>Seurat2PB</code><a class="anchor" aria-label="anchor" href="#aggregate-counts-with-seurat2pb"></a>
 </h3>
-<p>We use matrix multiplication with a design matrix to efficiently
-aggregate counts. This is equivalent to summing counts across all cells
-within each pseudobulk group:</p>
-<div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Create design matrix for aggregation</span></span>
-<span><span class="va">design_agg</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/model.matrix.html" class="external-link">model.matrix</a></span><span class="op">(</span><span class="op">~</span> <span class="fl">0</span> <span class="op">+</span> <span class="va">pseudobulk_group</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/row_colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">design_agg</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/levels.html" class="external-link">levels</a></span><span class="op">(</span><span class="va">pseudobulk_group</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Aggregate counts by matrix multiplication</span></span>
-<span><span class="co"># Each column of the result is the sum of counts for all cells in that group</span></span>
-<span><span class="va">pb_counts</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">counts_filtered</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/r/base/matmult.html" class="external-link">%*%</a></span> <span class="va">design_agg</span></span>
+<p><em>edgeR</em> provides <code><a href="https://rdrr.io/pkg/edgeR/man/Seurat2PB.html" class="external-link">Seurat2PB()</a></code>, a one-call helper
+that takes a <code>Seurat</code> object plus the names of its sample and
+cluster metadata columns and returns a <code>DGEList</code> whose
+columns are the cell-type × sample pseudobulks. Internally it does
+exactly what a manual <code>model.matrix(~ 0 + group)</code> followed by
+a sparse matrix multiplication would do — sum the raw counts within
+every (cluster, sample) combination — but without the bookkeeping around
+column names and factor levels.</p>
+<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Aggregate raw counts by (Celltype, Sample) into a DGEList. The Seurat</span></span>
+<span><span class="co"># object already carries Celltype and Sample in @meta.data (added during</span></span>
+<span><span class="co"># data loading above), so this is a single call.</span></span>
+<span><span class="va">dge</span> <span class="op">&lt;-</span> <span class="fu">edgeR</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/edgeR/man/Seurat2PB.html" class="external-link">Seurat2PB</a></span><span class="op">(</span></span>
+<span>    <span class="va">seu</span>,</span>
+<span>    sample  <span class="op">=</span> <span class="st">"Sample"</span>,</span>
+<span>    cluster <span class="op">=</span> <span class="st">"Celltype"</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Pseudobulk matrix dimensions:\n"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Pseudobulk matrix dimensions:</span></span></code></pre>
-<div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"- Genes:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">pb_counts</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## - Genes: 18953</span></span></code></pre>
-<div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"- Samples:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">pb_counts</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"- Genes:  "</span>, <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/format.html" class="external-link">format</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">dge</span><span class="op">)</span>, big.mark <span class="op">=</span> <span class="st">","</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## - Genes:   18,953</span></span></code></pre>
+<div class="sourceCode" id="cb45"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"- Samples:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">dge</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## - Samples: 63</span></span></code></pre>
+<div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"\nCells per pseudobulk sample (first 10):\n"</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## </span></span>
+<span><span class="co">## Cells per pseudobulk sample (first 10):</span></span></code></pre>
+<div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/table.html" class="external-link">table</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="va">seu</span><span class="op">$</span><span class="va">Celltype</span>, <span class="va">seu</span><span class="op">$</span><span class="va">Sample</span>, sep <span class="op">=</span> <span class="st">"."</span><span class="op">)</span><span class="op">)</span>, <span class="fl">10</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## </span></span>
+<span><span class="co">##    Cardiomyocytes.a1    Cardiomyocytes.a2    Cardiomyocytes.a3 </span></span>
+<span><span class="co">##                 1661                  308                  160 </span></span>
+<span><span class="co">##    Cardiomyocytes.f1    Cardiomyocytes.f2    Cardiomyocytes.f3 </span></span>
+<span><span class="co">##                 5436                 8448                 5073 </span></span>
+<span><span class="co">##    Cardiomyocytes.y1    Cardiomyocytes.y2    Cardiomyocytes.y3 </span></span>
+<span><span class="co">##                 1045                 1920                 2626 </span></span>
+<span><span class="co">## Endothelial cells.a1 </span></span>
+<span><span class="co">##                  590</span></span></code></pre>
 </div>
 <div class="section level3">
-<h3 id="create-dgelist-object">Create DGEList Object<a class="anchor" aria-label="anchor" href="#create-dgelist-object"></a>
+<h3 id="augment-the-dgelist-with-sample-level-metadata">Augment the DGEList with Sample-Level Metadata<a class="anchor" aria-label="anchor" href="#augment-the-dgelist-with-sample-level-metadata"></a>
 </h3>
-<p>The <code>DGEList</code> object from <em>edgeR</em> is the standard
-container for count data in the limma-voom pipeline. It stores counts,
-library sizes, and sample information:</p>
-<div class="sourceCode" id="cb53"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Create DGEList</span></span>
-<span><span class="va">dge</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/edgeR/man/DGEList.html" class="external-link">DGEList</a></span><span class="op">(</span>counts <span class="op">=</span> <span class="va">pb_counts</span><span class="op">)</span></span>
+<p><code><a href="https://rdrr.io/pkg/edgeR/man/Seurat2PB.html" class="external-link">Seurat2PB()</a></code> populates <code>dge$samples</code> with
+<code>cluster</code>, <code>sample</code>, <code>lib.size</code>, and
+<code>norm.factors</code>. We expose those under the names the rest of
+the module uses (<code>celltype</code>, <code>sample</code>), and add
+the developmental <code>group</code> and <code>sex</code> columns we
+will need for the design matrix and the MDS plots.</p>
+<div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Rename for downstream readability</span></span>
+<span><span class="va">dge</span><span class="op">$</span><span class="va">samples</span><span class="op">$</span><span class="va">celltype</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="va">dge</span><span class="op">$</span><span class="va">samples</span><span class="op">$</span><span class="va">cluster</span><span class="op">)</span></span>
+<span><span class="va">dge</span><span class="op">$</span><span class="va">samples</span><span class="op">$</span><span class="va">sample</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="va">dge</span><span class="op">$</span><span class="va">samples</span><span class="op">$</span><span class="va">sample</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Parse sample information from column names</span></span>
-<span><span class="va">sample_info</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>    pseudobulk_id <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/row_colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">dge</span><span class="op">)</span>,</span>
-<span>    stringsAsFactors <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="co"># Developmental group derived from sample-name prefix</span></span>
+<span><span class="va">dge</span><span class="op">$</span><span class="va">samples</span><span class="op">$</span><span class="va">group</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/case_when.html" class="external-link">case_when</a></span><span class="op">(</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/grep.html" class="external-link">grepl</a></span><span class="op">(</span><span class="st">"^f"</span>, <span class="va">dge</span><span class="op">$</span><span class="va">samples</span><span class="op">$</span><span class="va">sample</span><span class="op">)</span> <span class="op">~</span> <span class="st">"fetal"</span>,</span>
+<span>    <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/grep.html" class="external-link">grepl</a></span><span class="op">(</span><span class="st">"^y"</span>, <span class="va">dge</span><span class="op">$</span><span class="va">samples</span><span class="op">$</span><span class="va">sample</span><span class="op">)</span> <span class="op">~</span> <span class="st">"young"</span>,</span>
+<span>    <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/grep.html" class="external-link">grepl</a></span><span class="op">(</span><span class="st">"^a"</span>, <span class="va">dge</span><span class="op">$</span><span class="va">samples</span><span class="op">$</span><span class="va">sample</span><span class="op">)</span> <span class="op">~</span> <span class="st">"adult"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Extract cell type and sample from the combined name</span></span>
-<span><span class="va">parsed</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/strsplit.html" class="external-link">strsplit</a></span><span class="op">(</span><span class="va">sample_info</span><span class="op">$</span><span class="va">pseudobulk_id</span>, <span class="st">"\\."</span><span class="op">)</span></span>
-<span><span class="va">sample_info</span><span class="op">$</span><span class="va">celltype</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">parsed</span>, <span class="va">`[`</span>, <span class="fl">1</span><span class="op">)</span></span>
-<span><span class="va">sample_info</span><span class="op">$</span><span class="va">sample</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">parsed</span>, <span class="va">`[`</span>, <span class="fl">2</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Add developmental group (keep as character to avoid factor level issues)</span></span>
-<span><span class="va">sample_info</span><span class="op">$</span><span class="va">group</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/case_when.html" class="external-link">case_when</a></span><span class="op">(</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/grep.html" class="external-link">grepl</a></span><span class="op">(</span><span class="st">"^f"</span>, <span class="va">sample_info</span><span class="op">$</span><span class="va">sample</span><span class="op">)</span> <span class="op">~</span> <span class="st">"fetal"</span>,</span>
-<span>    <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/grep.html" class="external-link">grepl</a></span><span class="op">(</span><span class="st">"^y"</span>, <span class="va">sample_info</span><span class="op">$</span><span class="va">sample</span><span class="op">)</span> <span class="op">~</span> <span class="st">"young"</span>,</span>
-<span>    <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/grep.html" class="external-link">grepl</a></span><span class="op">(</span><span class="st">"^a"</span>, <span class="va">sample_info</span><span class="op">$</span><span class="va">sample</span><span class="op">)</span> <span class="op">~</span> <span class="st">"adult"</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Add sex information from cellinfo (matches actual data)</span></span>
+<span><span class="co"># Sex per sample, looked up from the original cell-level metadata</span></span>
 <span><span class="va">sex_by_sample</span> <span class="op">&lt;-</span> <span class="va">cellinfo_filtered</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">Sample</span>, <span class="va">Sex</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>    <span class="op">{</span> <span class="fu"><a href="https://rdrr.io/r/stats/setNames.html" class="external-link">setNames</a></span><span class="op">(</span><span class="va">.</span><span class="op">$</span><span class="va">Sex</span>, <span class="va">.</span><span class="op">$</span><span class="va">Sample</span><span class="op">)</span> <span class="op">}</span></span>
-<span><span class="va">sample_info</span><span class="op">$</span><span class="va">sex</span> <span class="op">&lt;-</span> <span class="va">sex_by_sample</span><span class="op">[</span><span class="va">sample_info</span><span class="op">$</span><span class="va">sample</span><span class="op">]</span></span>
+<span><span class="va">dge</span><span class="op">$</span><span class="va">samples</span><span class="op">$</span><span class="va">sex</span> <span class="op">&lt;-</span> <span class="va">sex_by_sample</span><span class="op">[</span><span class="va">dge</span><span class="op">$</span><span class="va">samples</span><span class="op">$</span><span class="va">sample</span><span class="op">]</span></span>
 <span></span>
-<span><span class="co"># Add gene annotation to DGEList (for output tables)</span></span>
+<span><span class="co"># Attach gene annotation for output tables</span></span>
 <span><span class="va">dge</span><span class="op">$</span><span class="va">genes</span> <span class="op">&lt;-</span> <span class="va">ann</span></span>
 <span></span>
-<span><span class="co"># Store sample information</span></span>
-<span><span class="co"># Note: DGEList creates a default 'group' column (all 1s), so we remove it first</span></span>
-<span><span class="va">dge</span><span class="op">$</span><span class="va">samples</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">dge</span><span class="op">$</span><span class="va">samples</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lib.size"</span>, <span class="st">"norm.factors"</span><span class="op">)</span><span class="op">]</span>, <span class="va">sample_info</span><span class="op">)</span></span>
-<span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">dge</span><span class="op">$</span><span class="va">samples</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">##                   lib.size norm.factors     pseudobulk_id       celltype sample</span></span>
-<span><span class="co">## Cardiomyocytes.a1 32392120            1 Cardiomyocytes.a1 Cardiomyocytes     a1</span></span>
-<span><span class="co">## Cardiomyocytes.a2  7280354            1 Cardiomyocytes.a2 Cardiomyocytes     a2</span></span>
-<span><span class="co">## Cardiomyocytes.a3  2715798            1 Cardiomyocytes.a3 Cardiomyocytes     a3</span></span>
-<span><span class="co">## Cardiomyocytes.f1 59294709            1 Cardiomyocytes.f1 Cardiomyocytes     f1</span></span>
-<span><span class="co">## Cardiomyocytes.f2 82244242            1 Cardiomyocytes.f2 Cardiomyocytes     f2</span></span>
-<span><span class="co">## Cardiomyocytes.f3 72452381            1 Cardiomyocytes.f3 Cardiomyocytes     f3</span></span>
-<span><span class="co">##                   group sex</span></span>
-<span><span class="co">## Cardiomyocytes.a1 adult   f</span></span>
-<span><span class="co">## Cardiomyocytes.a2 adult   m</span></span>
-<span><span class="co">## Cardiomyocytes.a3 adult   m</span></span>
-<span><span class="co">## Cardiomyocytes.f1 fetal   m</span></span>
-<span><span class="co">## Cardiomyocytes.f2 fetal   m</span></span>
-<span><span class="co">## Cardiomyocytes.f3 fetal   f</span></span></code></pre>
+<pre><code><span><span class="co">##                             group lib.size norm.factors sample</span></span>
+<span><span class="co">## a1_clusterCardiomyocytes    adult 32392120            1     a1</span></span>
+<span><span class="co">## a1_clusterEndothelial cells adult  4127506            1     a1</span></span>
+<span><span class="co">## a1_clusterEpicardial cells  adult  1859175            1     a1</span></span>
+<span><span class="co">## a1_clusterFibroblast        adult  7754220            1     a1</span></span>
+<span><span class="co">## a1_clusterImmune cells      adult  2870300            1     a1</span></span>
+<span><span class="co">## a1_clusterNeurons           adult   328128            1     a1</span></span>
+<span><span class="co">##                                       cluster          celltype sex</span></span>
+<span><span class="co">## a1_clusterCardiomyocytes       Cardiomyocytes    Cardiomyocytes   f</span></span>
+<span><span class="co">## a1_clusterEndothelial cells Endothelial cells Endothelial cells   f</span></span>
+<span><span class="co">## a1_clusterEpicardial cells   Epicardial cells  Epicardial cells   f</span></span>
+<span><span class="co">## a1_clusterFibroblast               Fibroblast        Fibroblast   f</span></span>
+<span><span class="co">## a1_clusterImmune cells           Immune cells      Immune cells   f</span></span>
+<span><span class="co">## a1_clusterNeurons                     Neurons           Neurons   f</span></span></code></pre>
 </div>
 </div>
 <div class="section level2">
@@ -783,7 +741,7 @@ dataset.</p>
 <div class="section level3">
 <h3 id="mds-plot-overview">MDS Plot Overview<a class="anchor" aria-label="anchor" href="#mds-plot-overview"></a>
 </h3>
-<div class="sourceCode" id="cb55"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb53"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Calculate MDS for all samples</span></span>
 <span><span class="va">mds</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/limma/man/plotMDS.html" class="external-link">plotMDS</a></span><span class="op">(</span><span class="va">dge</span>, plot <span class="op">=</span> <span class="cn">FALSE</span>, gene.selection <span class="op">=</span> <span class="st">"common"</span><span class="op">)</span></span>
 <span></span>
@@ -840,7 +798,7 @@ within cell type clusters.</p>
 </h3>
 <p>To better visualise developmental differences, we examine MDS plots
 for each major cell type separately:</p>
-<div class="sourceCode" id="cb56"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb54"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Function to create MDS plot for a specific cell type</span></span>
 <span><span class="va">plot_mds_celltype</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">celltype_name</span><span class="op">)</span> <span class="op">{</span></span>
 <span>    <span class="co"># Subset to this cell type</span></span>
@@ -937,7 +895,7 @@ interest.</p>
 <p>The design matrix encodes our experimental factors. We use a
 cell-means parameterisation (no intercept) where each column represents
 a unique combination of cell type, developmental group, and sex:</p>
-<div class="sourceCode" id="cb57"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb55"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Create short cell type labels for cleaner coefficient names</span></span>
 <span><span class="va">celltype_short</span> <span class="op">&lt;-</span> <span class="va">dge</span><span class="op">$</span><span class="va">samples</span><span class="op">$</span><span class="va">celltype</span></span>
 <span><span class="va">celltype_short</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">gsub</a></span><span class="op">(</span><span class="st">" cells"</span>, <span class="st">""</span>, <span class="va">celltype_short</span><span class="op">)</span></span>
@@ -954,11 +912,11 @@ a unique combination of cell type, developmental group, and sex:</p>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Design matrix dimensions:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">design</span><span class="op">)</span>, <span class="st">"x"</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">design</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Design matrix dimensions: 63 x 42</span></span></code></pre>
-<div class="sourceCode" id="cb59"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb57"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"\nDesign matrix coefficients:\n"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">## Design matrix coefficients:</span></span></code></pre>
-<div class="sourceCode" id="cb61"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb59"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/row_colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">design</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##  [1] "cardiomyocytes.adult.f" "cardiomyocytes.adult.m" "cardiomyocytes.fetal.f"</span></span>
 <span><span class="co">##  [4] "cardiomyocytes.fetal.m" "cardiomyocytes.young.f" "cardiomyocytes.young.m"</span></span>
@@ -978,7 +936,7 @@ a unique combination of cell type, developmental group, and sex:</p>
 <div class="section level3">
 <h3 id="filtering-and-normalisation">Filtering and Normalisation<a class="anchor" aria-label="anchor" href="#filtering-and-normalisation"></a>
 </h3>
-<div class="sourceCode" id="cb63"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb61"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Filter genes with low expression using edgeR's filterByExpr</span></span>
 <span><span class="co"># This removes genes that are not expressed at a biologically meaningful level</span></span>
 <span><span class="va">keep</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/edgeR/man/filterByExpr.html" class="external-link">filterByExpr</a></span><span class="op">(</span><span class="va">dge</span>, design <span class="op">=</span> <span class="va">design</span><span class="op">)</span></span>
@@ -986,82 +944,82 @@ a unique combination of cell type, developmental group, and sex:</p>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Genes before filtering:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">dge</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Genes before filtering: 18953</span></span></code></pre>
-<div class="sourceCode" id="cb65"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb63"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Genes after filtering:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">dge_filtered</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Genes after filtering: 16085</span></span></code></pre>
-<div class="sourceCode" id="cb67"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb65"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Apply TMM normalisation</span></span>
 <span><span class="va">dge_filtered</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/edgeR/man/calcNormFactors.html" class="external-link">calcNormFactors</a></span><span class="op">(</span><span class="va">dge_filtered</span>, method <span class="op">=</span> <span class="st">"TMM"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"\nLibrary sizes and normalisation factors:\n"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">## Library sizes and normalisation factors:</span></span></code></pre>
-<div class="sourceCode" id="cb69"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb67"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">dge_filtered</span><span class="op">$</span><span class="va">samples</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lib.size"</span>, <span class="st">"norm.factors"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">##                        lib.size norm.factors</span></span>
-<span><span class="co">## Cardiomyocytes.a1      32379510    0.6062195</span></span>
-<span><span class="co">## Cardiomyocytes.a2       7277544    0.6871822</span></span>
-<span><span class="co">## Cardiomyocytes.a3       2714040    0.8796562</span></span>
-<span><span class="co">## Cardiomyocytes.f1      59267741    0.8122854</span></span>
-<span><span class="co">## Cardiomyocytes.f2      82215178    0.7780581</span></span>
-<span><span class="co">## Cardiomyocytes.f3      72428402    0.7224807</span></span>
-<span><span class="co">## Cardiomyocytes.y1      13418896    0.6523640</span></span>
-<span><span class="co">## Cardiomyocytes.y2      31912809    0.6315278</span></span>
-<span><span class="co">## Cardiomyocytes.y3      19313451    0.9023738</span></span>
-<span><span class="co">## Endothelial cells.a1    4125389    1.0507578</span></span>
-<span><span class="co">## Endothelial cells.a2    2778450    1.0091423</span></span>
-<span><span class="co">## Endothelial cells.a3     838838    1.1131212</span></span>
-<span><span class="co">## Endothelial cells.f1    4334507    1.1422059</span></span>
-<span><span class="co">## Endothelial cells.f2    3826307    1.1090792</span></span>
-<span><span class="co">## Endothelial cells.f3    5304616    1.0560309</span></span>
-<span><span class="co">## Endothelial cells.y1    3618850    1.0725650</span></span>
-<span><span class="co">## Endothelial cells.y2    2958916    0.9896856</span></span>
-<span><span class="co">## Endothelial cells.y3    2738058    0.9695908</span></span>
-<span><span class="co">## Epicardial cells.a1     1858312    1.0385323</span></span>
-<span><span class="co">## Epicardial cells.a2     3758676    0.8723308</span></span>
-<span><span class="co">## Epicardial cells.a3      637172    1.0710208</span></span>
-<span><span class="co">## Epicardial cells.f1     5473502    1.1198427</span></span>
-<span><span class="co">## Epicardial cells.f2     4725334    1.0363738</span></span>
-<span><span class="co">## Epicardial cells.f3     5804650    0.9882715</span></span>
-<span><span class="co">## Epicardial cells.y1     3799209    0.9767808</span></span>
-<span><span class="co">## Epicardial cells.y2     1717993    0.9644361</span></span>
-<span><span class="co">## Epicardial cells.y3     1343036    0.9462232</span></span>
-<span><span class="co">## Fibroblast.a1           7750305    1.0867079</span></span>
-<span><span class="co">## Fibroblast.a2           8812958    0.9867011</span></span>
-<span><span class="co">## Fibroblast.a3           4052897    1.0859247</span></span>
-<span><span class="co">## Fibroblast.f1           7830817    1.0555564</span></span>
-<span><span class="co">## Fibroblast.f2           5476825    1.0310459</span></span>
-<span><span class="co">## Fibroblast.f3          11550623    1.0052905</span></span>
-<span><span class="co">## Fibroblast.y1          13480942    0.9618096</span></span>
-<span><span class="co">## Fibroblast.y2          12218557    0.9621212</span></span>
-<span><span class="co">## Fibroblast.y3           5870367    0.9887452</span></span>
-<span><span class="co">## Immune cells.a1         2869009    1.0391055</span></span>
-<span><span class="co">## Immune cells.a2         2276808    1.0725683</span></span>
-<span><span class="co">## Immune cells.a3         3192409    1.1483534</span></span>
-<span><span class="co">## Immune cells.f1         1960762    1.1266492</span></span>
-<span><span class="co">## Immune cells.f2         1675070    1.1731315</span></span>
-<span><span class="co">## Immune cells.f3         1580118    1.0676369</span></span>
-<span><span class="co">## Immune cells.y1         2529505    1.1267478</span></span>
-<span><span class="co">## Immune cells.y2         3734520    1.0432559</span></span>
-<span><span class="co">## Immune cells.y3         3091938    1.0305902</span></span>
-<span><span class="co">## Neurons.a1               328005    1.1719423</span></span>
-<span><span class="co">## Neurons.a2               218624    1.0640886</span></span>
-<span><span class="co">## Neurons.a3                74057    1.3408405</span></span>
-<span><span class="co">## Neurons.f1               769716    1.1090986</span></span>
-<span><span class="co">## Neurons.f2              1053894    1.0953821</span></span>
-<span><span class="co">## Neurons.f3               955923    1.0477880</span></span>
-<span><span class="co">## Neurons.y1              1098075    1.0945203</span></span>
-<span><span class="co">## Neurons.y2               209762    1.0747981</span></span>
-<span><span class="co">## Neurons.y3               443229    1.0579727</span></span>
-<span><span class="co">## Smooth muscle cells.a1   119000    1.1801528</span></span>
-<span><span class="co">## Smooth muscle cells.a2   389758    0.9537409</span></span>
-<span><span class="co">## Smooth muscle cells.a3    96593    1.1759140</span></span>
-<span><span class="co">## Smooth muscle cells.f1   471111    1.0362309</span></span>
-<span><span class="co">## Smooth muscle cells.f2   145848    1.1343509</span></span>
-<span><span class="co">## Smooth muscle cells.f3  1682502    0.9653342</span></span>
-<span><span class="co">## Smooth muscle cells.y1   376185    1.0336519</span></span>
-<span><span class="co">## Smooth muscle cells.y2   164171    0.9875187</span></span>
-<span><span class="co">## Smooth muscle cells.y3   305519    0.9628307</span></span></code></pre>
+<pre><code><span><span class="co">##                               lib.size norm.factors</span></span>
+<span><span class="co">## a1_clusterCardiomyocytes      32379510    0.6062195</span></span>
+<span><span class="co">## a1_clusterEndothelial cells    4125389    1.0507578</span></span>
+<span><span class="co">## a1_clusterEpicardial cells     1858312    1.0385323</span></span>
+<span><span class="co">## a1_clusterFibroblast           7750305    1.0867079</span></span>
+<span><span class="co">## a1_clusterImmune cells         2869009    1.0391055</span></span>
+<span><span class="co">## a1_clusterNeurons               328005    1.1719423</span></span>
+<span><span class="co">## a1_clusterSmooth muscle cells   119000    1.1801528</span></span>
+<span><span class="co">## a2_clusterCardiomyocytes       7277544    0.6871822</span></span>
+<span><span class="co">## a2_clusterEndothelial cells    2778450    1.0091423</span></span>
+<span><span class="co">## a2_clusterEpicardial cells     3758676    0.8723308</span></span>
+<span><span class="co">## a2_clusterFibroblast           8812958    0.9867011</span></span>
+<span><span class="co">## a2_clusterImmune cells         2276808    1.0725683</span></span>
+<span><span class="co">## a2_clusterNeurons               218624    1.0640886</span></span>
+<span><span class="co">## a2_clusterSmooth muscle cells   389758    0.9537409</span></span>
+<span><span class="co">## a3_clusterCardiomyocytes       2714040    0.8796562</span></span>
+<span><span class="co">## a3_clusterEndothelial cells     838838    1.1131212</span></span>
+<span><span class="co">## a3_clusterEpicardial cells      637172    1.0710208</span></span>
+<span><span class="co">## a3_clusterFibroblast           4052897    1.0859247</span></span>
+<span><span class="co">## a3_clusterImmune cells         3192409    1.1483534</span></span>
+<span><span class="co">## a3_clusterNeurons                74057    1.3408405</span></span>
+<span><span class="co">## a3_clusterSmooth muscle cells    96593    1.1759140</span></span>
+<span><span class="co">## f1_clusterCardiomyocytes      59267741    0.8122854</span></span>
+<span><span class="co">## f1_clusterEndothelial cells    4334507    1.1422059</span></span>
+<span><span class="co">## f1_clusterEpicardial cells     5473502    1.1198427</span></span>
+<span><span class="co">## f1_clusterFibroblast           7830817    1.0555564</span></span>
+<span><span class="co">## f1_clusterImmune cells         1960762    1.1266492</span></span>
+<span><span class="co">## f1_clusterNeurons               769716    1.1090986</span></span>
+<span><span class="co">## f1_clusterSmooth muscle cells   471111    1.0362309</span></span>
+<span><span class="co">## f2_clusterCardiomyocytes      82215178    0.7780581</span></span>
+<span><span class="co">## f2_clusterEndothelial cells    3826307    1.1090792</span></span>
+<span><span class="co">## f2_clusterEpicardial cells     4725334    1.0363738</span></span>
+<span><span class="co">## f2_clusterFibroblast           5476825    1.0310459</span></span>
+<span><span class="co">## f2_clusterImmune cells         1675070    1.1731315</span></span>
+<span><span class="co">## f2_clusterNeurons              1053894    1.0953821</span></span>
+<span><span class="co">## f2_clusterSmooth muscle cells   145848    1.1343509</span></span>
+<span><span class="co">## f3_clusterCardiomyocytes      72428402    0.7224807</span></span>
+<span><span class="co">## f3_clusterEndothelial cells    5304616    1.0560309</span></span>
+<span><span class="co">## f3_clusterEpicardial cells     5804650    0.9882715</span></span>
+<span><span class="co">## f3_clusterFibroblast          11550623    1.0052905</span></span>
+<span><span class="co">## f3_clusterImmune cells         1580118    1.0676369</span></span>
+<span><span class="co">## f3_clusterNeurons               955923    1.0477880</span></span>
+<span><span class="co">## f3_clusterSmooth muscle cells  1682502    0.9653342</span></span>
+<span><span class="co">## y1_clusterCardiomyocytes      13418896    0.6523640</span></span>
+<span><span class="co">## y1_clusterEndothelial cells    3618850    1.0725650</span></span>
+<span><span class="co">## y1_clusterEpicardial cells     3799209    0.9767808</span></span>
+<span><span class="co">## y1_clusterFibroblast          13480942    0.9618096</span></span>
+<span><span class="co">## y1_clusterImmune cells         2529505    1.1267478</span></span>
+<span><span class="co">## y1_clusterNeurons              1098075    1.0945203</span></span>
+<span><span class="co">## y1_clusterSmooth muscle cells   376185    1.0336519</span></span>
+<span><span class="co">## y2_clusterCardiomyocytes      31912809    0.6315278</span></span>
+<span><span class="co">## y2_clusterEndothelial cells    2958916    0.9896856</span></span>
+<span><span class="co">## y2_clusterEpicardial cells     1717993    0.9644361</span></span>
+<span><span class="co">## y2_clusterFibroblast          12218557    0.9621212</span></span>
+<span><span class="co">## y2_clusterImmune cells         3734520    1.0432559</span></span>
+<span><span class="co">## y2_clusterNeurons               209762    1.0747981</span></span>
+<span><span class="co">## y2_clusterSmooth muscle cells   164171    0.9875187</span></span>
+<span><span class="co">## y3_clusterCardiomyocytes      19313451    0.9023738</span></span>
+<span><span class="co">## y3_clusterEndothelial cells    2738058    0.9695908</span></span>
+<span><span class="co">## y3_clusterEpicardial cells     1343036    0.9462232</span></span>
+<span><span class="co">## y3_clusterFibroblast           5870367    0.9887452</span></span>
+<span><span class="co">## y3_clusterImmune cells         3091938    1.0305902</span></span>
+<span><span class="co">## y3_clusterNeurons               443229    1.0579727</span></span>
+<span><span class="co">## y3_clusterSmooth muscle cells   305519    0.9628307</span></span></code></pre>
 </div>
 <div class="section level3">
 <h3 id="voom-transformation">Voom Transformation<a class="anchor" aria-label="anchor" href="#voom-transformation"></a>
@@ -1069,7 +1027,7 @@ a unique combination of cell type, developmental group, and sex:</p>
 <p>The voom transformation models the mean-variance relationship in the
 data and assigns precision weights to each observation. This is critical
 for proper statistical inference:</p>
-<div class="sourceCode" id="cb71"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb69"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Apply voom with cyclic loess normalisation</span></span>
 <span><span class="va">v</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/limma/man/voom.html" class="external-link">voom</a></span><span class="op">(</span><span class="va">dge_filtered</span>, <span class="va">design</span>, plot <span class="op">=</span> <span class="cn">TRUE</span>, normalize.method <span class="op">=</span> <span class="st">"cyclicloess"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="04_differential_expression_files/figure-html/voom-transform-1.png" class="r-plt" alt="" width="768" style="display: block; margin: auto;"><strong>Interpretation</strong>: The mean-variance plot shows the
@@ -1082,7 +1040,7 @@ indicate quality issues or batch effects.</p>
 <div class="section level3">
 <h3 id="fit-linear-model">Fit Linear Model<a class="anchor" aria-label="anchor" href="#fit-linear-model"></a>
 </h3>
-<div class="sourceCode" id="cb72"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb70"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Fit linear model</span></span>
 <span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/limma/man/lmFit.html" class="external-link">lmFit</a></span><span class="op">(</span><span class="va">v</span>, <span class="va">design</span><span class="op">)</span></span>
 <span></span>
@@ -1110,7 +1068,7 @@ development within each cell type?”</p>
 <strong>Adult vs Young</strong>: Late maturation changes</li>
 </ul>
 <p>We average over sex to obtain marginal developmental effects:</p>
-<div class="sourceCode" id="cb74"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb72"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Function to create contrasts for a cell type</span></span>
 <span><span class="va">create_celltype_contrasts</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">ct_short</span>, <span class="va">design</span><span class="op">)</span> <span class="op">{</span></span>
 <span>    <span class="co"># Get coefficient names containing this cell type</span></span>
@@ -1169,7 +1127,7 @@ from glycolysis to fatty acid oxidation</li>
 and female cardiomyocytes, the majority of which were autosomal
 genes</li>
 </ul>
-<div class="sourceCode" id="cb75"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb73"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Create contrasts for cardiomyocytes</span></span>
 <span><span class="va">cont_cardio</span> <span class="op">&lt;-</span> <span class="fu">create_celltype_contrasts</span><span class="op">(</span><span class="st">"cardiomyocytes"</span>, <span class="va">design</span><span class="op">)</span></span>
 <span></span>
@@ -1184,17 +1142,17 @@ genes</li>
 <span><span class="co"># Summarise results</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Cardiomyocytes: Differential Expression Summary\n"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Cardiomyocytes: Differential Expression Summary</span></span></code></pre>
-<div class="sourceCode" id="cb77"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb75"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"(FDR &lt; 0.05, |logFC| &gt; 0.5)\n\n"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## (FDR &lt; 0.05, |logFC| &gt; 0.5)</span></span></code></pre>
-<div class="sourceCode" id="cb79"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb77"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dt_cardio</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/limma/man/decideTests.html" class="external-link">decideTests</a></span><span class="op">(</span><span class="va">treat_cardio</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">dt_cardio</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##          YvF   AvF   AvY</span></span>
 <span><span class="co">## Down    1133  1121     4</span></span>
 <span><span class="co">## NotSig 13795 13854 16064</span></span>
 <span><span class="co">## Up      1157  1110    17</span></span></code></pre>
-<div class="sourceCode" id="cb81"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb79"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># MD plots for each contrast</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="kw">for</span> <span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fl">3</span><span class="op">)</span> <span class="op">{</span></span>
@@ -1210,11 +1168,11 @@ second condition; blue points indicate downregulated genes. The Adult vs
 Fetal comparison typically shows the most differentially expressed
 genes, reflecting the substantial transcriptional remodelling that
 occurs during cardiac maturation.</p>
-<div class="sourceCode" id="cb82"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb80"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Display top differentially expressed genes for Adult vs Fetal</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Top 20 DE genes: Adult vs Fetal Cardiomyocytes\n"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Top 20 DE genes: Adult vs Fetal Cardiomyocytes</span></span></code></pre>
-<div class="sourceCode" id="cb84"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb82"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/pkg/limma/man/toptable.html" class="external-link">topTreat</a></span><span class="op">(</span><span class="va">treat_cardio</span>, coef <span class="op">=</span> <span class="st">"AvF"</span>, n <span class="op">=</span> <span class="fl">20</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SYMBOL"</span>, <span class="st">"GENENAME"</span>, <span class="st">"logFC"</span>, <span class="st">"P.Value"</span>, <span class="st">"adj.P.Val"</span><span class="op">)</span><span class="op">]</span></span></code></pre></div>
 <pre><code><span><span class="co">##                SYMBOL</span></span>
 <span><span class="co">## TOGARAM2     TOGARAM2</span></span>
@@ -1291,7 +1249,7 @@ with increased interferon signaling capacity (Figure 1G in the paper).
 Fibroblasts also showed significant expansion in proportion during
 postnatal development, consistent with the increasing structural
 complexity of the maturing heart.</p>
-<div class="sourceCode" id="cb86"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb84"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Create contrasts for fibroblasts</span></span>
 <span><span class="va">cont_fibro</span> <span class="op">&lt;-</span> <span class="fu">create_celltype_contrasts</span><span class="op">(</span><span class="st">"fibroblast"</span>, <span class="va">design</span><span class="op">)</span></span>
 <span></span>
@@ -1305,22 +1263,22 @@ complexity of the maturing heart.</p>
 <span><span class="co"># Summarise results</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Fibroblasts: Differential Expression Summary\n"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Fibroblasts: Differential Expression Summary</span></span></code></pre>
-<div class="sourceCode" id="cb88"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb86"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"(FDR &lt; 0.05, |logFC| &gt; 0.5)\n\n"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## (FDR &lt; 0.05, |logFC| &gt; 0.5)</span></span></code></pre>
-<div class="sourceCode" id="cb90"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb88"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dt_fibro</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/limma/man/decideTests.html" class="external-link">decideTests</a></span><span class="op">(</span><span class="va">treat_fibro</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">dt_fibro</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##          YvF   AvF   AvY</span></span>
 <span><span class="co">## Down     883   695     6</span></span>
 <span><span class="co">## NotSig 14560 14868 16072</span></span>
 <span><span class="co">## Up       642   522     7</span></span></code></pre>
-<div class="sourceCode" id="cb92"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb90"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Top DE genes</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"\nTop 20 DE genes: Adult vs Fetal Fibroblasts\n"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">## Top 20 DE genes: Adult vs Fetal Fibroblasts</span></span></code></pre>
-<div class="sourceCode" id="cb94"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb92"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/pkg/limma/man/toptable.html" class="external-link">topTreat</a></span><span class="op">(</span><span class="va">treat_fibro</span>, coef <span class="op">=</span> <span class="st">"AvF"</span>, n <span class="op">=</span> <span class="fl">20</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SYMBOL"</span>, <span class="st">"GENENAME"</span>, <span class="st">"logFC"</span>, <span class="st">"P.Value"</span>, <span class="st">"adj.P.Val"</span><span class="op">)</span><span class="op">]</span></span></code></pre></div>
 <pre><code><span><span class="co">##              SYMBOL</span></span>
 <span><span class="co">## PIEZO2       PIEZO2</span></span>
@@ -1395,7 +1353,7 @@ the original study found that endothelial cell maturation was associated
 with increased interferon signaling capacity. Endothelial cells also
 contributed substantially to the total number of differentially
 expressed genes during cardiac maturation (Figure 1E in the paper).</p>
-<div class="sourceCode" id="cb96"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb94"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Create contrasts for endothelial cells</span></span>
 <span><span class="va">cont_endo</span> <span class="op">&lt;-</span> <span class="fu">create_celltype_contrasts</span><span class="op">(</span><span class="st">"endothelial"</span>, <span class="va">design</span><span class="op">)</span></span>
 <span></span>
@@ -1409,10 +1367,10 @@ expressed genes during cardiac maturation (Figure 1E in the paper).</p>
 <span><span class="co"># Summarise results</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Endothelial Cells: Differential Expression Summary\n"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Endothelial Cells: Differential Expression Summary</span></span></code></pre>
-<div class="sourceCode" id="cb98"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb96"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"(FDR &lt; 0.05, |logFC| &gt; 0.5)\n\n"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## (FDR &lt; 0.05, |logFC| &gt; 0.5)</span></span></code></pre>
-<div class="sourceCode" id="cb100"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb98"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dt_endo</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/limma/man/decideTests.html" class="external-link">decideTests</a></span><span class="op">(</span><span class="va">treat_endo</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">dt_endo</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##          YvF   AvF   AvY</span></span>
@@ -1431,7 +1389,7 @@ proportions increase significantly during postnatal development (Figure
 interferon signaling capacity (Figure 1G). With our limited sample size,
 we may detect fewer DE genes in immune cells compared to the more
 abundant cardiomyocytes and fibroblasts.</p>
-<div class="sourceCode" id="cb102"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb100"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Create contrasts for immune cells</span></span>
 <span><span class="va">cont_immune</span> <span class="op">&lt;-</span> <span class="fu">create_celltype_contrasts</span><span class="op">(</span><span class="st">"immune"</span>, <span class="va">design</span><span class="op">)</span></span>
 <span></span>
@@ -1445,10 +1403,10 @@ abundant cardiomyocytes and fibroblasts.</p>
 <span><span class="co"># Summarise results</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Immune Cells: Differential Expression Summary\n"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Immune Cells: Differential Expression Summary</span></span></code></pre>
-<div class="sourceCode" id="cb104"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb102"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"(FDR &lt; 0.05, |logFC| &gt; 0.5)\n\n"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## (FDR &lt; 0.05, |logFC| &gt; 0.5)</span></span></code></pre>
-<div class="sourceCode" id="cb106"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb104"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dt_immune</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/limma/man/decideTests.html" class="external-link">decideTests</a></span><span class="op">(</span><span class="va">treat_immune</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">dt_immune</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##          YvF   AvF   AvY</span></span>
@@ -1463,7 +1421,7 @@ abundant cardiomyocytes and fibroblasts.</p>
 <div class="section level3">
 <h3 id="summary-across-cell-types">Summary Across Cell Types<a class="anchor" aria-label="anchor" href="#summary-across-cell-types"></a>
 </h3>
-<div class="sourceCode" id="cb108"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb106"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Compile summary statistics</span></span>
 <span><span class="va">de_summary</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>    celltype <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Cardiomyocytes"</span>, <span class="st">"Fibroblasts"</span>, <span class="st">"Endothelial"</span>, <span class="st">"Immune"</span><span class="op">)</span>, each <span class="op">=</span> <span class="fl">3</span><span class="op">)</span>,</span>
@@ -1540,7 +1498,7 @@ addition to activation of mature genes.</p></li>
 <p>Volcano plots visualise the relationship between statistical
 significance and effect size, helping identify genes that are both
 significant and biologically meaningful:</p>
-<div class="sourceCode" id="cb109"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb107"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Function to create volcano plot</span></span>
 <span><span class="va">create_volcano</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">fit_obj</span>, <span class="va">coef_name</span>, <span class="va">title</span><span class="op">)</span> <span class="op">{</span></span>
 <span>    <span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/limma/man/toptable.html" class="external-link">topTreat</a></span><span class="op">(</span><span class="va">fit_obj</span>, coef <span class="op">=</span> <span class="va">coef_name</span>, n <span class="op">=</span> <span class="cn">Inf</span><span class="op">)</span></span>
@@ -1592,7 +1550,7 @@ significant and biologically meaningful:</p>
 log-fold-changes for Young vs Fetal against Adult vs Fetal. Genes
 showing progressive changes (consistent direction across development)
 appear in the upper-right or lower-left quadrants:</p>
-<div class="sourceCode" id="cb110"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb108"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Get results for cardiomyocytes</span></span>
 <span><span class="va">results_yvf</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/limma/man/toptable.html" class="external-link">topTreat</a></span><span class="op">(</span><span class="va">treat_cardio</span>, coef <span class="op">=</span> <span class="st">"YvF"</span>, n <span class="op">=</span> <span class="cn">Inf</span><span class="op">)</span></span>
 <span><span class="va">results_avf</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/limma/man/toptable.html" class="external-link">topTreat</a></span><span class="op">(</span><span class="va">treat_cardio</span>, coef <span class="op">=</span> <span class="st">"AvF"</span>, n <span class="op">=</span> <span class="cn">Inf</span><span class="op">)</span></span>
@@ -1650,7 +1608,7 @@ investigation.</p>
 <div class="section level2">
 <h2 id="export-results">Export Results<a class="anchor" aria-label="anchor" href="#export-results"></a>
 </h2>
-<div class="sourceCode" id="cb111"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb109"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Create results directory</span></span>
 <span><span class="va">results_dir</span> <span class="op">&lt;-</span> <span class="st">"../results"</span></span>
 <span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.exists</a></span><span class="op">(</span><span class="va">results_dir</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
@@ -1677,7 +1635,7 @@ investigation.</p>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Results exported to:"</span>, <span class="va">results_dir</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Results exported to: ../results</span></span></code></pre>
-<div class="sourceCode" id="cb113"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb111"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/list.files.html" class="external-link">list.files</a></span><span class="op">(</span><span class="va">results_dir</span>, pattern <span class="op">=</span> <span class="st">"DE_"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##  [1] "DE_Cardiomyocytes_AvF.csv" "DE_Cardiomyocytes_AvY.csv"</span></span>
 <span><span class="co">##  [3] "DE_Cardiomyocytes_YvF.csv" "DE_Endothelial_AvF.csv"   </span></span>
@@ -1816,11 +1774,11 @@ Heart Maturation by the Progesterone Receptor. <em>Circulation</em>.
 <div class="section level2">
 <h2 id="session-information">Session Information<a class="anchor" aria-label="anchor" href="#session-information"></a>
 </h2>
-<div class="sourceCode" id="cb115"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb113"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## R version 4.5.2 (2025-10-31)</span></span>
 <span><span class="co">## Platform: x86_64-pc-linux-gnu</span></span>
-<span><span class="co">## Running under: Ubuntu 24.04.3 LTS</span></span>
+<span><span class="co">## Running under: Ubuntu 24.04.4 LTS</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## Matrix products: default</span></span>
 <span><span class="co">## BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 </span></span>
@@ -1876,7 +1834,7 @@ Heart Maturation by the Progesterone Receptor. <em>Circulation</em>.
 <span><span class="co">##  [49] ggridges_0.5.7              survival_3.8-3             </span></span>
 <span><span class="co">##  [51] systemfonts_1.3.1           tools_4.5.2                </span></span>
 <span><span class="co">##  [53] ragg_1.5.0                  ica_1.0-3                  </span></span>
-<span><span class="co">##  [55] Rcpp_1.1.1                  glue_1.8.0                 </span></span>
+<span><span class="co">##  [55] Rcpp_1.1.1-1                glue_1.8.0                 </span></span>
 <span><span class="co">##  [57] gridExtra_2.3               SparseArray_1.10.8         </span></span>
 <span><span class="co">##  [59] xfun_0.55                   MatrixGenerics_1.22.0      </span></span>
 <span><span class="co">##  [61] withr_3.0.2                 BiocManager_1.30.27        </span></span>
@@ -1890,7 +1848,7 @@ Heart Maturation by the Progesterone Receptor. <em>Circulation</em>.
 <span><span class="co">##  [77] S4Arrays_1.10.1             uwot_0.2.4                 </span></span>
 <span><span class="co">##  [79] pkgconfig_2.0.3             gtable_0.3.6               </span></span>
 <span><span class="co">##  [81] blob_1.2.4                  lmtest_0.9-40              </span></span>
-<span><span class="co">##  [83] S7_0.2.1                    SingleCellExperiment_1.32.0</span></span>
+<span><span class="co">##  [83] S7_0.2.1-1                  SingleCellExperiment_1.32.0</span></span>
 <span><span class="co">##  [85] XVector_0.50.0              htmltools_0.5.9            </span></span>
 <span><span class="co">##  [87] dotCall64_1.2               scales_1.4.0               </span></span>
 <span><span class="co">##  [89] png_0.1-8                   spatstat.univar_3.1-5      </span></span>

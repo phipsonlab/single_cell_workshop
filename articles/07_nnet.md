@@ -1,0 +1,597 @@
+# Module 7: Cell-specific Co-expression Networks (NeighbourNet)
+
+> **Note.** This module’s code chunks are not evaluated because
+> `results/06_cm_pseudotime.rds` is missing. Render Module 6 first, or
+> download the pre-computed afternoon caches.
+
+## Introduction
+
+The previous two modules gave us a continuous view of cardiomyocyte
+maturation. Module 5 built Φ-Space scores: each cell received a score
+for how much it resembled fetal, young, middle and old reference
+phenotypes. Module 6 turned those scores into several pseudotime axes
+and saved a cardiomyocyte-only object for downstream analysis.
+
+Here we ask a different question: as cardiomyocytes mature, do the
+relationships between genes change?
+
+It is tempting to call this a **gene regulatory network** analysis, but
+that would overstate what single-cell RNA-seq alone can prove. A true
+GRN is directional and mechanistic: it says that one factor regulates
+another in a causal sense. Co-expression does not get us all the way
+there.
+
+Instead, we will build a **cell-specific co-expression network**. This
+is a statistical scaffold: it tells us which transcription factors and
+target genes vary together in local neighbourhoods of cells. If the
+scaffold is well constructed, it can contain useful regulatory
+hypotheses, but the edges are still associations, not proof of
+causality.
+
+We use **NeighbourNet** (NNet), a method for building noisy per-cell
+co-expression networks and then denoising them into a small number of
+recurring **meta-networks**. The method borrows strength from each
+cell’s nearest neighbours, computes a network for each cell, and then
+aggregates those networks with non-negative PCA so that the strongest
+recurring network patterns are visible.
+
+### What this module will do
+
+We will:
+
+- load the cardiomyocyte object from Module 6;
+- convert it from `SingleCellExperiment` to `Seurat`, because
+  NeighbourNet works on Seurat objects;
+- use
+  [`PhiSpace::rankFeatures()`](https://jiadongm.github.io/PhiSpace/reference/rankFeatures.html)
+  to choose maturation-associated target genes from the trajectory-free
+  Φ-Space score `pt_phi_score`;
+- run the NeighbourNet workflow on those target genes;
+- find the meta-network whose cell scores correlate most strongly with
+  `pt_phi_score`;
+- visualise that maturation-associated meta-network.
+
+We deliberately use `pt_phi_score`, not one of the slingshot or DPT
+pseudotimes. `pt_phi_score` is simply the adult-like Φ-Space score minus
+the fetal Φ-Space score, so it is a trajectory-free maturation baseline.
+That keeps this module focused on network rewiring rather than on the
+method comparison from Module 6.
+
+### Learning objectives
+
+By the end of this module you will be able to:
+
+- distinguish co-expression networks from causal gene regulatory
+  networks;
+- explain why NeighbourNet builds per-cell networks before aggregating
+  them into meta-networks;
+- select target genes associated with a continuous phenotype using
+  [`PhiSpace::rankFeatures()`](https://jiadongm.github.io/PhiSpace/reference/rankFeatures.html);
+- run the core NeighbourNet workflow on a Seurat object;
+- interpret a meta-network figure without over-claiming causality.
+
+## Load Libraries and Module 6 Output
+
+``` r
+
+library(SingleCellExperiment)
+library(Seurat)
+library(NeighbourNet)
+library(PhiSpace)
+library(ggplot2)
+library(dplyr)
+library(tibble)
+library(patchwork)
+library(RColorBrewer)
+```
+
+Module 6 saved the cardiomyocyte subset with expression, Φ-Space scores,
+UMAP coordinates, six pseudotime estimates, and the trajectory-free
+`pt_phi_score`.
+
+``` r
+
+cm <- readRDS("../results/06_cm_pseudotime.rds")
+
+cat("Assays:      ", paste(assayNames(cm), collapse = ", "), "\n")
+cat("reducedDims: ", paste(reducedDimNames(cm), collapse = ", "), "\n")
+cat("Cells:       ", ncol(cm), "\n")
+cat("Genes:       ", nrow(cm), "\n")
+cat("Groups:      ", paste(table(cm$group), collapse = ", "), "\n")
+summary(cm$pt_phi_score)
+```
+
+``` r
+
+results_dir <- "../results"
+dir.create(results_dir, showWarnings = FALSE, recursive = TRUE)
+
+# n_targets and n_meta_networks are defined in the setup chunk above so
+# that inline references in the surrounding prose resolve even when this
+# chunk is skipped (data_ok = FALSE).
+```
+
+## Convert to Seurat
+
+NeighbourNet expects a Seurat object with normalised expression in the
+`data` layer. The scran `logcounts` from Module 5 are already suitable,
+so we do not run
+[`NormalizeData()`](https://satijalab.org/seurat/reference/NormalizeData.html)
+again.
+
+``` r
+
+stopifnot(all(c("counts", "logcounts") %in% assayNames(cm)))
+
+seu <- as.Seurat(cm, counts = "counts", data = "logcounts")
+
+seu$pt_phi_score <- cm$pt_phi_score
+seu$group <- cm$group
+seu$PhiCellType <- cm$PhiCellType
+seu$PhiCellTypeBroad <- cm$PhiCellTypeBroad
+
+cat("Seurat cells:", ncol(seu), "\n")
+cat("Seurat genes:", nrow(seu), "\n")
+head(seu@meta.data[, c("group", "PhiCellType", "pt_phi_score")])
+```
+
+## Select Maturation-associated Target Genes
+
+NeighbourNet can use its built-in target-gene prior directly, but for a
+short workshop module we want the network to focus on the maturation
+axis. We therefore rank genes by their association with `pt_phi_score`
+and keep the top 10.
+
+[`rankFeatures()`](https://jiadongm.github.io/PhiSpace/reference/rankFeatures.html)
+fits a PLS model from expression to the continuous response and ranks
+genes by the absolute coefficient. Positive and negative coefficients
+are both useful: they mark genes associated with adult-like or
+fetal-like ends of the same maturation gradient.
+
+``` r
+
+rank_res <- PhiSpace::rankFeatures(
+    data       = cm,
+    response   = cm$pt_phi_score,
+    method     = "PLS",
+    source     = "assay",
+    assay_name = "logcounts",
+    center     = TRUE,
+    scale      = FALSE,
+    seed       = 42
+)
+
+rank_tbl <- as_tibble(rank_res$feature_ranking)
+score_col <- if ("importance_norm" %in% names(rank_tbl)) {
+    "importance_norm"
+} else {
+    setdiff(names(rank_tbl), "feature")[1]
+}
+
+rank_tbl <- rank_tbl |>
+    arrange(desc(.data[[score_col]]))
+
+top_targets <- head(rank_tbl$feature, n_targets)
+top_targets <- intersect(top_targets, rownames(seu))
+
+cat("Top targets retained in Seurat object:", length(top_targets), "\n")
+head(rank_tbl, 20)
+```
+
+The top-ranked genes should look like cardiomyocyte maturation markers:
+contractile genes, metabolic genes, stress-response genes, and genes
+that track the fetal-to-adult shift in cell state. The exact list is
+less important than the principle: the target set defines the biological
+question asked of NeighbourNet. Here we keep only 10 target genes so the
+per-cell network cube is small enough to knit during the workshop.
+
+## Run NeighbourNet
+
+The core workflow is:
+
+1.  resolve target and transcription-factor lists;
+2.  scale the selected genes and compute PCA;
+3.  build a k-nearest-neighbour graph in PC space;
+4.  set up local regressions from TFs to target genes;
+5.  run per-cell network regression;
+6.  aggregate the cell-specific networks into meta-networks.
+
+This is the slowest chunk in the module, so we cache the Seurat object
+immediately after
+[`build.meta.network()`](https://meiosis97.github.io/NeighbourNet/reference/build.meta.network.html).
+
+``` r
+
+nnet_cache <- file.path(
+    results_dir,
+    sprintf("07_seu_nnet_%02dtargets.rds", n_targets)
+)
+
+if (file.exists(nnet_cache)) {
+    seu <- readRDS(nnet_cache)
+    message("Loaded cached NeighbourNet object from ", nnet_cache)
+} else {
+    # NeighbourNet 1.0.0's select.gene() currently references a hard-coded
+    # object name internally, so we reproduce the small filtering step here.
+    select_nnet_genes <- function(seurat_obj, targets, min.cells = 10) {
+        gene_list <- NeighbourNet::gene.list
+        genes_all <- rownames(seurat_obj)
+        counts <- SeuratObject::LayerData(seurat_obj, layer = "counts")
+        n_cell_expressed <- Matrix::rowSums(counts[genes_all, , drop = FALSE] > 0)
+        genes_kept <- genes_all[n_cell_expressed > min.cells]
+
+        tfs <- intersect(genes_kept, unique(gene_list$tfs))
+        targets <- intersect(genes_kept, intersect(gene_list$targets, targets))
+
+        list(
+            tfs = tfs,
+            targets = targets,
+            bgs = character(0),
+            genes = unique(c(tfs, targets))
+        )
+    }
+
+    genes <- select_nnet_genes(seu, targets = top_targets, min.cells = 10)
+
+    cat("Predictor TFs:", length(genes$tfs), "\n")
+    cat("Target genes: ", length(genes$targets), "\n")
+    cat("Total genes:  ", length(genes$genes), "\n")
+
+    if (length(genes$targets) < 5) {
+        warning("Fewer than five target genes survived filtering; ",
+                "the network plots may be sparse.")
+    }
+    if (length(genes$genes) < 3) {
+        stop("Too few genes survived NeighbourNet filtering.")
+    }
+
+    npcs <- min(50, length(genes$genes) - 1, ncol(seu) - 1)
+    knn <- min(30, ncol(seu) - 1)
+
+    seu <- prepare.seurat(seu, genes = genes$genes, npcs = npcs)
+    seu <- prepare.graph(seu, knn = knn)
+    seu <- prepare.reg(seu,
+                       predictors = genes$tfs,
+                       responses  = genes$targets)
+    seu <- run.nn.reg(seu,
+                      responses = genes$targets,
+                      return.p.val = TRUE)
+    seu <- build.meta.network(seu, n.net = n_meta_networks)
+
+    seu@misc$Module7 <- list(
+        feature_ranking = rank_tbl,
+        top_targets = top_targets,
+        n_targets = n_targets,
+        n_meta_networks = n_meta_networks
+    )
+
+    saveRDS(seu, nnet_cache)
+}
+```
+
+The expensive output now lives under `seu@misc$NNet.mod`. The most
+useful piece for this module is `meta.network$pcs`: one row per cell and
+one column per meta-network. You can read it like a network-space
+embedding, where cells close together have similar co-expression
+programs.
+
+``` r
+
+nnet_mod <- Seurat::Misc(seu, "NNet.mod")
+names(nnet_mod)
+names(nnet_mod$meta.network)
+dim(nnet_mod$meta.network$pcs)
+dim(nnet_mod$meta.network$meta.network)
+```
+
+## Meta-network Space
+
+Before visualising any one network, we check whether the meta-network
+embedding carries the maturation signal. If the first few meta-networks
+separate fetal-like and adult-like cells, NeighbourNet has found
+co-expression programs that vary with maturation.
+
+``` r
+
+meta_pcs <- nnet_mod$meta.network$pcs
+if (is.null(rownames(meta_pcs))) {
+    rownames(meta_pcs) <- colnames(seu)
+}
+
+pcs_df <- as.data.frame(meta_pcs[, 1:2, drop = FALSE])
+colnames(pcs_df) <- c("NNet1", "NNet2")
+pcs_df$cell <- rownames(pcs_df)
+
+meta_df <- seu@meta.data[match(pcs_df$cell, rownames(seu@meta.data)), ]
+pcs_df$group <- meta_df$group
+pcs_df$pt_phi_score <- meta_df$pt_phi_score
+
+p_stage <- ggplot(pcs_df, aes(NNet1, NNet2, colour = group)) +
+    geom_point(size = 0.6, alpha = 0.75) +
+    scale_colour_brewer(palette = "Set1") +
+    labs(title = "Meta-network space by donor stage",
+         colour = "Stage") +
+    theme_bw(base_size = 12)
+
+p_pt <- ggplot(pcs_df, aes(NNet1, NNet2, colour = pt_phi_score)) +
+    geom_point(size = 0.6, alpha = 0.75) +
+    scale_colour_distiller(palette = "Spectral", direction = -1) +
+    labs(title = "Meta-network space by Φ-Space maturation score",
+         colour = "pt_phi_score") +
+    theme_bw(base_size = 12)
+
+p_stage | p_pt
+```
+
+### Meta-network scores on the PCA UMAP
+
+Figure 3B of the NeighbourNet paper projects meta-network cell weights
+back onto a familiar expression UMAP. This is useful pedagogically: the
+meta-network embedding above tells us that cells differ in network
+space, while the UMAP below tells us where those network programs sit on
+the ordinary expression manifold.
+
+We reuse the PCA-based UMAP from Module 6 and colour each cell by its
+score on meta-networks 1 and 2.
+
+``` r
+
+umap <- reducedDim(cm, "UMAP")
+umap_df <- as.data.frame(umap[match(rownames(meta_pcs), colnames(cm)), ,
+                             drop = FALSE])
+colnames(umap_df) <- c("UMAP1", "UMAP2")
+umap_df$cell <- rownames(meta_pcs)
+umap_df$NNet1 <- meta_pcs[, 1]
+umap_df$NNet2 <- meta_pcs[, 2]
+
+umap_score_plot <- function(score_col, title) {
+    ggplot(umap_df, aes(UMAP1, UMAP2, colour = .data[[score_col]])) +
+        geom_point(size = 0.5, alpha = 0.75) +
+        scale_colour_distiller(palette = "Spectral", direction = -1) +
+        labs(title = title, colour = "Score") +
+        theme_bw(base_size = 12)
+}
+
+umap_score_plot("NNet1", "Meta-network 1 score on PCA UMAP") |
+    umap_score_plot("NNet2", "Meta-network 2 score on PCA UMAP")
+```
+
+## Pick the Maturation Meta-network
+
+Each meta-network has a cell score. We correlate each score with
+`pt_phi_score`. The paper notes that the meta-networks are ordered:
+meta-network 1 is the strongest recurring co-expression pattern in the
+ensemble, and meta-network 2 is the next strongest pattern. We therefore
+show both, and use the correlation table to interpret which one tracks
+maturation most closely.
+
+``` r
+
+safe_cor <- function(x, y) {
+    sx <- stats::sd(x, na.rm = TRUE)
+    sy <- stats::sd(y, na.rm = TRUE)
+    if (is.na(sx) || is.na(sy) || sx == 0 || sy == 0) {
+        return(NA_real_)
+    }
+    stats::cor(x, y, use = "complete.obs", method = "spearman")
+}
+
+cor_tbl <- tibble(
+    meta_network = seq_len(ncol(meta_pcs)),
+    spearman_cor = apply(meta_pcs, 2, safe_cor, y = seu$pt_phi_score)
+) |>
+    mutate(abs_cor = abs(spearman_cor)) |>
+    arrange(desc(abs_cor))
+
+cor_tbl
+
+maturation_idx <- cor_tbl$meta_network[1]
+cat("Meta-network most associated with maturation:", maturation_idx, "\n")
+```
+
+This selection is intentionally data-driven. We are not deciding which
+network “looks right”; we are asking which recurring co-expression
+pattern tracks the continuous maturation score most strongly.
+
+## Meta-network Adjacency Matrices
+
+Figure 3C in the paper shows the weighted adjacency matrices behind the
+first two meta-networks. Each heatmap is a TF-by-target view of a
+meta-network: bright tiles mark TF-target pairs with strong aggregated
+co-expression in that recurrent network pattern.
+
+Because our workshop run keeps only 10 requested target genes, and five
+survive NeighbourNet’s target-prior and expression filters in this data,
+we show all retained targets and the top 10 TFs for each meta-network.
+
+``` r
+
+plot_adjacency <- function(i, n_tf = 10, n_target = 10) {
+    mat <- Seurat::Misc(seu, "NNet.mod")$meta.network$meta.network[, , i]
+
+    target_score <- Matrix::rowSums(abs(mat))
+    tf_score <- Matrix::colSums(abs(mat))
+
+    targets <- names(sort(target_score, decreasing = TRUE))[
+        seq_len(min(n_target, length(target_score)))
+    ]
+    tfs <- names(sort(tf_score, decreasing = TRUE))[
+        seq_len(min(n_tf, length(tf_score)))
+    ]
+
+    plot_mat <- t(mat[targets, tfs, drop = FALSE])
+
+    if (nrow(plot_mat) > 1) {
+        plot_mat <- plot_mat[hclust(dist(plot_mat))$order, , drop = FALSE]
+    }
+    if (ncol(plot_mat) > 1) {
+        plot_mat <- plot_mat[, hclust(dist(t(plot_mat)))$order, drop = FALSE]
+    }
+
+    adj_df <- as.data.frame(as.table(plot_mat))
+    colnames(adj_df) <- c("TF", "Target", "weight")
+
+    ggplot(adj_df, aes(Target, TF, fill = weight)) +
+        geom_tile(colour = "white", linewidth = 0.2) +
+        scale_fill_gradient(low = "white", high = "#B2182B") +
+        labs(title = paste("Meta-network", i, "weighted adjacency"),
+             x = "Target gene", y = "TF", fill = "Weight") +
+        theme_bw(base_size = 11) +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1))
+}
+
+plot_adjacency(1) | plot_adjacency(2)
+```
+
+## Visualise the First Two Meta-networks
+
+NeighbourNet’s network plot uses prior knowledge to arrange the figure
+in layers. The radial layout helps interpretation, but it should not be
+read as experimental proof of directionality.
+
+- Inner layer: receptors and upstream signalling context from the prior.
+- Middle layer: transcription factors.
+- Outer layer: target-gene clusters.
+- Edge thickness: evidence from the cell-specific co-expression
+  networks.
+
+``` r
+
+central_genes <- select.central.genes(
+    seu,
+    n.net = min(2, n_meta_networks),
+    n.per.component = 4,
+    k = 2
+)
+seu <- prepare.visualise(seu, central.genes = central_genes, n.clu = 4)
+
+edge_cutoff <- function(p_mat) {
+    mean(apply(p_mat, 1, max, na.rm = TRUE), na.rm = TRUE)
+}
+
+plot_meta_network <- function(i) {
+    meta_p <- Seurat::Misc(seu, "NNet.mod")$meta.network$p.val[, , i]
+    visualise.network(
+        seu,
+        i = i,
+        meta.network = TRUE,
+        cutoff = edge_cutoff(meta_p),
+        radius = c(0.4, 0.7, 0.85, 1),
+        pie.radius = 0.04,
+        text.size = 4
+    ) +
+        labs(title = paste("Meta-network", i))
+}
+
+plot_meta_network(1) | plot_meta_network(2)
+```
+
+Read these as compact hypothesis generators. The target clusters tell us
+which maturation-associated genes share TF co-expression structure. The
+TFs and receptor context suggest plausible upstream biology. Follow-up
+experiments or perturbation data would be needed before calling any edge
+causal regulation.
+
+## Representative Cell-specific Networks
+
+A meta-network is an aggregate over many cell-specific networks. To make
+that connection concrete, we pick one representative cell for each of
+the first two meta-networks: the cell with the largest score on that
+meta-network. These plots are slices of the original cell-specific
+network ensemble, not averages.
+
+``` r
+
+shown_meta_networks <- seq_len(min(2, ncol(meta_pcs)))
+rep_tbl <- tibble(
+    meta_network = shown_meta_networks,
+    cell_idx = vapply(shown_meta_networks, function(i) {
+        which.max(meta_pcs[, i])
+    }, integer(1))
+) |>
+    mutate(
+        cell = rownames(meta_pcs)[cell_idx],
+        meta_score = meta_pcs[cbind(cell_idx, meta_network)],
+        group = seu$group[match(cell, colnames(seu))],
+        pt_phi_score = seu$pt_phi_score[match(cell, colnames(seu))]
+    )
+
+rep_tbl
+```
+
+``` r
+
+plot_cell_network <- function(cell_idx, meta_idx, cell_name) {
+    cell_p <- Seurat::Misc(seu, "NNet.mod")$p.val[, , cell_idx]
+    visualise.network(
+        seu,
+        i = cell_idx,
+        meta.network = FALSE,
+        cutoff = edge_cutoff(cell_p),
+        radius = c(0.4, 0.7, 0.85, 1),
+        pie.radius = 0.04,
+        text.size = 4
+    ) +
+        labs(title = paste("Representative cell for meta-network",
+                           meta_idx),
+             subtitle = cell_name)
+}
+
+cell_plots <- lapply(seq_len(nrow(rep_tbl)), function(i) {
+    plot_cell_network(rep_tbl$cell_idx[i],
+                      rep_tbl$meta_network[i],
+                      rep_tbl$cell[i])
+})
+
+wrap_plots(cell_plots, nrow = 1)
+```
+
+The representative cell networks should resemble their corresponding
+meta-networks, but they will be noisier. That is the point of the
+meta-network step: it denoises repeated cell-specific patterns without
+collapsing the whole population into a single global network.
+
+## What We Are Not Running
+
+NeighbourNet also includes
+[`receptor.activity()`](https://meiosis97.github.io/NeighbourNet/reference/receptor.activity.html),
+which propagates cell-specific TF-target networks through the signalling
+prior to estimate receptor activity per cell. That is useful when the
+biological question is about upstream signalling pathways, but it would
+add another conceptual layer to this short workshop. For self-study, the
+NeighbourNet cell-cycle vignette shows the full receptor-activity
+workflow.
+
+## Handing Off
+
+This module writes one cache:
+
+- `results/07_seu_nnet_10targets.rds` — the cardiomyocyte Seurat object
+  after
+  [`build.meta.network()`](https://meiosis97.github.io/NeighbourNet/reference/build.meta.network.html),
+  including `@misc$NNet.mod` and the Module 7 target-gene selection
+  metadata.
+
+Because the cache is saved before visualisation, you can re-run the
+plots and tune the network layout without repeating the per-cell
+regressions.
+
+## Summary
+
+- NeighbourNet builds **cell-specific co-expression networks**, not
+  causal GRNs.
+- We focused the network on maturation by selecting 10 target genes
+  associated with the trajectory-free Φ-Space score `pt_phi_score`.
+- Meta-networks summarise recurring co-expression programs across cells.
+- Meta-networks 1 and 2 are the two strongest recurring network
+  patterns; representative cell networks show noisy individual slices of
+  the same ensemble.
+- The network plots are hypothesis generators: useful, structured, and
+  biologically suggestive, but not causal proof.
+
+## Session Info
+
+``` r
+
+sessionInfo()
+```

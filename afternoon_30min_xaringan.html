@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Continuum-aware single-cell analysis of heart maturation</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Single-cell RNA-seq workshop" />
+    <meta name="date" content="2026-05-04" />
+    <script src="libs/header-attrs-2.30/header-attrs.js"></script>
+    <link href="libs/remark-css-0.0.1/default.css" rel="stylesheet" />
+    <link href="libs/remark-css-0.0.1/default-fonts.css" rel="stylesheet" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+.title[
+# Continuum-aware single-cell analysis of heart maturation
+]
+.subtitle[
+## Afternoon session: Φ-Space, pseudotime, and NeighbourNet
+]
+.author[
+### Single-cell RNA-seq workshop
+]
+.date[
+### 04 May 2026
+]
+
+---
+
+
+
+
+&lt;style&gt;
+.remark-slide-content {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  color: #111827;
+  background: #FFFFFF;
+  padding: 52px 66px 48px 66px;
+}
+.remark-slide-content h1 {
+  font-size: 42px;
+  line-height: 1.05;
+  letter-spacing: 0;
+  margin-bottom: 18px;
+  color: #0F172A;
+}
+.remark-slide-content h2 {
+  font-size: 27px;
+  line-height: 1.15;
+  letter-spacing: 0;
+  color: #334155;
+  font-weight: 600;
+}
+.remark-slide-content p,
+.remark-slide-content li {
+  font-size: 25px;
+  line-height: 1.35;
+}
+.remark-slide-content li {
+  margin-bottom: 10px;
+}
+.title-slide {
+  background: linear-gradient(135deg, #0F172A 0%, #1F2937 45%, #29524A 100%);
+  color: #FFFFFF;
+}
+.title-slide h1,
+.title-slide h2 {
+  color: #FFFFFF;
+}
+.title-slide h1 {
+  font-size: 50px;
+  max-width: 900px;
+}
+.title-slide .remark-slide-number {
+  display: none;
+}
+.section {
+  background: #0F172A;
+  color: #FFFFFF;
+}
+.section h1,
+.section h2,
+.section p,
+.section li {
+  color: #FFFFFF;
+}
+.kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 16px;
+  font-weight: 700;
+  color: #0F766E;
+  margin-bottom: 16px;
+}
+.section .kicker {
+  color: #5EEAD4;
+}
+.claim {
+  font-size: 34px;
+  line-height: 1.18;
+  font-weight: 750;
+  color: #0F172A;
+  margin: 18px 0 24px 0;
+}
+.section .claim {
+  color: #FFFFFF;
+}
+.small {
+  font-size: 18px !important;
+  color: #475569;
+}
+.muted {
+  color: #64748B;
+}
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 34px;
+  align-items: center;
+}
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+.panel {
+  border: 1px solid #CBD5E1;
+  border-radius: 8px;
+  padding: 22px 24px;
+  background: #F8FAFC;
+}
+.panel h3 {
+  margin: 0 0 8px 0;
+  font-size: 22px;
+}
+.panel p,
+.panel li {
+  font-size: 19px;
+  line-height: 1.28;
+}
+.flow {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+  margin-top: 26px;
+}
+.flow-step {
+  flex: 1;
+  padding: 18px 16px;
+  border-radius: 8px;
+  background: #ECFDF5;
+  border: 1px solid #99F6E4;
+  font-weight: 700;
+  font-size: 20px;
+  text-align: center;
+}
+.arrow {
+  align-self: center;
+  color: #0F766E;
+  font-size: 27px;
+  font-weight: 800;
+}
+.caption {
+  font-size: 15px;
+  color: #64748B;
+  margin-top: 6px;
+}
+code {
+  font-size: 0.82em;
+  color: #0F766E;
+}
+&lt;/style&gt;
+
+class: section, middle
+
+&lt;div class="kicker"&gt;Afternoon arc&lt;/div&gt;
+
+&lt;div class="claim"&gt;The afternoon session asks what we lose when we force continuous biology into discrete bins.&lt;/div&gt;
+
+&lt;div class="flow"&gt;
+  &lt;div class="flow-step"&gt;Module 5&lt;br&gt;soft phenotype scores&lt;/div&gt;
+  &lt;div class="arrow"&gt;-&gt;&lt;/div&gt;
+  &lt;div class="flow-step"&gt;Module 6&lt;br&gt;maturation ordering&lt;/div&gt;
+  &lt;div class="arrow"&gt;-&gt;&lt;/div&gt;
+  &lt;div class="flow-step"&gt;Module 7&lt;br&gt;network rewiring hypotheses&lt;/div&gt;
+&lt;/div&gt;
+
+???
+Timing: 2 minutes. Tie back to Session 1: QC, integration, clustering, annotation, DE.
+
+---
+
+# The biological problem
+
+&lt;div class="grid-2"&gt;
+&lt;div&gt;
+&lt;div class="kicker"&gt;Human heart development&lt;/div&gt;
+
+* The dataset spans **foetal**, **young**, and **adult** heart samples.
+* Cardiomyocyte maturation is not a set of clean bins.
+* A hard label can be correct and still hide the gradient we care about.
+&lt;/div&gt;
+
+&lt;div class="panel"&gt;
+&lt;h3&gt;Morning workflow&lt;/h3&gt;
+&lt;p&gt;Cluster -&gt; marker genes -&gt; one label per cluster.&lt;/p&gt;
+&lt;h3&gt;Afternoon question&lt;/h3&gt;
+&lt;p&gt;Can we preserve gradual identity and use it for trajectory and network analysis?&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+
+???
+Timing: 2 minutes. The core contrast is not that hard labels are bad; they are insufficient for this biological question.
+
+---
+
+# Module 5: Φ-Space turns labels into scores
+
+&lt;div class="grid-2"&gt;
+&lt;div&gt;
+&lt;div class="claim"&gt;Ask “how much does this cell resemble each reference phenotype?” rather than “which single label wins?”&lt;/div&gt;
+
+* Output: a **cells × phenotype scores** matrix.
+* Scores can be collapsed to labels with `getClass()`.
+* The reverse is impossible: labels cannot recover the original continuum.
+&lt;/div&gt;
+
+&lt;div class="panel"&gt;
+&lt;h3&gt;Method sketch&lt;/h3&gt;
+&lt;p&gt;Annotated reference expression `X` is mapped onto a dummy phenotype matrix `Y` using PLS regression.&lt;/p&gt;
+&lt;p&gt;The fitted model is applied to query cells to produce `reducedDim(query, "PhiSpace")`.&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+
+???
+Timing: 3 minutes. Keep PLS high level: components maximize covariance between expression and phenotype labels.
+
+---
+
+# Φ-Space proof object
+
+&lt;img src="afternoon_30min_xaringan_files/figure-html/phispace-proof-1.png" alt="" width="100%" style="display: block; margin: auto;" /&gt;
+
+&lt;div class="caption"&gt;Use this slide to show that continuous phenotype scores retain developmental signal inside a cell type.&lt;/div&gt;
+
+???
+Timing: 3 minutes. Explain how to read the stage separation without over-interpreting PCA axes.
+
+---
+
+# Bridge: scores become a maturation coordinate
+
+&lt;div class="grid-2"&gt;
+&lt;div&gt;
+&lt;div class="kicker"&gt;The payoff of Module 5&lt;/div&gt;
+
+* The age scores give a biological anchor for direction.
+* `pt_phi_score` is the trajectory-free baseline: adult-like score minus fetal score.
+* Module 6 compares fitted pseudotimes against this simple maturation signal.
+&lt;/div&gt;
+
+&lt;div&gt;
+&lt;img src="afternoon_30min_xaringan_files/figure-html/phispace-pt-umap-1.png" alt="" width="100%" style="display: block; margin: auto;" /&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+
+???
+Timing: 2 minutes. This is the hinge between Modules 5 and 6.
+
+---
+
+# Module 6: pseudotime is an ordering, not a clock
+
+&lt;div class="grid-2"&gt;
+&lt;div&gt;
+&lt;div class="claim"&gt;Pseudotime assigns each cell a scalar position along a biological process.&lt;/div&gt;
+
+* It is not real elapsed time.
+* Its absolute scale is not identified.
+* Direction must come from outside the method unless velocity is available.
+&lt;/div&gt;
+
+&lt;div class="panel"&gt;
+&lt;h3&gt;In this workshop&lt;/h3&gt;
+&lt;p&gt;The highest fetal Φ-Space score anchors the early end of the cardiomyocyte maturation trajectory.&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+
+???
+Timing: 2 minutes. Make sure participants do not treat pseudotime values as calendar time.
+
+---
+
+# Two method families, two kinds of uncertainty
+
+&lt;div class="grid-3"&gt;
+&lt;div class="panel"&gt;
+&lt;h3&gt;Slingshot&lt;/h3&gt;
+&lt;p&gt;Cluster centroids -&gt; minimum spanning tree -&gt; principal curves -&gt; arc-length pseudotime.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Main choice:&lt;/strong&gt; embedding and clustering.&lt;/p&gt;
+&lt;/div&gt;
+
+&lt;div class="panel"&gt;
+&lt;h3&gt;DPT via destiny&lt;/h3&gt;
+&lt;p&gt;Cell-cell affinity graph -&gt; diffusion components -&gt; transition distance from a root.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Main choice:&lt;/strong&gt; embedding and root cell.&lt;/p&gt;
+&lt;/div&gt;
+
+&lt;div class="panel"&gt;
+&lt;h3&gt;Velocity&lt;/h3&gt;
+&lt;p&gt;Splicing dynamics estimate local time derivatives.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Not run:&lt;/strong&gt; needs unspliced counts and has snRNA-seq caveats.&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+
+???
+Timing: 3 minutes. Mention velocity only as context; do not let it take over the talk.
+
+---
+
+# Slingshot sensitivity is the lesson
+
+&lt;div class="grid-2"&gt;
+&lt;div&gt;
+&lt;div class="claim"&gt;For principal-curve methods, clustering is a modelling choice.&lt;/div&gt;
+
+* Slingshot builds its tree on cluster centroids.
+* Changing the clustering can move the trajectory even with the same cells.
+* Module 6 therefore crosses two embeddings with two clusterings.
+&lt;/div&gt;
+
+&lt;div class="panel"&gt;
+&lt;h3&gt;Four slingshot runs&lt;/h3&gt;
+&lt;p&gt;Φ-Space or PCA embedding, crossed with Louvain or PhiCellType clustering.&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+
+???
+Timing: 3 minutes. This prepares participants to read the sensitivity grid in the vignette.
+
+---
+
+# Module 6 proof object
+
+&lt;img src="afternoon_30min_xaringan_files/figure-html/pseudotime-proof-1.png" alt="" width="100%" style="display: block; margin: auto;" /&gt;
+
+&lt;div class="caption"&gt;Rows separate method effects; columns separate embedding effects.&lt;/div&gt;
+
+???
+Timing: 4 minutes. The ideal result is broad agreement; disagreement is also useful because it exposes method sensitivity.
+
+---
+
+# Bridge: from gene levels to gene relationships
+
+&lt;div class="grid-2"&gt;
+&lt;div&gt;
+&lt;div class="kicker"&gt;After pseudotime&lt;/div&gt;
+
+* Differential expression asks: **which genes go up or down?**
+* Network analysis asks: **which gene relationships change?**
+* Along a continuum, one global network can average away rewiring.
+&lt;/div&gt;
+
+&lt;div class="panel"&gt;
+&lt;h3&gt;Module 7 question&lt;/h3&gt;
+&lt;p&gt;As cardiomyocytes mature, do transcription factors and target genes change how they co-vary locally?&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+
+???
+Timing: 2 minutes. This is the transition into NeighbourNet.
+
+---
+
+# Module 7: co-expression scaffold, not causal GRN
+
+&lt;div class="grid-2"&gt;
+&lt;div&gt;
+&lt;div class="claim"&gt;NeighbourNet builds cell-specific co-expression networks.&lt;/div&gt;
+
+* Edges are local TF-target co-expression evidence.
+* Prior knowledge can arrange receptor, TF, and target layers.
+* The direction in the plot is biological context, not causality inferred from expression alone.
+&lt;/div&gt;
+
+&lt;div class="panel"&gt;
+&lt;h3&gt;Interpretation rule&lt;/h3&gt;
+&lt;p&gt;Use these networks as structured hypothesis generators. Causal claims need perturbation or external evidence.&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+
+???
+Timing: 3 minutes. This slide prevents over-claiming.
+
+---
+
+# NeighbourNet algorithm at high level
+
+&lt;div class="flow"&gt;
+  &lt;div class="flow-step"&gt;PCA&lt;br&gt;denoise cells&lt;/div&gt;
+  &lt;div class="arrow"&gt;-&gt;&lt;/div&gt;
+  &lt;div class="flow-step"&gt;kNN&lt;br&gt;local samples&lt;/div&gt;
+  &lt;div class="arrow"&gt;-&gt;&lt;/div&gt;
+  &lt;div class="flow-step"&gt;Local PC&lt;br&gt;regression&lt;/div&gt;
+  &lt;div class="arrow"&gt;-&gt;&lt;/div&gt;
+  &lt;div class="flow-step"&gt;Cell-specific&lt;br&gt;networks&lt;/div&gt;
+  &lt;div class="arrow"&gt;-&gt;&lt;/div&gt;
+  &lt;div class="flow-step"&gt;nPCA&lt;br&gt;meta-networks&lt;/div&gt;
+&lt;/div&gt;
+
+&lt;div class="grid-2" style="margin-top: 40px;"&gt;
+&lt;div class="panel"&gt;
+&lt;h3&gt;Computational shape&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;cells × target genes × TF predictors&lt;/code&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class="panel"&gt;
+&lt;h3&gt;Workshop constraint&lt;/h3&gt;
+&lt;p&gt;Keep 10 maturation-associated target genes so the vignette remains feasible.&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+
+???
+Timing: 4 minutes. Keep this conceptual; participants will see the function-level workflow in the vignette.
+
+---
+
+# Module 7 proof object
+
+
+
+&lt;img src="afternoon_30min_xaringan_files/figure-html/nnet-placeholder-1.png" alt="" width="100%" style="display: block; margin: auto;" /&gt;
+
+&lt;div class="caption"&gt;Recommended final figure: meta-network scores plus an adjacency heatmap or radial network plot from Module 7.&lt;/div&gt;
+
+???
+Timing: 4 minutes. Explain meta-network scores as PCA-like cell scores for recurring network patterns.
+
+---
+
+class: section, middle
+
+&lt;div class="kicker"&gt;Take-home&lt;/div&gt;
+
+&lt;div class="claim"&gt;The afternoon workflow keeps continuous biology continuous long enough to ask better questions.&lt;/div&gt;
+
+&lt;div class="flow"&gt;
+  &lt;div class="flow-step"&gt;Soft phenotype scores&lt;br&gt;preserve gradients&lt;/div&gt;
+  &lt;div class="arrow"&gt;-&gt;&lt;/div&gt;
+  &lt;div class="flow-step"&gt;Pseudotime&lt;br&gt;tests trajectory robustness&lt;/div&gt;
+  &lt;div class="arrow"&gt;-&gt;&lt;/div&gt;
+  &lt;div class="flow-step"&gt;Meta-networks&lt;br&gt;summarise rewiring hypotheses&lt;/div&gt;
+&lt;/div&gt;
+
+???
+Timing: 2 minutes. End by directing participants back to the three vignettes.
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+  "ratio": "16:9",
+  "highlightStyle": "github",
+  "highlightLines": true,
+  "countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

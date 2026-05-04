@@ -1,0 +1,659 @@
+---
+title: "Continuum-aware single-cell analysis of heart maturation"
+subtitle: "Afternoon session: Φ-Space, pseudotime, and NeighbourNet"
+author: "Single-cell RNA-seq workshop"
+date: "`r format(Sys.Date(), '%d %B %Y')`"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    nature:
+      ratio: "16:9"
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+params:
+  render_heavy_nnet: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    echo = FALSE,
+    message = FALSE,
+    warning = FALSE,
+    fig.align = "center",
+    dpi = 180,
+    out.width = "100%"
+)
+
+ok_pkg <- function(pkg) requireNamespace(pkg, quietly = TRUE)
+load_pkg <- function(pkg) {
+    if (ok_pkg(pkg)) {
+        suppressPackageStartupMessages(library(pkg, character.only = TRUE))
+        TRUE
+    } else {
+        FALSE
+    }
+}
+
+has_ggplot2 <- load_pkg("ggplot2")
+has_patchwork <- load_pkg("patchwork")
+has_sce <- ok_pkg("SingleCellExperiment")
+has_se <- ok_pkg("SummarizedExperiment")
+
+if (has_ggplot2) {
+    theme_set(theme_minimal(base_size = 18))
+}
+
+rescale01 <- function(x) {
+    rng <- range(x, na.rm = TRUE)
+    if (!all(is.finite(rng)) || diff(rng) == 0) return(rep(NA_real_, length(x)))
+    (x - rng[1]) / diff(rng)
+}
+
+placeholder_plot <- function(title, detail = "Figure placeholder") {
+    if (!has_ggplot2) {
+        plot.new()
+        text(0.5, 0.6, title, cex = 1.2)
+        text(0.5, 0.45, detail, cex = 0.9)
+        return(invisible(NULL))
+    }
+    ggplot() +
+        annotate("rect", xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf,
+                 fill = "#F5F7FA", colour = "#CBD5E1", linewidth = 0.8) +
+        annotate("text", x = 0, y = 0.12, label = title,
+                 size = 6.5, fontface = "bold", colour = "#111827") +
+        annotate("text", x = 0, y = -0.12, label = detail,
+                 size = 4.2, colour = "#475569") +
+        xlim(-1, 1) + ylim(-0.7, 0.7) +
+        theme_void()
+}
+
+read_cache <- function(path) {
+    if (!file.exists(path)) return(NULL)
+    tryCatch(readRDS(path), error = function(e) NULL)
+}
+
+plot_umap <- function(df, colour_col, title, continuous = TRUE) {
+    p <- ggplot(df, aes(UMAP1, UMAP2, colour = .data[[colour_col]])) +
+        geom_point(size = 0.25, alpha = 0.75) +
+        labs(title = title, colour = NULL) +
+        theme_void(base_size = 15) +
+        theme(
+            plot.title = element_text(face = "bold", size = 14, hjust = 0.02),
+            legend.position = "bottom",
+            legend.key.width = grid::unit(1.2, "cm")
+        )
+    if (continuous) {
+        p + scale_colour_distiller(palette = "Spectral", direction = -1)
+    } else {
+        p + scale_colour_brewer(palette = "Set1")
+    }
+}
+
+combine2 <- function(p1, p2) {
+    if (has_patchwork) p1 | p2 else print(p1)
+}
+
+combine4 <- function(p1, p2, p3, p4) {
+    if (has_patchwork) (p1 | p2) / (p3 | p4) else print(p1)
+}
+```
+
+<style>
+.remark-slide-content {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  color: #111827;
+  background: #FFFFFF;
+  padding: 52px 66px 48px 66px;
+}
+.remark-slide-content h1 {
+  font-size: 42px;
+  line-height: 1.05;
+  letter-spacing: 0;
+  margin-bottom: 18px;
+  color: #0F172A;
+}
+.remark-slide-content h2 {
+  font-size: 27px;
+  line-height: 1.15;
+  letter-spacing: 0;
+  color: #334155;
+  font-weight: 600;
+}
+.remark-slide-content p,
+.remark-slide-content li {
+  font-size: 25px;
+  line-height: 1.35;
+}
+.remark-slide-content li {
+  margin-bottom: 10px;
+}
+.title-slide {
+  background: linear-gradient(135deg, #0F172A 0%, #1F2937 45%, #29524A 100%);
+  color: #FFFFFF;
+}
+.title-slide h1,
+.title-slide h2 {
+  color: #FFFFFF;
+}
+.title-slide h1 {
+  font-size: 50px;
+  max-width: 900px;
+}
+.title-slide .remark-slide-number {
+  display: none;
+}
+.section {
+  background: #0F172A;
+  color: #FFFFFF;
+}
+.section h1,
+.section h2,
+.section p,
+.section li {
+  color: #FFFFFF;
+}
+.kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 16px;
+  font-weight: 700;
+  color: #0F766E;
+  margin-bottom: 16px;
+}
+.section .kicker {
+  color: #5EEAD4;
+}
+.claim {
+  font-size: 34px;
+  line-height: 1.18;
+  font-weight: 750;
+  color: #0F172A;
+  margin: 18px 0 24px 0;
+}
+.section .claim {
+  color: #FFFFFF;
+}
+.small {
+  font-size: 18px !important;
+  color: #475569;
+}
+.muted {
+  color: #64748B;
+}
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 34px;
+  align-items: center;
+}
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+.panel {
+  border: 1px solid #CBD5E1;
+  border-radius: 8px;
+  padding: 22px 24px;
+  background: #F8FAFC;
+}
+.panel h3 {
+  margin: 0 0 8px 0;
+  font-size: 22px;
+}
+.panel p,
+.panel li {
+  font-size: 19px;
+  line-height: 1.28;
+}
+.flow {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+  margin-top: 26px;
+}
+.flow-step {
+  flex: 1;
+  padding: 18px 16px;
+  border-radius: 8px;
+  background: #ECFDF5;
+  border: 1px solid #99F6E4;
+  font-weight: 700;
+  font-size: 20px;
+  text-align: center;
+}
+.arrow {
+  align-self: center;
+  color: #0F766E;
+  font-size: 27px;
+  font-weight: 800;
+}
+.caption {
+  font-size: 15px;
+  color: #64748B;
+  margin-top: 6px;
+}
+code {
+  font-size: 0.82em;
+  color: #0F766E;
+}
+</style>
+
+class: section, middle
+
+<div class="kicker">Afternoon arc</div>
+
+<div class="claim">The afternoon session asks what we lose when we force continuous biology into discrete bins.</div>
+
+<div class="flow">
+  <div class="flow-step">Module 5<br>soft phenotype scores</div>
+  <div class="arrow">-></div>
+  <div class="flow-step">Module 6<br>maturation ordering</div>
+  <div class="arrow">-></div>
+  <div class="flow-step">Module 7<br>network rewiring hypotheses</div>
+</div>
+
+???
+Timing: 2 minutes. Tie back to Session 1: QC, integration, clustering, annotation, DE.
+
+---
+
+# The biological problem
+
+<div class="grid-2">
+<div>
+<div class="kicker">Human heart development</div>
+
+* The dataset spans **foetal**, **young**, and **adult** heart samples.
+* Cardiomyocyte maturation is not a set of clean bins.
+* A hard label can be correct and still hide the gradient we care about.
+</div>
+
+<div class="panel">
+<h3>Morning workflow</h3>
+<p>Cluster -> marker genes -> one label per cluster.</p>
+<h3>Afternoon question</h3>
+<p>Can we preserve gradual identity and use it for trajectory and network analysis?</p>
+</div>
+</div>
+
+???
+Timing: 2 minutes. The core contrast is not that hard labels are bad; they are insufficient for this biological question.
+
+---
+
+# Module 5: Φ-Space turns labels into scores
+
+<div class="grid-2">
+<div>
+<div class="claim">Ask “how much does this cell resemble each reference phenotype?” rather than “which single label wins?”</div>
+
+* Output: a **cells × phenotype scores** matrix.
+* Scores can be collapsed to labels with `getClass()`.
+* The reverse is impossible: labels cannot recover the original continuum.
+</div>
+
+<div class="panel">
+<h3>Method sketch</h3>
+<p>Annotated reference expression `X` is mapped onto a dummy phenotype matrix `Y` using PLS regression.</p>
+<p>The fitted model is applied to query cells to produce `reducedDim(query, "PhiSpace")`.</p>
+</div>
+</div>
+
+???
+Timing: 3 minutes. Keep PLS high level: components maximize covariance between expression and phenotype labels.
+
+---
+
+# Φ-Space proof object
+
+```{r phispace-proof, fig.width=10.5, fig.height=5.4}
+query <- read_cache("results/05_phispace_query.rds")
+
+if (!is.null(query) && has_ggplot2 && has_sce && has_se) {
+    phi_scores <- SingleCellExperiment::reducedDim(query, "PhiSpace")
+    pc <- prcomp(phi_scores, center = TRUE, scale. = FALSE)
+    pc_df <- as.data.frame(pc$x[, 1:2])
+    names(pc_df) <- c("PC1", "PC2")
+    query_cd <- as.data.frame(SummarizedExperiment::colData(query))
+    pc_df$group <- query_cd$group
+
+    age_cols <- intersect(c("fetal", "young", "middle", "old"), colnames(phi_scores))
+    cell_type_cols <- setdiff(colnames(phi_scores), age_cols)
+    broad <- rep("Cell", nrow(pc_df))
+    if (length(cell_type_cols) > 0) {
+        broad <- sub(":.*$", "", colnames(phi_scores[, cell_type_cols, drop = FALSE])[
+            max.col(phi_scores[, cell_type_cols, drop = FALSE], ties.method = "first")
+        ])
+    }
+    pc_df$broad <- broad
+
+    p_stage <- ggplot(pc_df, aes(PC1, PC2, colour = group)) +
+        geom_point(size = 0.25, alpha = 0.65) +
+        scale_colour_brewer(palette = "Set1") +
+        labs(title = "Phenotype-space PCA by donor stage", colour = NULL) +
+        theme_void(base_size = 15) +
+        theme(plot.title = element_text(face = "bold", size = 14),
+              legend.position = "bottom")
+
+    cm_idx <- broad == "Cardiomyocyte"
+    if (any(cm_idx) && length(age_cols) > 0) {
+        cm_scores <- as.data.frame(phi_scores[cm_idx, age_cols, drop = FALSE])
+        cm_scores$group <- query_cd$group[cm_idx]
+        cm_long <- stats::reshape(
+            cm_scores,
+            varying = age_cols,
+            v.names = "score",
+            timevar = "age_score",
+            times = age_cols,
+            direction = "long"
+        )
+        p_age <- ggplot(cm_long, aes(age_score, score, fill = group)) +
+            geom_violin(scale = "width", alpha = 0.75, colour = NA) +
+            scale_fill_brewer(palette = "Set1") +
+            labs(title = "CM age scores preserve the maturation gradient",
+                 x = NULL, y = "Φ-Space score", fill = NULL) +
+            theme_minimal(base_size = 15) +
+            theme(plot.title = element_text(face = "bold", size = 14),
+                  legend.position = "bottom")
+    } else {
+        p_age <- placeholder_plot("CM age-score figure", "Requires age-group Φ-Space columns")
+    }
+
+    combine2(p_stage, p_age)
+} else {
+    placeholder_plot(
+        "Φ-Space biplot / score figure",
+        "Render after results/05_phispace_query.rds is available"
+    )
+}
+```
+
+<div class="caption">Use this slide to show that continuous phenotype scores retain developmental signal inside a cell type.</div>
+
+???
+Timing: 3 minutes. Explain how to read the stage separation without over-interpreting PCA axes.
+
+---
+
+# Bridge: scores become a maturation coordinate
+
+<div class="grid-2">
+<div>
+<div class="kicker">The payoff of Module 5</div>
+
+* The age scores give a biological anchor for direction.
+* `pt_phi_score` is the trajectory-free baseline: adult-like score minus fetal score.
+* Module 6 compares fitted pseudotimes against this simple maturation signal.
+</div>
+
+<div>
+```{r phispace-pt-umap, fig.width=5.6, fig.height=4.2}
+cm <- read_cache("results/06_cm_pseudotime.rds")
+if (!is.null(cm) && has_ggplot2 && has_sce && has_se &&
+    "UMAP" %in% SingleCellExperiment::reducedDimNames(cm)) {
+    umap <- as.data.frame(SingleCellExperiment::reducedDim(cm, "UMAP"))
+    names(umap) <- c("UMAP1", "UMAP2")
+    umap$pt_phi_score <- SummarizedExperiment::colData(cm)$pt_phi_score
+    print(plot_umap(umap, "pt_phi_score", "Trajectory-free Φ-Space maturation score"))
+} else {
+    placeholder_plot("UMAP by pt_phi_score", "Requires results/06_cm_pseudotime.rds")
+}
+```
+</div>
+</div>
+
+???
+Timing: 2 minutes. This is the hinge between Modules 5 and 6.
+
+---
+
+# Module 6: pseudotime is an ordering, not a clock
+
+<div class="grid-2">
+<div>
+<div class="claim">Pseudotime assigns each cell a scalar position along a biological process.</div>
+
+* It is not real elapsed time.
+* Its absolute scale is not identified.
+* Direction must come from outside the method unless velocity is available.
+</div>
+
+<div class="panel">
+<h3>In this workshop</h3>
+<p>The highest fetal Φ-Space score anchors the early end of the cardiomyocyte maturation trajectory.</p>
+</div>
+</div>
+
+???
+Timing: 2 minutes. Make sure participants do not treat pseudotime values as calendar time.
+
+---
+
+# Two method families, two kinds of uncertainty
+
+<div class="grid-3">
+<div class="panel">
+<h3>Slingshot</h3>
+<p>Cluster centroids -> minimum spanning tree -> principal curves -> arc-length pseudotime.</p>
+<p><strong>Main choice:</strong> embedding and clustering.</p>
+</div>
+
+<div class="panel">
+<h3>DPT via destiny</h3>
+<p>Cell-cell affinity graph -> diffusion components -> transition distance from a root.</p>
+<p><strong>Main choice:</strong> embedding and root cell.</p>
+</div>
+
+<div class="panel">
+<h3>Velocity</h3>
+<p>Splicing dynamics estimate local time derivatives.</p>
+<p><strong>Not run:</strong> needs unspliced counts and has snRNA-seq caveats.</p>
+</div>
+</div>
+
+???
+Timing: 3 minutes. Mention velocity only as context; do not let it take over the talk.
+
+---
+
+# Slingshot sensitivity is the lesson
+
+<div class="grid-2">
+<div>
+<div class="claim">For principal-curve methods, clustering is a modelling choice.</div>
+
+* Slingshot builds its tree on cluster centroids.
+* Changing the clustering can move the trajectory even with the same cells.
+* Module 6 therefore crosses two embeddings with two clusterings.
+</div>
+
+<div class="panel">
+<h3>Four slingshot runs</h3>
+<p>Φ-Space or PCA embedding, crossed with Louvain or PhiCellType clustering.</p>
+</div>
+</div>
+
+???
+Timing: 3 minutes. This prepares participants to read the sensitivity grid in the vignette.
+
+---
+
+# Module 6 proof object
+
+```{r pseudotime-proof, fig.width=10.8, fig.height=5.6}
+cm <- read_cache("results/06_cm_pseudotime.rds")
+
+if (!is.null(cm) && has_ggplot2 && has_sce && has_se &&
+    "UMAP" %in% SingleCellExperiment::reducedDimNames(cm)) {
+    umap_df <- as.data.frame(SingleCellExperiment::reducedDim(cm, "UMAP"))
+    names(umap_df) <- c("UMAP1", "UMAP2")
+    cd <- as.data.frame(SummarizedExperiment::colData(cm))
+
+    needed <- c("pt_sling_phi_phict", "pt_sling_pca_phict", "pt_dpt_phi", "pt_dpt_pca")
+    if (all(needed %in% names(cd))) {
+        for (nm in needed) umap_df[[paste0(nm, "_01")]] <- rescale01(cd[[nm]])
+        p1 <- plot_umap(umap_df, "pt_sling_phi_phict_01", "slingshot / Φ-Space")
+        p2 <- plot_umap(umap_df, "pt_sling_pca_phict_01", "slingshot / PCA")
+        p3 <- plot_umap(umap_df, "pt_dpt_phi_01", "DPT / Φ-Space")
+        p4 <- plot_umap(umap_df, "pt_dpt_pca_01", "DPT / PCA")
+        combine4(p1, p2, p3, p4)
+    } else {
+        placeholder_plot("Canonical four-way pseudotime figure",
+                         "Pseudotime columns are missing from the Module 6 cache")
+    }
+} else {
+    placeholder_plot(
+        "Canonical four-way pseudotime figure",
+        "Render after results/06_cm_pseudotime.rds is available"
+    )
+}
+```
+
+<div class="caption">Rows separate method effects; columns separate embedding effects.</div>
+
+???
+Timing: 4 minutes. The ideal result is broad agreement; disagreement is also useful because it exposes method sensitivity.
+
+---
+
+# Bridge: from gene levels to gene relationships
+
+<div class="grid-2">
+<div>
+<div class="kicker">After pseudotime</div>
+
+* Differential expression asks: **which genes go up or down?**
+* Network analysis asks: **which gene relationships change?**
+* Along a continuum, one global network can average away rewiring.
+</div>
+
+<div class="panel">
+<h3>Module 7 question</h3>
+<p>As cardiomyocytes mature, do transcription factors and target genes change how they co-vary locally?</p>
+</div>
+</div>
+
+???
+Timing: 2 minutes. This is the transition into NeighbourNet.
+
+---
+
+# Module 7: co-expression scaffold, not causal GRN
+
+<div class="grid-2">
+<div>
+<div class="claim">NeighbourNet builds cell-specific co-expression networks.</div>
+
+* Edges are local TF-target co-expression evidence.
+* Prior knowledge can arrange receptor, TF, and target layers.
+* The direction in the plot is biological context, not causality inferred from expression alone.
+</div>
+
+<div class="panel">
+<h3>Interpretation rule</h3>
+<p>Use these networks as structured hypothesis generators. Causal claims need perturbation or external evidence.</p>
+</div>
+</div>
+
+???
+Timing: 3 minutes. This slide prevents over-claiming.
+
+---
+
+# NeighbourNet algorithm at high level
+
+<div class="flow">
+  <div class="flow-step">PCA<br>denoise cells</div>
+  <div class="arrow">-></div>
+  <div class="flow-step">kNN<br>local samples</div>
+  <div class="arrow">-></div>
+  <div class="flow-step">Local PC<br>regression</div>
+  <div class="arrow">-></div>
+  <div class="flow-step">Cell-specific<br>networks</div>
+  <div class="arrow">-></div>
+  <div class="flow-step">nPCA<br>meta-networks</div>
+</div>
+
+<div class="grid-2" style="margin-top: 40px;">
+<div class="panel">
+<h3>Computational shape</h3>
+<p><code>cells × target genes × TF predictors</code></p>
+</div>
+<div class="panel">
+<h3>Workshop constraint</h3>
+<p>Keep 10 maturation-associated target genes so the vignette remains feasible.</p>
+</div>
+</div>
+
+???
+Timing: 4 minutes. Keep this conceptual; participants will see the function-level workflow in the vignette.
+
+---
+
+# Module 7 proof object
+
+```{r nnet-proof, fig.width=10.5, fig.height=5.2, eval=params$render_heavy_nnet}
+seu <- read_cache("results/07_seu_nnet_10targets.rds")
+if (!is.null(seu) && has_ggplot2 && ok_pkg("Seurat")) {
+    nnet_mod <- Seurat::Misc(seu, "NNet.mod")
+    meta_pcs <- nnet_mod$meta.network$pcs
+    plot_df <- as.data.frame(meta_pcs[, seq_len(min(2, ncol(meta_pcs))), drop = FALSE])
+    names(plot_df) <- paste0("NNet", seq_len(ncol(plot_df)))
+    plot_df$group <- seu$group
+    plot_df$pt_phi_score <- seu$pt_phi_score
+
+    p_stage <- ggplot(plot_df, aes(NNet1, NNet2, colour = group)) +
+        geom_point(size = 0.45, alpha = 0.75) +
+        scale_colour_brewer(palette = "Set1") +
+        labs(title = "Meta-network space by donor stage", colour = NULL) +
+        theme_minimal(base_size = 15) +
+        theme(plot.title = element_text(face = "bold", size = 14),
+              legend.position = "bottom")
+
+    p_pt <- ggplot(plot_df, aes(NNet1, NNet2, colour = pt_phi_score)) +
+        geom_point(size = 0.45, alpha = 0.75) +
+        scale_colour_distiller(palette = "Spectral", direction = -1) +
+        labs(title = "Meta-network space by Φ-Space maturation", colour = NULL) +
+        theme_minimal(base_size = 15) +
+        theme(plot.title = element_text(face = "bold", size = 14),
+              legend.position = "bottom")
+
+    combine2(p_stage, p_pt)
+} else {
+    placeholder_plot("NeighbourNet meta-network figure",
+                     "Requires results/07_seu_nnet_10targets.rds and Seurat")
+}
+```
+
+```{r nnet-placeholder, fig.width=10.5, fig.height=5.2, eval=!params$render_heavy_nnet}
+placeholder_plot(
+    "NeighbourNet figure placeholder",
+    "Set params$render_heavy_nnet = TRUE to render from results/07_seu_nnet_10targets.rds"
+)
+```
+
+<div class="caption">Recommended final figure: meta-network scores plus an adjacency heatmap or radial network plot from Module 7.</div>
+
+???
+Timing: 4 minutes. Explain meta-network scores as PCA-like cell scores for recurring network patterns.
+
+---
+
+class: section, middle
+
+<div class="kicker">Take-home</div>
+
+<div class="claim">The afternoon workflow keeps continuous biology continuous long enough to ask better questions.</div>
+
+<div class="flow">
+  <div class="flow-step">Soft phenotype scores<br>preserve gradients</div>
+  <div class="arrow">-></div>
+  <div class="flow-step">Pseudotime<br>tests trajectory robustness</div>
+  <div class="arrow">-></div>
+  <div class="flow-step">Meta-networks<br>summarise rewiring hypotheses</div>
+</div>
+
+???
+Timing: 2 minutes. End by directing participants back to the three vignettes.

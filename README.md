@@ -121,6 +121,27 @@ The setup runs as a single unified flow that covers both sessions:
 
 Total time: roughly 20–40 minutes depending on whether the GitHub-only packages need to compile from source.
 
+### Optional: Backup checkpoints
+
+A separate Zenodo record hosts pre-computed checkpoints so you can start
+at any module boundary — useful for skipping straight to a particular
+technique, or for starting Session 2 without first running Session 1.
+Each file replaces the output of one or more upstream modules:
+
+| File | Lets you skip |
+|---|---|
+| `01_qc_filtered.rds` | Module 1 |
+| `02_integrated_clustered.rds` | Modules 1 + 2 |
+| `03_annotated.rds` | Modules 1 + 2 + 3 |
+| `afternoonSession.zip` | All of Session 1 — start at Module 5 |
+
+`afternoonSession.zip` contains the Session 2 (Module 5, 6, 7) input and
+intermediate results. Download, unzip, and the files land in `data/` and
+`results/` per the instructions in Module 0.
+
+The download chunk lives in
+[Module 0, "Optional: Backup Checkpoints"](https://phipsonlab.github.io/single_cell_workshop/articles/00_setup.html).
+
 ## Key Package Versions
 
 The core packages are pinned in `renv.lock` for reproducibility. The

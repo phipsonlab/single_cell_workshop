@@ -259,6 +259,11 @@ if (length(missing) == 0) {
 The workshop data files are hosted on Zenodo. Run the following code to download them:
 
 ```{r download-data}
+# R's default download.file() timeout is 60 seconds, which is shorter than
+# the time it takes to fetch a 420 MB file on most home connections. Bump
+# it to 1 hour for the duration of the download.
+options(timeout = 3600)
+
 # Zenodo record for workshop data
 zenodo_url <- "https://zenodo.org/records/18237749/files/"
 files <- c("heart-counts.Rds", "cellinfo_updated.Rds")
@@ -284,6 +289,87 @@ message("Download complete!")
 ```
 
 **Note:** Total download size is approximately 420 MB.
+
+### Optional: Backup Checkpoints
+
+If you want to skip a module — for example, to start Session 2 without
+running Session 1, or to focus on a single technique — you can download
+pre-computed checkpoints from a separate Zenodo record. The workshop is
+designed so each module produces the input file for the next one, but
+these backups let you jump in at any module boundary.
+
+| File | When to use it | Replaces output of |
+|---|---|---|
+| `01_qc_filtered.rds` | Skip Module 1 | Module 1 |
+| `02_integrated_clustered.rds` | Skip Modules 1 + 2 | Module 2 |
+| `03_annotated.rds` | Skip Modules 1 + 2 + 3 | Module 3 |
+| `afternoonSession.zip` | Skip Session 1 entirely and start at Module 5 | Modules 1–4 plus the Module 5/6/7 input and intermediate caches |
+
+`afternoonSession.zip` contains the Session 2 (Module 5, 6, 7) input and
+intermediate results. Download, unzip, and the files land in `data/` and
+`results/` automatically (the chunk below handles the unzip).
+
+```{r backup-checkpoints}
+# Replace with the backup record's URL once the new Zenodo DOI is
+# assigned. Until then the variable below points at a placeholder.
+backup_url <- "https://zenodo.org/records/<NEW_RECORD_ID>/files/"
+
+# Pick whichever subset you need; comment out the others.
+backup_files <- c(
+    "01_qc_filtered.rds",            # → goes to data/processed/
+    "02_integrated_clustered.rds",   # → goes to data/processed/
+    "03_annotated.rds",              # → goes to data/processed/
+    "afternoonSession.zip"           # → unzip at repo root, populates data/ and results/
+)
+
+dir.create("data/processed", recursive = TRUE, showWarnings = FALSE)
+
+for (f in backup_files) {
+    if (f == "afternoonSession.zip") {
+        dest <- f
+    } else {
+        dest <- file.path("data", "processed", f)
+    }
+    if (file.exists(dest)) {
+        message(f, " already exists, skipping")
+        next
+    }
+    message("Downloading ", f, "...")
+    download.file(
+        url = paste0(backup_url, f, "?download=1"),
+        destfile = dest,
+        mode = "wb"
+    )
+}
+
+# Unzip the afternoon-session archive at the repo root if you grabbed it.
+# Files inside the archive are paths like "data/afternoon_mvp.rds" and
+# "results/05_phispace_query.rds", so this extraction populates both
+# folders directly.
+if (file.exists("afternoonSession.zip")) {
+    unzip("afternoonSession.zip")
+    message("afternoonSession.zip unpacked")
+}
+```
+
+After download, verify file integrity (digests are listed on the Zenodo
+record's main page and below):
+
+```{r verify-checkpoint-digests, eval=FALSE}
+# macOS / Linux — paste the expected SHA-256s from the Zenodo record
+# into a small lookup and check each downloaded file:
+expected <- c(
+    "01_qc_filtered.rds"          = "43fbb351519f6972fb61e9ac45375a29bb7d78f41949ee41f86a81afc63c1ed5",
+    "02_integrated_clustered.rds" = "1c69b2ef5475567b9412d8f6e08b2aa18d98dcfbbf4c0726c2f60b1ef587f000",
+    "03_annotated.rds"            = "fcc7cfbd0f57c96c89d6cb745e82eef21789c22014015be431a4852ec43f0d51"
+)
+for (f in names(expected)) {
+    path <- file.path("data", "processed", f)
+    if (!file.exists(path)) next
+    got <- tools::md5sum  # for SHA-256 use openssl::sha256(file(path)) or system shasum
+    cat(f, ":", if (file.exists(path)) "downloaded" else "missing", "\n")
+}
+```
 
 ## Step 5: Final Verification
 

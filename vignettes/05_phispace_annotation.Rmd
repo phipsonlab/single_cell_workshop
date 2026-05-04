@@ -202,8 +202,8 @@ of the human left ventricle. It combines 299 donors from eight published
 studies, spans 8 post-conceptional weeks through ≥60 years, and provides
 harmonised cell type and age-group annotations. We have pre-filtered it to
 non-diseased donors and balanced the major cell types by down-sampling; the
-processing script lives at
-[`references/prepare_gao_2026.R`](../references/prepare_gao_2026.R).
+HPC processing recipe is documented in
+[`references/HPC_reference_processing.md`](../references/HPC_reference_processing.md).
 
 Two columns from the reference drive everything that follows:
 

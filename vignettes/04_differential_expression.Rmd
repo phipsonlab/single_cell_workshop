@@ -158,6 +158,13 @@ cellinfo <- readRDS(file.path(data_dir, "cellinfo_updated.Rds"))
 # Match cellinfo to QC-filtered cells
 cellinfo <- cellinfo[match(colnames(seu), cellinfo$CellID), ]
 
+# Attach the cell-type and sample columns we will pseudobulk on directly
+# to the Seurat object's metadata. edgeR::Seurat2PB() reads these column
+# names from `seu@meta.data`, so they need to live there rather than in
+# the separate cellinfo data frame.
+seu$Celltype <- cellinfo$Celltype
+seu$Sample   <- cellinfo$Sample
+
 cat("QC-filtered dataset:\n")
 cat("- Genes:", format(nrow(counts), big.mark = ","), "\n")
 cat("- Cells:", format(ncol(counts), big.mark = ","), "\n")
@@ -244,6 +251,9 @@ if (n_erythroid > 0) {
   cells_keep <- cellinfo$Celltype != "Erythroid"
   cellinfo_filtered <- cellinfo[cells_keep, ]
   counts_filtered <- counts[, cells_keep]
+  # Mirror the filter on the Seurat object so the Seurat2PB call below
+  # operates on the same cells as the count / metadata tables.
+  seu <- seu[, cells_keep]
 } else {
   cellinfo_filtered <- cellinfo
   counts_filtered <- counts
@@ -439,85 +449,61 @@ us to perform differential expression within each cell type, accounting for
 the fact that different cell types may respond differently to developmental
 changes.
 
-```{r create-pseudobulk-groups}
-# Create factor for cell type
-celltype <- factor(cellinfo_filtered$Celltype)
+### Aggregate Counts with `Seurat2PB`
 
-# Create factor for sample with explicit level ordering
-sample_factor <- factor(
-    cellinfo_filtered$Sample,
-    levels = c("f1", "f2", "f3", "y1", "y2", "y3", "a1", "a2", "a3")
-)
-
-# Create combined grouping variable (celltype.sample)
-pseudobulk_group <- paste(celltype, sample_factor, sep = ".")
-pseudobulk_group <- factor(pseudobulk_group)
-
-cat("Number of pseudobulk samples:", length(levels(pseudobulk_group)), "\n")
-cat("\nCells per pseudobulk sample:\n")
-print(table(pseudobulk_group))
-```
-
-### Aggregate Counts
-
-We use matrix multiplication with a design matrix to efficiently aggregate
-counts. This is equivalent to summing counts across all cells within each
-pseudobulk group:
+*edgeR* provides `Seurat2PB()`, a one-call helper that takes a `Seurat`
+object plus the names of its sample and cluster metadata columns and
+returns a `DGEList` whose columns are the cell-type × sample pseudobulks.
+Internally it does exactly what a manual `model.matrix(~ 0 + group)`
+followed by a sparse matrix multiplication would do — sum the raw counts
+within every (cluster, sample) combination — but without the bookkeeping
+around column names and factor levels.
 
 ```{r aggregate-counts}
-# Create design matrix for aggregation
-design_agg <- model.matrix(~ 0 + pseudobulk_group)
-colnames(design_agg) <- levels(pseudobulk_group)
-
-# Aggregate counts by matrix multiplication
-# Each column of the result is the sum of counts for all cells in that group
-pb_counts <- as.matrix(counts_filtered) %*% design_agg
+# Aggregate raw counts by (Celltype, Sample) into a DGEList. The Seurat
+# object already carries Celltype and Sample in @meta.data (added during
+# data loading above), so this is a single call.
+dge <- edgeR::Seurat2PB(
+    seu,
+    sample  = "Sample",
+    cluster = "Celltype"
+)
 
 cat("Pseudobulk matrix dimensions:\n")
-cat("- Genes:", nrow(pb_counts), "\n")
-cat("- Samples:", ncol(pb_counts), "\n")
+cat("- Genes:  ", format(nrow(dge), big.mark = ","), "\n")
+cat("- Samples:", ncol(dge), "\n")
+cat("\nCells per pseudobulk sample (first 10):\n")
+print(head(table(paste(seu$Celltype, seu$Sample, sep = ".")), 10))
 ```
 
-### Create DGEList Object
+### Augment the DGEList with Sample-Level Metadata
 
-The `DGEList` object from *edgeR* is the standard container for count data
-in the limma-voom pipeline. It stores counts, library sizes, and sample
-information:
+`Seurat2PB()` populates `dge$samples` with `cluster`, `sample`,
+`lib.size`, and `norm.factors`. We expose those under the names the rest
+of the module uses (`celltype`, `sample`), and add the developmental
+`group` and `sex` columns we will need for the design matrix and the
+MDS plots.
 
-```{r create-dgelist}
-# Create DGEList
-dge <- DGEList(counts = pb_counts)
+```{r dge-sample-info}
+# Rename for downstream readability
+dge$samples$celltype <- as.character(dge$samples$cluster)
+dge$samples$sample   <- as.character(dge$samples$sample)
 
-# Parse sample information from column names
-sample_info <- data.frame(
-    pseudobulk_id = colnames(dge),
-    stringsAsFactors = FALSE
+# Developmental group derived from sample-name prefix
+dge$samples$group <- case_when(
+    grepl("^f", dge$samples$sample) ~ "fetal",
+    grepl("^y", dge$samples$sample) ~ "young",
+    grepl("^a", dge$samples$sample) ~ "adult"
 )
 
-# Extract cell type and sample from the combined name
-parsed <- strsplit(sample_info$pseudobulk_id, "\\.")
-sample_info$celltype <- sapply(parsed, `[`, 1)
-sample_info$sample <- sapply(parsed, `[`, 2)
-
-# Add developmental group (keep as character to avoid factor level issues)
-sample_info$group <- case_when(
-    grepl("^f", sample_info$sample) ~ "fetal",
-    grepl("^y", sample_info$sample) ~ "young",
-    grepl("^a", sample_info$sample) ~ "adult"
-)
-
-# Add sex information from cellinfo (matches actual data)
+# Sex per sample, looked up from the original cell-level metadata
 sex_by_sample <- cellinfo_filtered %>%
     distinct(Sample, Sex) %>%
     { setNames(.$Sex, .$Sample) }
-sample_info$sex <- sex_by_sample[sample_info$sample]
+dge$samples$sex <- sex_by_sample[dge$samples$sample]
 
-# Add gene annotation to DGEList (for output tables)
+# Attach gene annotation for output tables
 dge$genes <- ann
-
-# Store sample information
-# Note: DGEList creates a default 'group' column (all 1s), so we remove it first
-dge$samples <- cbind(dge$samples[, c("lib.size", "norm.factors")], sample_info)
 
 head(dge$samples)
 ```

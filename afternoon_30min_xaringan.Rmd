@@ -553,3 +553,10 @@ preserve gradients
 clues for gene regulation
 ]
 ]
+
+---
+
+# We want to hear from you
+```{r out.width="50%"}
+knitr::include_graphics("figs/QR_code.png")
+```

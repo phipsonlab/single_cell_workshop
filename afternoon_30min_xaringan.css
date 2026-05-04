@@ -1,0 +1,282 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Source+Code+Pro:wght@500&display=swap');
+
+:root {
+  --ink: #1f2933;
+  --muted: #5f6b7a;
+  --soft: #f4f7f9;
+  --panel: #ffffff;
+  --line: #d8e0e7;
+  --blue: #215c8f;
+  --navy: #17324d;
+  --teal: #0f766e;
+  --green: #3f7d20;
+  --red: #a43f3f;
+  --gold: #b7791f;
+}
+
+body {
+  font-family: "Inter", Arial, sans-serif;
+  color: var(--ink);
+}
+
+.remark-slide-content {
+  font-size: 27px;
+  padding: 52px 64px 42px 64px;
+  background: #fbfcfd;
+}
+
+.remark-slide-content h1 {
+  font-size: 48px;
+  line-height: 1.05;
+  color: var(--blue);
+  margin: 0 0 26px 0;
+  letter-spacing: 0;
+}
+
+.remark-slide-content h2 {
+  font-size: 34px;
+  color: var(--teal);
+  margin-top: 0;
+  letter-spacing: 0;
+}
+
+.remark-slide-content h3 {
+  font-size: 26px;
+  color: var(--ink);
+}
+
+.remark-slide-content p,
+.remark-slide-content li {
+  line-height: 1.32;
+}
+
+.remark-slide-content li {
+  margin-bottom: 9px;
+}
+
+.remark-code,
+.remark-inline-code,
+code {
+  font-family: "Source Code Pro", ui-monospace, monospace;
+  font-size: 0.86em;
+  color: var(--teal);
+}
+
+.title-slide {
+  background: var(--navy);
+  color: white;
+  text-align: center;
+}
+
+.title-slide h1 {
+  color: white;
+  font-size: 54px;
+  max-width: 920px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.title-slide h2,
+.title-slide h3 {
+  color: #d9e7f2;
+  max-width: 920px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.title-slide .remark-slide-number {
+  display: none;
+}
+
+.section-slide {
+  background: var(--navy);
+  color: white;
+}
+
+.section-slide h1,
+.section-slide h2,
+.section-slide p,
+.section-slide li {
+  color: white;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.small {
+  font-size: 21px;
+}
+
+.large {
+  font-size: 36px;
+}
+
+.centered {
+  text-align: center;
+}
+
+.kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--teal);
+  margin-bottom: 16px;
+}
+
+.section-slide .kicker {
+  color: #8fe5dd;
+}
+
+.claim {
+  font-size: 34px;
+  line-height: 1.18;
+  font-weight: 800;
+  color: var(--ink);
+  margin: 18px 0 24px 0;
+}
+
+.section-slide .claim {
+  color: white;
+}
+
+.cols,
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  align-items: start;
+}
+
+.cols.middle,
+.grid-2.middle {
+  align-items: center;
+}
+
+.cols-3,
+.grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 18px;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 18px 20px;
+}
+
+.panel h3 {
+  margin: 0 0 8px 0;
+  font-size: 24px;
+  color: var(--ink);
+}
+
+.panel p,
+.panel li {
+  font-size: 20px;
+  line-height: 1.28;
+}
+
+.callout {
+  border-left: 6px solid var(--teal);
+  background: #eef8f6;
+  padding: 16px 22px;
+  border-radius: 4px;
+  margin-top: 22px;
+  margin-bottom: 14px;
+}
+
+.warn {
+  border-left-color: var(--gold);
+  background: #fff7e8;
+}
+
+.mini-table table {
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.mini-table th {
+  color: var(--blue);
+}
+
+.placeholder {
+  border: 2px dashed #9aa8b5;
+  background: #f6f8fa;
+  min-height: 255px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #526170;
+  padding: 24px;
+  font-size: 24px;
+}
+
+.flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 13px;
+  margin: 20px 0;
+  flex-wrap: wrap;
+}
+
+.flow-step,
+.node {
+  border: 2px solid var(--blue);
+  background: white;
+  border-radius: 6px;
+  padding: 12px 18px;
+  min-width: 92px;
+  text-align: center;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.flow-step {
+  flex: 1;
+  min-width: 135px;
+  border-color: var(--teal);
+}
+
+.node.teal {
+  border-color: var(--teal);
+}
+
+.node.red {
+  border-color: var(--red);
+}
+
+.arrow {
+  align-self: center;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.section-slide .arrow {
+  color: #d9e7f2;
+}
+
+.caption {
+  font-size: 16px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+.footnote {
+  position: absolute;
+  bottom: 24px;
+  left: 64px;
+  right: 64px;
+  font-size: 16px;
+  color: var(--muted);
+}
+
+.title-slide .footnote {
+  color: #d9e7f2;
+}

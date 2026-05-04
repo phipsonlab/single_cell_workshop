@@ -1,178 +1,37 @@
 <!DOCTYPE html>
 <html lang="" xml:lang="">
   <head>
-    <title>Continuum-aware single-cell analysis of heart maturation</title>
+    <title>Cell states along a cotinuum</title>
     <meta charset="utf-8" />
-    <meta name="author" content="Single-cell RNA-seq workshop" />
-    <meta name="date" content="2026-05-04" />
-    <script src="libs/header-attrs-2.30/header-attrs.js"></script>
-    <link href="libs/remark-css-0.0.1/default.css" rel="stylesheet" />
-    <link href="libs/remark-css-0.0.1/default-fonts.css" rel="stylesheet" />
+    <meta name="author" content="Jiadong Mao (MIG), Yidi Deng (ANU, Florey Institute)" />
+    <meta name="date" content="2026-05-06" />
+    <script src="libs/header-attrs/header-attrs.js"></script>
+    <link href="libs/remark-css/default.css" rel="stylesheet" />
+    <link rel="stylesheet" href="afternoon_30min_xaringan.css" type="text/css" />
   </head>
   <body>
     <textarea id="source">
-class: center, middle, inverse, title-slide
 
-.title[
-# Continuum-aware single-cell analysis of heart maturation
-]
-.subtitle[
-## Afternoon session: Φ-Space, pseudotime, and NeighbourNet
-]
-.author[
-### Single-cell RNA-seq workshop
-]
-.date[
-### 04 May 2026
+
+
+
+class: title-slide, middle
+
+# Cell states along a cotinuum
+
+
+
+### Jiadong Mao (MIG), Yidi Deng (ANU, Florey Institute)
+
+### 6 May 2026
+
+.footnote[
+Modules 5-7: Φ-Space -&gt; pseudotime -&gt; NeighbourNet
 ]
 
 ---
 
-
-
-
-&lt;style&gt;
-.remark-slide-content {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-  color: #111827;
-  background: #FFFFFF;
-  padding: 52px 66px 48px 66px;
-}
-.remark-slide-content h1 {
-  font-size: 42px;
-  line-height: 1.05;
-  letter-spacing: 0;
-  margin-bottom: 18px;
-  color: #0F172A;
-}
-.remark-slide-content h2 {
-  font-size: 27px;
-  line-height: 1.15;
-  letter-spacing: 0;
-  color: #334155;
-  font-weight: 600;
-}
-.remark-slide-content p,
-.remark-slide-content li {
-  font-size: 25px;
-  line-height: 1.35;
-}
-.remark-slide-content li {
-  margin-bottom: 10px;
-}
-.title-slide {
-  background: linear-gradient(135deg, #0F172A 0%, #1F2937 45%, #29524A 100%);
-  color: #FFFFFF;
-}
-.title-slide h1,
-.title-slide h2 {
-  color: #FFFFFF;
-}
-.title-slide h1 {
-  font-size: 50px;
-  max-width: 900px;
-}
-.title-slide .remark-slide-number {
-  display: none;
-}
-.section {
-  background: #0F172A;
-  color: #FFFFFF;
-}
-.section h1,
-.section h2,
-.section p,
-.section li {
-  color: #FFFFFF;
-}
-.kicker {
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 16px;
-  font-weight: 700;
-  color: #0F766E;
-  margin-bottom: 16px;
-}
-.section .kicker {
-  color: #5EEAD4;
-}
-.claim {
-  font-size: 34px;
-  line-height: 1.18;
-  font-weight: 750;
-  color: #0F172A;
-  margin: 18px 0 24px 0;
-}
-.section .claim {
-  color: #FFFFFF;
-}
-.small {
-  font-size: 18px !important;
-  color: #475569;
-}
-.muted {
-  color: #64748B;
-}
-.grid-2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 34px;
-  align-items: center;
-}
-.grid-3 {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
-}
-.panel {
-  border: 1px solid #CBD5E1;
-  border-radius: 8px;
-  padding: 22px 24px;
-  background: #F8FAFC;
-}
-.panel h3 {
-  margin: 0 0 8px 0;
-  font-size: 22px;
-}
-.panel p,
-.panel li {
-  font-size: 19px;
-  line-height: 1.28;
-}
-.flow {
-  display: flex;
-  gap: 12px;
-  align-items: stretch;
-  margin-top: 26px;
-}
-.flow-step {
-  flex: 1;
-  padding: 18px 16px;
-  border-radius: 8px;
-  background: #ECFDF5;
-  border: 1px solid #99F6E4;
-  font-weight: 700;
-  font-size: 20px;
-  text-align: center;
-}
-.arrow {
-  align-self: center;
-  color: #0F766E;
-  font-size: 27px;
-  font-weight: 800;
-}
-.caption {
-  font-size: 15px;
-  color: #64748B;
-  margin-top: 6px;
-}
-code {
-  font-size: 0.82em;
-  color: #0F766E;
-}
-&lt;/style&gt;
-
-class: section, middle
+class: section-slide, middle
 
 &lt;div class="kicker"&gt;Afternoon arc&lt;/div&gt;
 
@@ -193,7 +52,7 @@ Timing: 2 minutes. Tie back to Session 1: QC, integration, clustering, annotatio
 
 # The biological problem
 
-&lt;div class="grid-2"&gt;
+&lt;div class="cols middle"&gt;
 &lt;div&gt;
 &lt;div class="kicker"&gt;Human heart development&lt;/div&gt;
 
@@ -217,7 +76,7 @@ Timing: 2 minutes. The core contrast is not that hard labels are bad; they are i
 
 # Module 5: Φ-Space turns labels into scores
 
-&lt;div class="grid-2"&gt;
+&lt;div class="cols middle"&gt;
 &lt;div&gt;
 &lt;div class="claim"&gt;Ask “how much does this cell resemble each reference phenotype?” rather than “which single label wins?”&lt;/div&gt;
 
@@ -251,7 +110,7 @@ Timing: 3 minutes. Explain how to read the stage separation without over-interpr
 
 # Bridge: scores become a maturation coordinate
 
-&lt;div class="grid-2"&gt;
+&lt;div class="cols middle"&gt;
 &lt;div&gt;
 &lt;div class="kicker"&gt;The payoff of Module 5&lt;/div&gt;
 
@@ -272,7 +131,7 @@ Timing: 2 minutes. This is the hinge between Modules 5 and 6.
 
 # Module 6: pseudotime is an ordering, not a clock
 
-&lt;div class="grid-2"&gt;
+&lt;div class="cols middle"&gt;
 &lt;div&gt;
 &lt;div class="claim"&gt;Pseudotime assigns each cell a scalar position along a biological process.&lt;/div&gt;
 
@@ -294,7 +153,7 @@ Timing: 2 minutes. Make sure participants do not treat pseudotime values as cale
 
 # Two method families, two kinds of uncertainty
 
-&lt;div class="grid-3"&gt;
+&lt;div class="cols-3"&gt;
 &lt;div class="panel"&gt;
 &lt;h3&gt;Slingshot&lt;/h3&gt;
 &lt;p&gt;Cluster centroids -&gt; minimum spanning tree -&gt; principal curves -&gt; arc-length pseudotime.&lt;/p&gt;
@@ -321,7 +180,7 @@ Timing: 3 minutes. Mention velocity only as context; do not let it take over the
 
 # Slingshot sensitivity is the lesson
 
-&lt;div class="grid-2"&gt;
+&lt;div class="cols middle"&gt;
 &lt;div&gt;
 &lt;div class="claim"&gt;For principal-curve methods, clustering is a modelling choice.&lt;/div&gt;
 
@@ -354,7 +213,7 @@ Timing: 4 minutes. The ideal result is broad agreement; disagreement is also use
 
 # Bridge: from gene levels to gene relationships
 
-&lt;div class="grid-2"&gt;
+&lt;div class="cols middle"&gt;
 &lt;div&gt;
 &lt;div class="kicker"&gt;After pseudotime&lt;/div&gt;
 
@@ -376,7 +235,7 @@ Timing: 2 minutes. This is the transition into NeighbourNet.
 
 # Module 7: co-expression scaffold, not causal GRN
 
-&lt;div class="grid-2"&gt;
+&lt;div class="cols middle"&gt;
 &lt;div&gt;
 &lt;div class="claim"&gt;NeighbourNet builds cell-specific co-expression networks.&lt;/div&gt;
 
@@ -410,7 +269,7 @@ Timing: 3 minutes. This slide prevents over-claiming.
   &lt;div class="flow-step"&gt;nPCA&lt;br&gt;meta-networks&lt;/div&gt;
 &lt;/div&gt;
 
-&lt;div class="grid-2" style="margin-top: 40px;"&gt;
+&lt;div class="cols middle" style="margin-top: 40px;"&gt;
 &lt;div class="panel"&gt;
 &lt;h3&gt;Computational shape&lt;/h3&gt;
 &lt;p&gt;&lt;code&gt;cells × target genes × TF predictors&lt;/code&gt;&lt;/p&gt;
@@ -439,7 +298,7 @@ Timing: 4 minutes. Explain meta-network scores as PCA-like cell scores for recur
 
 ---
 
-class: section, middle
+class: section-slide, middle
 
 &lt;div class="kicker"&gt;Take-home&lt;/div&gt;
 

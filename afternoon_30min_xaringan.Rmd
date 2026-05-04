@@ -1,11 +1,13 @@
 ---
-title: "Continuum-aware single-cell analysis of heart maturation"
-subtitle: "Afternoon session: Φ-Space, pseudotime, and NeighbourNet"
-author: "Single-cell RNA-seq workshop"
-date: "`r format(Sys.Date(), '%d %B %Y')`"
+title: "Cell states along a cotinuum"
+subtitle: ""
+author: "Jiadong Mao (MIG), Yidi Deng (ANU, Florey Institute)"
+date: "6 May 2026"
 output:
   xaringan::moon_reader:
     lib_dir: libs
+    seal: false
+    css: ["default", "afternoon_30min_xaringan.css"]
     nature:
       ratio: "16:9"
       highlightStyle: github
@@ -16,6 +18,8 @@ params:
 ---
 
 ```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+
 knitr::opts_chunk$set(
     echo = FALSE,
     message = FALSE,
@@ -39,6 +43,13 @@ has_ggplot2 <- load_pkg("ggplot2")
 has_patchwork <- load_pkg("patchwork")
 has_sce <- ok_pkg("SingleCellExperiment")
 has_se <- ok_pkg("SummarizedExperiment")
+
+`%||%` <- function(x, y) if (is.null(x)) y else x
+meta <- rmarkdown::metadata
+deck_title <- meta$title %||% ""
+deck_subtitle <- meta$subtitle %||% ""
+deck_author <- meta$author %||% ""
+deck_date <- meta$date %||% ""
 
 if (has_ggplot2) {
     theme_set(theme_minimal(base_size = 18))
@@ -99,148 +110,23 @@ combine4 <- function(p1, p2, p3, p4) {
 }
 ```
 
-<style>
-.remark-slide-content {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-  color: #111827;
-  background: #FFFFFF;
-  padding: 52px 66px 48px 66px;
-}
-.remark-slide-content h1 {
-  font-size: 42px;
-  line-height: 1.05;
-  letter-spacing: 0;
-  margin-bottom: 18px;
-  color: #0F172A;
-}
-.remark-slide-content h2 {
-  font-size: 27px;
-  line-height: 1.15;
-  letter-spacing: 0;
-  color: #334155;
-  font-weight: 600;
-}
-.remark-slide-content p,
-.remark-slide-content li {
-  font-size: 25px;
-  line-height: 1.35;
-}
-.remark-slide-content li {
-  margin-bottom: 10px;
-}
-.title-slide {
-  background: linear-gradient(135deg, #0F172A 0%, #1F2937 45%, #29524A 100%);
-  color: #FFFFFF;
-}
-.title-slide h1,
-.title-slide h2 {
-  color: #FFFFFF;
-}
-.title-slide h1 {
-  font-size: 50px;
-  max-width: 900px;
-}
-.title-slide .remark-slide-number {
-  display: none;
-}
-.section {
-  background: #0F172A;
-  color: #FFFFFF;
-}
-.section h1,
-.section h2,
-.section p,
-.section li {
-  color: #FFFFFF;
-}
-.kicker {
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 16px;
-  font-weight: 700;
-  color: #0F766E;
-  margin-bottom: 16px;
-}
-.section .kicker {
-  color: #5EEAD4;
-}
-.claim {
-  font-size: 34px;
-  line-height: 1.18;
-  font-weight: 750;
-  color: #0F172A;
-  margin: 18px 0 24px 0;
-}
-.section .claim {
-  color: #FFFFFF;
-}
-.small {
-  font-size: 18px !important;
-  color: #475569;
-}
-.muted {
-  color: #64748B;
-}
-.grid-2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 34px;
-  align-items: center;
-}
-.grid-3 {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
-}
-.panel {
-  border: 1px solid #CBD5E1;
-  border-radius: 8px;
-  padding: 22px 24px;
-  background: #F8FAFC;
-}
-.panel h3 {
-  margin: 0 0 8px 0;
-  font-size: 22px;
-}
-.panel p,
-.panel li {
-  font-size: 19px;
-  line-height: 1.28;
-}
-.flow {
-  display: flex;
-  gap: 12px;
-  align-items: stretch;
-  margin-top: 26px;
-}
-.flow-step {
-  flex: 1;
-  padding: 18px 16px;
-  border-radius: 8px;
-  background: #ECFDF5;
-  border: 1px solid #99F6E4;
-  font-weight: 700;
-  font-size: 20px;
-  text-align: center;
-}
-.arrow {
-  align-self: center;
-  color: #0F766E;
-  font-size: 27px;
-  font-weight: 800;
-}
-.caption {
-  font-size: 15px;
-  color: #64748B;
-  margin-top: 6px;
-}
-code {
-  font-size: 0.82em;
-  color: #0F766E;
-}
-</style>
+class: title-slide, middle
 
-class: section, middle
+# `r deck_title`
+
+`r if (nzchar(deck_subtitle)) paste0("## ", deck_subtitle)`
+
+### `r deck_author`
+
+### `r deck_date`
+
+.footnote[
+Modules 5-7: Φ-Space -> pseudotime -> NeighbourNet
+]
+
+---
+
+class: section-slide, middle
 
 <div class="kicker">Afternoon arc</div>
 
@@ -261,7 +147,7 @@ Timing: 2 minutes. Tie back to Session 1: QC, integration, clustering, annotatio
 
 # The biological problem
 
-<div class="grid-2">
+<div class="cols middle">
 <div>
 <div class="kicker">Human heart development</div>
 
@@ -285,7 +171,7 @@ Timing: 2 minutes. The core contrast is not that hard labels are bad; they are i
 
 # Module 5: Φ-Space turns labels into scores
 
-<div class="grid-2">
+<div class="cols middle">
 <div>
 <div class="claim">Ask “how much does this cell resemble each reference phenotype?” rather than “which single label wins?”</div>
 
@@ -379,7 +265,7 @@ Timing: 3 minutes. Explain how to read the stage separation without over-interpr
 
 # Bridge: scores become a maturation coordinate
 
-<div class="grid-2">
+<div class="cols middle">
 <div>
 <div class="kicker">The payoff of Module 5</div>
 
@@ -411,7 +297,7 @@ Timing: 2 minutes. This is the hinge between Modules 5 and 6.
 
 # Module 6: pseudotime is an ordering, not a clock
 
-<div class="grid-2">
+<div class="cols middle">
 <div>
 <div class="claim">Pseudotime assigns each cell a scalar position along a biological process.</div>
 
@@ -433,7 +319,7 @@ Timing: 2 minutes. Make sure participants do not treat pseudotime values as cale
 
 # Two method families, two kinds of uncertainty
 
-<div class="grid-3">
+<div class="cols-3">
 <div class="panel">
 <h3>Slingshot</h3>
 <p>Cluster centroids -> minimum spanning tree -> principal curves -> arc-length pseudotime.</p>
@@ -460,7 +346,7 @@ Timing: 3 minutes. Mention velocity only as context; do not let it take over the
 
 # Slingshot sensitivity is the lesson
 
-<div class="grid-2">
+<div class="cols middle">
 <div>
 <div class="claim">For principal-curve methods, clustering is a modelling choice.</div>
 
@@ -520,7 +406,7 @@ Timing: 4 minutes. The ideal result is broad agreement; disagreement is also use
 
 # Bridge: from gene levels to gene relationships
 
-<div class="grid-2">
+<div class="cols middle">
 <div>
 <div class="kicker">After pseudotime</div>
 
@@ -542,7 +428,7 @@ Timing: 2 minutes. This is the transition into NeighbourNet.
 
 # Module 7: co-expression scaffold, not causal GRN
 
-<div class="grid-2">
+<div class="cols middle">
 <div>
 <div class="claim">NeighbourNet builds cell-specific co-expression networks.</div>
 
@@ -576,7 +462,7 @@ Timing: 3 minutes. This slide prevents over-claiming.
   <div class="flow-step">nPCA<br>meta-networks</div>
 </div>
 
-<div class="grid-2" style="margin-top: 40px;">
+<div class="cols middle" style="margin-top: 40px;">
 <div class="panel">
 <h3>Computational shape</h3>
 <p><code>cells × target genes × TF predictors</code></p>
@@ -641,7 +527,7 @@ Timing: 4 minutes. Explain meta-network scores as PCA-like cell scores for recur
 
 ---
 
-class: section, middle
+class: section-slide, middle
 
 <div class="kicker">Take-home</div>
 

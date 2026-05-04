@@ -23,6 +23,12 @@ vignette: >
 # succeeds on machines that have not run the afternoon modules yet.
 data_ok <- file.exists("../results/06_cm_pseudotime.rds")
 
+# Defined here (in the always-evaluated setup chunk) rather than inside
+# the conditional `cache-setup` chunk below so that inline references
+# like `r n_targets` still resolve when `data_ok` is FALSE.
+n_targets <- 10
+n_meta_networks <- 2
+
 knitr::opts_chunk$set(
     echo = TRUE,
     warning = FALSE,
@@ -135,8 +141,9 @@ summary(cm$pt_phi_score)
 results_dir <- "../results"
 dir.create(results_dir, showWarnings = FALSE, recursive = TRUE)
 
-n_targets <- 10
-n_meta_networks <- 2
+# n_targets and n_meta_networks are defined in the setup chunk above so
+# that inline references in the surrounding prose resolve even when this
+# chunk is skipped (data_ok = FALSE).
 ```
 
 ## Convert to Seurat

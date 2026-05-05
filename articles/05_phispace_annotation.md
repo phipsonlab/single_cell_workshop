@@ -44,8 +44,8 @@ high on one and low on the other.
 Under the hood, Φ-Space fits a **partial least squares (PLS)**
 regression from gene expression in the reference onto a dummy matrix of
 phenotype labels. The fitted model is then applied to the query,
-producing one score per cell per phenotype. This matrix of scores — the
-**phenotype space embedding** — is stored as a `reducedDim` and becomes
+producing one score per cell per phenotype. This matrix of scores, the
+**phenotype space embedding**, is stored as a `reducedDim` and becomes
 the substrate for every downstream analysis: visualisation, clustering,
 marker selection, and trajectory inference.
 
@@ -244,8 +244,8 @@ each fine label.
 
 ### A note on very rare phenotypes
 
-Even after splitting, some fine labels are tiny (e.g.
-`Cardiomyocyte:Senescent` ≈ 4 cells, `Fibroblast:Inflammatory` ≈ 6
+Even after splitting, some fine labels are tiny
+(e.g. `Cardiomyocyte:Senescent` ≈ 4 cells, `Fibroblast:Inflammatory` ≈ 6
 cells). Training PLS with a phenotype represented by a handful of cells
 is a bad bargain: the column it produces in the score matrix is mostly
 noise, and it still consumes a component in the PLS fit.
@@ -271,11 +271,9 @@ Three preparation steps are required before we can run Φ-Space:
 
 ### Match normalisation with scran
 
-The reference is stored with a `logcounts` assay (scran-normalised
-during reference preparation — see
-[`HPC_reference_processing.md`](https://phipsonlab.github.io/single_cell_workshop/references/HPC_reference_processing.md));
-the query carries raw `counts`. To put both on the same numerical scale
-we apply **scran normalisation** to the query as well, via PhiSpace’s
+The reference is stored with a `logcounts` assay; the query carries raw
+`counts`. To put both on the same numerical scale we apply **scran
+normalisation** to the query as well, via PhiSpace’s
 [`scranTransf()`](https://jiadongm.github.io/PhiSpace/reference/scranTransf.html)
 wrapper.
 [`scranTransf()`](https://jiadongm.github.io/PhiSpace/reference/scranTransf.html)
@@ -285,14 +283,6 @@ and then calls
 [`scuttle::logNormCounts()`](https://rdrr.io/pkg/scuttle/man/logNormCounts.html),
 storing the result in a `logcounts` assay — the same assay name and the
 same normalisation family the reference already uses.
-
-An earlier draft of this module used rank transformation instead. Rank
-is fast and invariant to library size, which is attractive when
-reference and query come from very different platforms. But for this
-dataset both sides are snRNA-seq, so the cross-platform argument is
-weaker, and scran’s size-factor normalisation preserves more of the
-count-level variation that PLS can exploit. The trade-off is that scran
-is slower, so we cache the intermediate object.
 
 ``` r
 
@@ -338,20 +328,7 @@ query     <- zeroFeatQC(query)
 dim(query)
 ```
 
-The gene-symbol overlap is comfortably above ten thousand, which is
-plenty for PLS.
-
-### Balancing the reference — a recap
-
-Two levers keep the reference balanced: **splitting** dense majority
-classes into biologically meaningful subclusters (what we did above with
-CM and Fibroblast), and **subsampling** with
-`PhiSpace::subsample(key = ...)` to cap the per-class cell count. The
-Gao 2026 reference was already down-sampled during preparation (see
-[`HPC_reference_processing.md`](https://phipsonlab.github.io/single_cell_workshop/references/HPC_reference_processing.md)),
-capping rare types at ~100 and abundant types at a few thousand — so
-between that and our fine split, we are in a reasonable spot without
-further action.
+The gene-symbol overlap is above ten thousand, which is plenty for PLS.
 
 ## Running Φ-Space
 
@@ -368,8 +345,8 @@ represented by fewer than 20 reference cells are dropped before PLS
 fitting — this trims the long tail of rare CM / Fibroblast subclusters
 without touching the well-populated ones.
 
-This step is the computational bottleneck of the module (roughly one
-minute on a laptop), so we cache the output.
+This step is the computational bottleneck of the module (even though
+it’s only around one minute on a laptop), so we cache the output.
 
 ``` r
 
@@ -415,11 +392,12 @@ and negative values mean the cell is confidently *not* that phenotype.
 
 Φ-Space defaults `ncomp` to the total number of phenotype levels (here
 17). This is a sensible starting point that we have found works well in
-practice. For a more principled choice — especially with large
-references — you can cross-validate `ncomp` and feature count with
-[`tunePhiSpace()`](https://jiadongm.github.io/PhiSpace/reference/tunePhiSpace.html);
-we skip it here in the interest of time, but the function is a one-liner
-when you need it.
+practice. What we tend to observe is that, when there are many
+phenotypes (e.g. 60 cell types), setting `ncomp` to the default value
+(e.g. 60) might be too much. This is because many of these cell types
+are heavily correlated, hence we do not need as many components to
+capture all the signal. When this is the case, setting `ncomp` to, say,
+`30` , might be a better choice.
 
 ## Exploring the Phenotype Space
 

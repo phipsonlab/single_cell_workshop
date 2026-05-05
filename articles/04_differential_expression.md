@@ -128,7 +128,9 @@ assay. Cell type labels come from the original study annotations in
 
 ``` r
 
-data_dir <- "../data"
+# Resolve `data/` whether wd is the repo root (interactive RStudio) or
+# `vignettes/` (knit context).
+data_dir <- if (dir.exists("data")) "data" else "../data"
 
 # Load QC-filtered Seurat object from Module 1
 seu <- readRDS(file.path(data_dir, "processed/01_qc_filtered.rds"))
@@ -1672,8 +1674,8 @@ developmental patterns that may warrant further investigation.
 
 ``` r
 
-# Create results directory
-results_dir <- "../results"
+# Create results directory (portable across wd contexts).
+results_dir <- if (dir.exists("results") || dir.exists("data")) "results" else "../results"
 if (!dir.exists(results_dir)) {
     dir.create(results_dir, recursive = TRUE)
 }

@@ -120,9 +120,9 @@ Let us load these files and examine their structure:
 
 ``` r
 
-# Set the path to the data directory
-# We use a relative path from the tutorials folder
-data_dir <- "../data"
+# Resolve the data directory whether the working directory is the repo
+# root (interactive RStudio) or `vignettes/` (knit context).
+data_dir <- if (dir.exists("data")) "data" else "../data"
 
 # Load the count matrix
 # readRDS() reads an R object that was saved with saveRDS()
@@ -315,8 +315,8 @@ gc()  # Garbage collection to release memory
 ```
 
     ##             used   (Mb) gc trigger   (Mb)   max used   (Mb)
-    ## Ncells   7682879  410.4   13937447  744.4   12640768  675.1
-    ## Vcells 281892854 2150.7 1210321641 9234.1 1180023528 9002.9
+    ## Ncells   7682890  410.4   13959498  745.6   12640779  675.1
+    ## Vcells 281892995 2150.7 1210321882 9234.1 1180023673 9002.9
 
 ### Examining the Seurat Object
 
@@ -1160,7 +1160,7 @@ modules:
 ``` r
 
 # Create output directory if it doesn't exist
-output_dir <- "../data/processed"
+output_dir <- file.path(data_dir, "processed")
 if (!dir.exists(output_dir)) {
     dir.create(output_dir, recursive = TRUE)
 }

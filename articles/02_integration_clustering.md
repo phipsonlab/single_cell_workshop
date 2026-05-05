@@ -104,8 +104,9 @@ We begin by loading the quality-controlled data from Module 1:
 
 ``` r
 
-# Load the QC-filtered Seurat object
-data_dir <- "../data"
+# Load the QC-filtered Seurat object. Resolve `data/` whether wd is the
+# repo root (interactive RStudio) or `vignettes/` (knit context).
+data_dir <- if (dir.exists("data")) "data" else "../data"
 seu <- readRDS(file.path(data_dir, "processed/01_qc_filtered.rds"))
 
 # Examine the object dimensions
@@ -887,7 +888,7 @@ We save the integrated and clustered object for use in the next module:
 ``` r
 
 # Create output directory if needed
-output_dir <- "../data/processed"
+output_dir <- file.path(data_dir, "processed")
 if (!dir.exists(output_dir)) {
     dir.create(output_dir, recursive = TRUE)
 }

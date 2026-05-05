@@ -5,10 +5,11 @@
 
 Single-cell RNA sequencing (scRNA-seq) has revolutionised our ability to
 study gene expression at the resolution of individual cells, enabling
-the discovery of novel cell types and providing insights into the
-cellular composition of complex tissues. This workshop provides a
-comprehensive introduction to the computational analysis of scRNA-seq
-data using R and Bioconductor.
+detailed characterisation of cell types and their association with
+complex diseases and phenotypes. This workshop provides a comprehensive
+introduction to the computational analysis of scRNA-seq data using R and
+Bioconductor, including some advanced topics such as continuous cell
+state modelling and co-expression network analysis.
 
 We analyse single-nucleus RNA-sequencing (snRNA-seq) data from human
 heart tissue across three developmental stages: foetal, young, and
@@ -25,9 +26,8 @@ This workshop is designed for researchers and students who:
 - Are interested in single-cell transcriptomics analysis
 - Want to understand best practices for scRNA-seq data processing
 
-No prior experience with single-cell analysis or Bioconductor is
-required. All concepts are introduced from first principles with
-detailed explanations.
+Some knowledge of single-cell analysis is recommended. All concepts are
+introduced from first principles with detailed explanations.
 
 ## System Requirements
 
@@ -58,7 +58,7 @@ headers on Linux).
 | **Module 4** | Differential Expression     | 55 min   |
 |              | Wrap-up & Q&A               | 10 min   |
 
-### Session 2: Trajectory and Gene Regulation (Afternoon, ~3 hours)
+### Session 2: Continuous Cell States (Afternoon, ~3 hours)
 
 | Module       | Topic                                               | Duration |
 |--------------|-----------------------------------------------------|----------|

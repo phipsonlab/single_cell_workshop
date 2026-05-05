@@ -68,7 +68,7 @@
                         <h4 data-toc-skip class="author">Single Cell
 Workshop</h4>
             
-            <h4 data-toc-skip class="date">2026-05-04</h4>
+            <h4 data-toc-skip class="date">2026-05-05</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/phipsonlab/single_cell_workshop/blob/main/vignettes/06_pseudotime.Rmd" class="external-link"><code>vignettes/06_pseudotime.Rmd</code></a></small>
       <div class="d-none name"><code>06_pseudotime.Rmd</code></div>
@@ -240,9 +240,7 @@ logcounts we already have from Module 5.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"PCA dims:      "</span>, <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/SingleCellExperiment/man/reducedDims.html" class="external-link">reducedDim</a></span><span class="op">(</span><span class="va">cm</span>, <span class="st">"PCA"</span><span class="op">)</span><span class="op">)</span>, collapse <span class="op">=</span> <span class="st">" x "</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"PhiSpace dims: "</span>, <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/SingleCellExperiment/man/reducedDims.html" class="external-link">reducedDim</a></span><span class="op">(</span><span class="va">cm</span>, <span class="st">"PhiSpace"</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>                             collapse <span class="op">=</span> <span class="st">" x "</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
-<p>We keep 20 PCs. That is a defensible default for single-cell data of
-this size; tunePhiSpace-style cross-validation of the component count is
-possible but not the point here.</p>
+<p>We keep 20 PCs the default.</p>
 </div>
 <div class="section level2">
 <h2 id="umap-for-visualisation">UMAP for Visualisation<a class="anchor" aria-label="anchor" href="#umap-for-visualisation"></a>

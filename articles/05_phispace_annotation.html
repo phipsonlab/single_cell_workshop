@@ -68,7 +68,7 @@
                         <h4 data-toc-skip class="author">Single Cell
 Workshop</h4>
             
-            <h4 data-toc-skip class="date">2026-05-04</h4>
+            <h4 data-toc-skip class="date">2026-05-05</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/phipsonlab/single_cell_workshop/blob/main/vignettes/05_phispace_annotation.Rmd" class="external-link"><code>vignettes/05_phispace_annotation.Rmd</code></a></small>
       <div class="d-none name"><code>05_phispace_annotation.Rmd</code></div>
@@ -124,7 +124,7 @@ will score high on one and low on the other.</p>
 (PLS)</strong> regression from gene expression in the reference onto a
 dummy matrix of phenotype labels. The fitted model is then applied to
 the query, producing one score per cell per phenotype. This matrix of
-scores — the <strong>phenotype space embedding</strong> — is stored as a
+scores, the <strong>phenotype space embedding</strong>, is stored as a
 <code>reducedDim</code> and becomes the substrate for every downstream
 analysis: visualisation, clustering, marker selection, and trajectory
 inference.</p>
@@ -330,8 +330,8 @@ subsample within each fine label.</p>
 <div class="section level3">
 <h3 id="a-note-on-very-rare-phenotypes">A note on very rare phenotypes<a class="anchor" aria-label="anchor" href="#a-note-on-very-rare-phenotypes"></a>
 </h3>
-<p>Even after splitting, some fine labels are tiny (e.g.
-<code>Cardiomyocyte:Senescent</code> ≈ 4 cells,
+<p>Even after splitting, some fine labels are tiny
+(e.g. <code>Cardiomyocyte:Senescent</code> ≈ 4 cells,
 <code>Fibroblast:Inflammatory</code> ≈ 6 cells). Training PLS with a
 phenotype represented by a handful of cells is a bad bargain: the column
 it produces in the score matrix is mostly noise, and it still consumes a
@@ -364,23 +364,15 @@ capacity.</li>
 <div class="section level3">
 <h3 id="match-normalisation-with-scran">Match normalisation with scran<a class="anchor" aria-label="anchor" href="#match-normalisation-with-scran"></a>
 </h3>
-<p>The reference is stored with a <code>logcounts</code> assay
-(scran-normalised during reference preparation — see <a href="../references/HPC_reference_processing.html"><code>HPC_reference_processing.md</code></a>);
-the query carries raw <code>counts</code>. To put both on the same
-numerical scale we apply <strong>scran normalisation</strong> to the
-query as well, via PhiSpace’s <code><a href="https://jiadongm.github.io/PhiSpace/reference/scranTransf.html" class="external-link">scranTransf()</a></code> wrapper.
+<p>The reference is stored with a <code>logcounts</code> assay; the
+query carries raw <code>counts</code>. To put both on the same numerical
+scale we apply <strong>scran normalisation</strong> to the query as
+well, via PhiSpace’s <code><a href="https://jiadongm.github.io/PhiSpace/reference/scranTransf.html" class="external-link">scranTransf()</a></code> wrapper.
 <code><a href="https://jiadongm.github.io/PhiSpace/reference/scranTransf.html" class="external-link">scranTransf()</a></code> computes pool-based size factors with
 <code><a href="https://rdrr.io/pkg/scran/man/computeSumFactors.html" class="external-link">scran::computeSumFactors()</a></code> and then calls
 <code><a href="https://rdrr.io/pkg/scuttle/man/logNormCounts.html" class="external-link">scuttle::logNormCounts()</a></code>, storing the result in a
 <code>logcounts</code> assay — the same assay name and the same
 normalisation family the reference already uses.</p>
-<p>An earlier draft of this module used rank transformation instead.
-Rank is fast and invariant to library size, which is attractive when
-reference and query come from very different platforms. But for this
-dataset both sides are snRNA-seq, so the cross-platform argument is
-weaker, and scran’s size-factor normalisation preserves more of the
-count-level variation that PLS can exploit. The trade-off is that scran
-is slower, so we cache the intermediate object.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ref_cache</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">results_dir</span>, <span class="st">"05_reference_scran.rds"</span><span class="op">)</span></span>
 <span><span class="va">query_cache</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">results_dir</span>, <span class="st">"05_query_scran.rds"</span><span class="op">)</span></span>
@@ -420,21 +412,8 @@ what Φ-Space will use below (<code>refAssay = "logcounts"</code>).</p>
 <span><span class="va">query</span>     <span class="op">&lt;-</span> <span class="va">query</span><span class="op">[</span><span class="va">common</span>, <span class="op">]</span></span>
 <span><span class="va">query</span>     <span class="op">&lt;-</span> <span class="fu"><a href="https://jiadongm.github.io/PhiSpace/reference/zeroFeatQC.html" class="external-link">zeroFeatQC</a></span><span class="op">(</span><span class="va">query</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">query</span><span class="op">)</span></span></code></pre></div>
-<p>The gene-symbol overlap is comfortably above ten thousand, which is
-plenty for PLS.</p>
-</div>
-<div class="section level3">
-<h3 id="balancing-the-reference-a-recap">Balancing the reference — a recap<a class="anchor" aria-label="anchor" href="#balancing-the-reference-a-recap"></a>
-</h3>
-<p>Two levers keep the reference balanced: <strong>splitting</strong>
-dense majority classes into biologically meaningful subclusters (what we
-did above with CM and Fibroblast), and <strong>subsampling</strong> with
-<code>PhiSpace::subsample(key = ...)</code> to cap the per-class cell
-count. The Gao 2026 reference was already down-sampled during
-preparation (see <a href="../references/HPC_reference_processing.html"><code>HPC_reference_processing.md</code></a>),
-capping rare types at ~100 and abundant types at a few thousand — so
-between that and our fine split, we are in a reasonable spot without
-further action.</p>
+<p>The gene-symbol overlap is above ten thousand, which is plenty for
+PLS.</p>
 </div>
 </div>
 <div class="section level2">
@@ -455,8 +434,8 @@ does it sit?</li>
 levels represented by fewer than 20 reference cells are dropped before
 PLS fitting — this trims the long tail of rare CM / Fibroblast
 subclusters without touching the well-populated ones.</p>
-<p>This step is the computational bottleneck of the module (roughly one
-minute on a laptop), so we cache the output.</p>
+<p>This step is the computational bottleneck of the module (even though
+it’s only around one minute on a laptop), so we cache the output.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">phispace_cache</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">results_dir</span>, <span class="st">"05_phispace_query.rds"</span><span class="op">)</span></span>
 <span></span>
@@ -496,10 +475,13 @@ phenotype.</p>
 </h3>
 <p>Φ-Space defaults <code>ncomp</code> to the total number of phenotype
 levels (here 17). This is a sensible starting point that we have found
-works well in practice. For a more principled choice — especially with
-large references — you can cross-validate <code>ncomp</code> and feature
-count with <code><a href="https://jiadongm.github.io/PhiSpace/reference/tunePhiSpace.html" class="external-link">tunePhiSpace()</a></code>; we skip it here in the interest
-of time, but the function is a one-liner when you need it.</p>
+works well in practice. What we tend to observe is that, when there are
+many phenotypes (e.g. 60 cell types), setting <code>ncomp</code> to the
+default value (e.g. 60) might be too much. This is because many of these
+cell types are heavily correlated, hence we do not need as many
+components to capture all the signal. When this is the case, setting
+<code>ncomp</code> to, say, <code>30</code> , might be a better
+choice.</p>
 </div>
 </div>
 <div class="section level2">

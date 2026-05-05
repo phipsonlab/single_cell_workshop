@@ -166,9 +166,7 @@ cat("PhiSpace dims: ", paste(dim(reducedDim(cm, "PhiSpace")),
                              collapse = " x "), "\n")
 ```
 
-We keep 20 PCs. That is a defensible default for single-cell data of
-this size; tunePhiSpace-style cross-validation of the component count is
-possible but not the point here.
+We keep 20 PCs the default.
 
 ## UMAP for Visualisation
 

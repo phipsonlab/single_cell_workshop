@@ -73,8 +73,10 @@ library(future)
 We load the integrated and clustered Seurat object from Module 2.
 
 ```{r load-data}
-# Load the clustered data
-seu <- readRDS("../data/processed/02_integrated_clustered.rds")
+# Load the clustered data. Resolve `data/` whether wd is the repo root
+# (interactive RStudio) or `vignettes/` (knit context).
+data_dir <- if (dir.exists("data")) "data" else "../data"
+seu <- readRDS(file.path(data_dir, "processed/02_integrated_clustered.rds"))
 
 # Verify the data
 cat("Loaded Seurat object:\n")
@@ -731,14 +733,15 @@ The split view highlights several key observations:
 ## Save Annotated Object
 
 ```{r save-checkpoint}
-# Create results directory if it doesn't exist
-dir.create("../results", recursive = TRUE, showWarnings = FALSE)
+# Resolve results/ alongside data/ for the same wd-portability reason.
+results_dir <- if (dir.exists("results") || dir.exists("data")) "results" else "../results"
+dir.create(results_dir, recursive = TRUE, showWarnings = FALSE)
 
 # Save the annotated Seurat object
-saveRDS(seu, "../data/processed/03_annotated.rds")
+saveRDS(seu, file.path(data_dir, "processed/03_annotated.rds"))
 
 # Also save the markers table
-write.csv(markers, "../results/cluster_markers.csv", row.names = FALSE)
+write.csv(markers, file.path(results_dir, "cluster_markers.csv"), row.names = FALSE)
 
 message("Saved annotated object to: data/processed/03_annotated.rds")
 message("Saved marker genes to: results/cluster_markers.csv")

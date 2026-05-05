@@ -113,9 +113,9 @@ Our workshop data consists of two files:
 Let us load these files and examine their structure:
 
 ```{r load-data}
-# Set the path to the data directory
-# We use a relative path from the tutorials folder
-data_dir <- "../data"
+# Resolve the data directory whether the working directory is the repo
+# root (interactive RStudio) or `vignettes/` (knit context).
+data_dir <- if (dir.exists("data")) "data" else "../data"
 
 # Load the count matrix
 # readRDS() reads an R object that was saved with saveRDS()
@@ -791,7 +791,7 @@ We save the filtered Seurat object so it can be loaded in subsequent modules:
 
 ```{r save-checkpoint}
 # Create output directory if it doesn't exist
-output_dir <- "../data/processed"
+output_dir <- file.path(data_dir, "processed")
 if (!dir.exists(output_dir)) {
     dir.create(output_dir, recursive = TRUE)
 }

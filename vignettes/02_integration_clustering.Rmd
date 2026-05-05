@@ -27,8 +27,11 @@ knitr::opts_chunk$set(
     fig.height = 6
 )
 
-# Increase future globals size limit for SCTransform parallelization
-options(future.globals.maxSize = 2000 * 1024^2)  # 2 GB
+# Increase future globals size limit for SCTransform parallelization.
+# 2 GB is too tight on Windows for the full Seurat object — bumping to
+# 8 GB matches Module 3 and prevents "object exceeds maximum allowed
+# size" errors when future serialises the object across workers.
+options(future.globals.maxSize = 8000 * 1024^2)  # 8 GB
 ```
 
 ## Introduction
@@ -124,8 +127,9 @@ sample_colors <- c(
 We begin by loading the quality-controlled data from Module 1:
 
 ```{r load-data}
-# Load the QC-filtered Seurat object
-data_dir <- "../data"
+# Load the QC-filtered Seurat object. Resolve `data/` whether wd is the
+# repo root (interactive RStudio) or `vignettes/` (knit context).
+data_dir <- if (dir.exists("data")) "data" else "../data"
 seu <- readRDS(file.path(data_dir, "processed/01_qc_filtered.rds"))
 
 # Examine the object dimensions
@@ -751,7 +755,7 @@ We save the integrated and clustered object for use in the next module:
 
 ```{r save-checkpoint}
 # Create output directory if needed
-output_dir <- "../data/processed"
+output_dir <- file.path(data_dir, "processed")
 if (!dir.exists(output_dir)) {
     dir.create(output_dir, recursive = TRUE)
 }

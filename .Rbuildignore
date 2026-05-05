@@ -2,5 +2,3 @@
 ^renv\.lock$
 ^.*\.Rproj$
 ^\.Rproj\.user$
-^\.positai$
-^\.claude$

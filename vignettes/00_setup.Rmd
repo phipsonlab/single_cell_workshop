@@ -46,7 +46,7 @@ needs a one-time toolchain install (Step 2 below); after that the same
 |----------|---------|-------------|
 | RAM | 8 GB | 16 GB |
 | Disk space | 5 GB free | 10 GB free |
-| R version | 4.3+ | 4.5+ |
+| R version | 4.6+ | 4.6+ |
 | RStudio | 2023.06+ | Latest |
 
 Check your R version:
@@ -55,7 +55,7 @@ Check your R version:
 R.version.string
 ```
 
-If your R version is older than 4.3, please update from [CRAN](https://cran.r-project.org/) before proceeding.
+If your R version is older than 4.6, please update from [CRAN](https://cran.r-project.org/) before proceeding. The workshop packages are pinned to Bioconductor 3.23 versions, which require R 4.6+.
 
 ## Step 1: Clone or Download the Repository
 
@@ -91,12 +91,12 @@ Several workshop packages contain C / C++ code that R must compile during
 installation (`destiny`, `harmony`, `PhiSpace`, `NeighbourNet`, …). Each
 operating system has its own one-line install for the required toolchain.
 
-**Windows — install Rtools45**
+**Windows — install Rtools46**
 
-R 4.5.x on Windows needs **Rtools45**:
+R 4.6.x on Windows needs **Rtools46**:
 
 1. Download the installer from
-   <https://cran.r-project.org/bin/windows/Rtools/rtools45/rtools.html>.
+   <https://cran.r-project.org/bin/windows/Rtools/rtools46/rtools.html>.
 2. Run the installer with the default options (it adds itself to `PATH`).
 3. Restart R.
 
@@ -457,7 +457,7 @@ date. Re-check it:
 
 - **Windows** — open R and run `pkgbuild::has_build_tools(debug = TRUE)`.
   If it returns `FALSE`, reinstall
-  [Rtools45](https://cran.r-project.org/bin/windows/Rtools/rtools45/rtools.html)
+  [Rtools46](https://cran.r-project.org/bin/windows/Rtools/rtools46/rtools.html)
   and restart R / RStudio.
 - **macOS** — run `xcode-select --install` in a terminal and click
   "Install" in the dialog.

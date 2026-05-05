@@ -2,7 +2,7 @@
 
 <!-- badges: start -->
 
-[![pkgdown](https://github.com/phipsonlab/single_cell_workshop/actions/workflows/pkgdown.yml/badge.svg)](https://github.com/phipsonlab/single_cell_workshop/actions/workflows/pkgdown.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![R Version](https://img.shields.io/badge/R-4.5.2-blue.svg)](https://cran.r-project.org/) [![Bioconductor](https://img.shields.io/badge/Bioconductor-3.22-green.svg)](https://bioconductor.org/)
+[![pkgdown](https://github.com/phipsonlab/single_cell_workshop/actions/workflows/pkgdown.yml/badge.svg)](https://github.com/phipsonlab/single_cell_workshop/actions/workflows/pkgdown.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![R Version](https://img.shields.io/badge/R-4.6.0-blue.svg)](https://cran.r-project.org/) [![Bioconductor](https://img.shields.io/badge/Bioconductor-3.23-green.svg)](https://bioconductor.org/)
 
 <!-- badges: end -->
 
@@ -30,10 +30,10 @@ Some knowledge of single-cell analysis is recommended. All concepts are introduc
 |------------|-----------|-------------|
 | RAM        | 8 GB      | 16 GB       |
 | Disk space | 5 GB free | 10 GB free  |
-| R version  | 4.3+      | 4.5.2       |
+| R version  | 4.6+      | 4.6.0       |
 | RStudio    | 2023.06+  | Latest      |
 
-**Supported platforms:** Windows 10/11, macOS 12+ (Intel and Apple Silicon), Ubuntu 22.04+ / equivalent Linux. A C/C++ build toolchain is required on each platform — Module 0 walks through the install (Rtools45 on Windows, Xcode Command Line Tools on macOS, `build-essential` + dev headers on Linux).
+**Supported platforms:** Windows 10/11, macOS 12+ (Intel and Apple Silicon), Ubuntu 22.04+ / equivalent Linux. A C/C++ build toolchain is required on each platform — Module 0 walks through the install (Rtools46 on Windows, Xcode Command Line Tools on macOS, `build-essential` + dev headers on Linux).
 
 ## Workshop Outline
 
@@ -112,7 +112,7 @@ The workshop uses snRNA-seq data from human heart tissue (Sim et al., 2021):
 
 The setup runs as a single unified flow that covers both sessions:
 
-- **Step 2 — System build tools** (Rtools45 on Windows, Xcode CLT on macOS, `build-essential` on Linux). Required because a few packages compile from source.
+- **Step 2 — System build tools** (Rtools46 on Windows, Xcode CLT on macOS, `build-essential` on Linux). Required because a few packages compile from source.
 - **Step 3 — R packages**: `renv::restore()` for the locked core, then `BiocManager::install(...)` + `remotes::install_github(...)` for the extras (`PhiSpace`, `NeighbourNet`, `slingshot`, `destiny`, `scater`, `ComplexHeatmap`).
 - **Step 4 — Workshop data** from Zenodo (\~420 MB).
 
@@ -135,15 +135,14 @@ The download chunk lives in [Module 0, "Optional: Backup Checkpoints"](https://p
 
 ## Key Package Versions
 
-The core packages are pinned in `renv.lock` for reproducibility. The afternoon-session extras are installed at the latest Bioconductor 3.22 / GitHub `HEAD` versions (see Module 0 Step 3b).
+The core packages are pinned in `renv.lock` for reproducibility. The afternoon-session extras are installed at the latest Bioconductor 3.23 / GitHub `HEAD` versions (see Module 0 Step 3b).
 
 | Package | Source | Package | Source |
 |-------------------|------------------|-------------------|------------------|
-| R 4.5.2 | renv.lock | Bioconductor 3.22 | renv.lock |
-| Seurat 5.4.0 | renv.lock | edgeR 4.8.2 | renv.lock |
-| SeuratObject 5.3.0 | renv.lock | limma 3.66.0 | renv.lock |
-| harmony 1.2.4 | renv.lock | speckle 1.10.0 | renv.lock |
-| glmGamPoi 1.22.0 | renv.lock |  |  |
+| R 4.6.0 | renv.lock | Bioconductor 3.23 | renv.lock |
+| Seurat 5.5.0 | renv.lock | edgeR 4.10.0 | renv.lock |
+| SeuratObject 5.4.0 | renv.lock | limma 3.68.1 | renv.lock |
+| harmony 2.0.2 | renv.lock | speckle 1.12.0 | renv.lock |
 | ComplexHeatmap | Bioconductor | slingshot | Bioconductor |
 | destiny | Bioconductor | scater | Bioconductor |
 | PhiSpace | GitHub (`jiadongm/PhiSpace`) | NeighbourNet | GitHub (`meiosis97/NeighbourNet`) |

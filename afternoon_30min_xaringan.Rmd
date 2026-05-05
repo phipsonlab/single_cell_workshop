@@ -126,6 +126,26 @@ class: section-slide, middle
 
 
 .claim[
+We wouldn't have created a workshop of this quality without AI. 
+]
+
+AI agents, including Claude Code, Codex, are used to
+
+- assist with vignette building;
+- resolve package dependency issues;
+- generate a comprehensive configuration guide;
+- draft this presentation (using xaringan and R Markdown).
+
+But, as human agents, we do our fair share of the work; lesson from Terry T.
+
+
+
+---
+
+class: section-slide, middle
+
+
+.claim[
 Discrete --> continuous cell states:
 ]
 

@@ -315,8 +315,8 @@ gc()  # Garbage collection to release memory
 ```
 
     ##             used   (Mb) gc trigger   (Mb)   max used   (Mb)
-    ## Ncells   7682889  410.4   13959497  745.6   12640778  675.1
-    ## Vcells 281892991 2150.7 1210321861 9234.1 1180023661 9002.9
+    ## Ncells   7682886  410.4   13940942  744.6   12640775  675.1
+    ## Vcells 281892979 2150.7 1210321848 9234.1 1180023653 9002.9
 
 ### Examining the Seurat Object
 

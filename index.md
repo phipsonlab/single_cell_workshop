@@ -48,15 +48,13 @@ headers on Linux).
 
 ### Session 1: Core Single Cell Analysis (Morning, ~3 hours)
 
-| Module       | Topic                       | Duration |
-|--------------|-----------------------------|----------|
-| **Module 1** | Quality Control             | 45 min   |
-|              | *Break*                     | 10 min   |
-| **Module 2** | Normalisation & Integration | 50 min   |
-|              | *Break*                     | 10 min   |
-| **Module 3** | Cell Type Annotation        | 20 min   |
-| **Module 4** | Differential Expression     | 55 min   |
-|              | Wrap-up & Q&A               | 10 min   |
+| Module       | Topic                      | Duration |
+|--------------|----------------------------|----------|
+| **Module 1** | Quality Control            | 30 min   |
+| **Module 2** | Normalisation & Clustering | 50 min   |
+| **Module 3** | Cell Type Annotation       | 20 min   |
+| **Module 4** | Differential Expression    | 50 min   |
+|              | Wrap-up & Q&A              | 10 min   |
 
 ### Session 2: Continuous Cell States (Afternoon, ~3 hours)
 

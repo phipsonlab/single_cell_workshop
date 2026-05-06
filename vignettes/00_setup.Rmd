@@ -315,6 +315,8 @@ message("Download complete!")
 
 **Note:** Total download size is approximately 420 MB.
 
+For afternoon session, download `afternoonSession.zip` from this [Zenodo repository](https://zenodo.org/records/20017845). Unzip it and add files to data and results folders as instructed there.
+
 ### Optional: Backup Checkpoints
 
 If you want to skip a module — for example, to start Session 2 without
